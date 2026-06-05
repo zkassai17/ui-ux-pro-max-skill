@@ -19,26 +19,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   async function loadProfile(userId: string) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
       .maybeSingle();
+    if (error) {
+      console.warn("Failed to load profile", error.message);
+      return;
+    }
     setProfile((data as Profile) ?? null);
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
-      setSession(data.session);
-      if (data.session) await loadProfile(data.session.user.id);
-      setLoading(false);
-    });
-
+    // onAuthStateChange fires immediately with the restored session on mount,
+    // so it drives both initial load and subsequent changes. getSession() only
+    // flips the loading flag once the persisted session has been read.
     const { data: sub } = supabase.auth.onAuthStateChange(async (_event, s) => {
       setSession(s);
       if (s) await loadProfile(s.user.id);
       else setProfile(null);
     });
+
+    supabase.auth
+      .getSession()
+      .catch(() => {})
+      .finally(() => setLoading(false));
+
     return () => sub.subscription.unsubscribe();
   }, []);
 
