@@ -9,13 +9,13 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { getLibrary } from "../../src/services/watchlist";
-import { sortLibrary, type LibrarySort } from "../../src/lib/libraryLogic";
-import { ratingEmoji } from "../../src/lib/ratingScale";
-import { TitleRow } from "../../src/components/TitleRow";
-import type { WatchStatus } from "../../src/types/db";
+import { getLibrary, rateEntry } from "../../src/services/watchlist";
+import { sortLibrary, applyInlineRating, type LibrarySort } from "../../src/lib/libraryLogic";
+import { PosterImage } from "../../src/components/PosterImage";
+import { InlineRating } from "../../src/components/InlineRating";
+import type { WatchStatus, WatchlistEntry } from "../../src/types/db";
 import type { MediaType } from "../../src/types/tmdb";
 
 const FILTERS: { key: "all" | WatchStatus; label: string }[] = [
@@ -50,7 +50,20 @@ export default function LibraryScreen() {
   const [media, setMedia] = useState<"all" | MediaType>("all");
   const [sort, setSort] = useState<LibrarySort>("recent");
   const router = useRouter();
+  const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
+
+  async function handleRate(entryId: string, rating: number | null) {
+    const prev = qc.getQueryData<WatchlistEntry[]>(["library"]);
+    qc.setQueryData<WatchlistEntry[]>(["library"], (old) => applyInlineRating(old, entryId, rating));
+    try {
+      await rateEntry(entryId, rating);
+      qc.invalidateQueries({ queryKey: ["library"] });
+    } catch (e) {
+      qc.setQueryData(["library"], prev);
+      Alert.alert("Couldn't save rating", (e as Error).message);
+    }
+  }
 
   const filtered = (data ?? []).filter(
     (e) =>
@@ -120,13 +133,21 @@ export default function LibraryScreen() {
           data={rows}
           keyExtractor={(e) => e.id}
           renderItem={({ item }) => (
-            <TitleRow
-              title={item.title}
-              subtitle={`${STATUS_LABEL[item.status]}${item.rating ? ` · ${ratingEmoji(item.rating)}` : ""}`}
-              mediaType={item.media_type}
-              posterPath={item.poster_path}
-              onPress={() => router.push(`/title/${item.media_type}/${item.tmdb_id}`)}
-            />
+            <View style={styles.item}>
+              <Pressable
+                style={styles.itemMain}
+                onPress={() => router.push(`/title/${item.media_type}/${item.tmdb_id}`)}
+              >
+                <PosterImage path={item.poster_path} width={46} height={68} />
+                <View style={styles.meta}>
+                  <Text style={styles.itemTitle} numberOfLines={1}>{item.title}</Text>
+                  <Text style={styles.itemSub} numberOfLines={1}>
+                    {`${STATUS_LABEL[item.status]} · ${item.media_type === "movie" ? "Movie" : "TV"}`}
+                  </Text>
+                </View>
+              </Pressable>
+              <InlineRating value={item.rating} onRate={(next) => handleRate(item.id, next)} />
+            </View>
           )}
         />
       )}
@@ -155,4 +176,10 @@ const styles = StyleSheet.create({
 
   count: { fontSize: 11, color: "#aaa", fontWeight: "600", marginTop: 10, marginBottom: 4 },
   msg: { color: "#888", fontSize: 13, marginTop: 16, textAlign: "center" },
+
+  item: { marginBottom: 16 },
+  itemMain: { flexDirection: "row", gap: 12, alignItems: "center" },
+  meta: { flex: 1, minWidth: 0 },
+  itemTitle: { fontSize: 15, fontWeight: "600" },
+  itemSub: { fontSize: 12, color: "#888", marginTop: 2 },
 });

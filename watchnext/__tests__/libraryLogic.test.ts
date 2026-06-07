@@ -1,4 +1,4 @@
-import { sortLibrary } from "../src/lib/libraryLogic";
+import { sortLibrary, applyInlineRating } from "../src/lib/libraryLogic";
 import type { WatchlistEntry } from "../src/types/db";
 
 function entry(over: Partial<WatchlistEntry>): WatchlistEntry {
@@ -64,4 +64,40 @@ test("does not mutate the input array", () => {
   const input = [a, b];
   sortLibrary(input, "title");
   expect(input.map((e) => e.id)).toEqual(["a", "b"]);
+});
+
+test("applyInlineRating sets the rating on the matching entry only", () => {
+  const a = entry({ id: "a", rating: null });
+  const b = entry({ id: "b", rating: 2 });
+  const out = applyInlineRating([a, b], "a", 5);
+  expect(out.find((e) => e.id === "a")?.rating).toBe(5);
+  expect(out.find((e) => e.id === "b")?.rating).toBe(2);
+});
+
+test("applyInlineRating flips status to watched when a rating is set", () => {
+  const a = entry({ id: "a", status: "want", rating: null });
+  const out = applyInlineRating([a], "a", 4)!;
+  const updated = out.find((e) => e.id === "a")!;
+  expect(updated.rating).toBe(4);
+  expect(updated.status).toBe("watched");
+});
+
+test("applyInlineRating keeps existing status when rating is cleared", () => {
+  const a = entry({ id: "a", status: "watching", rating: 3 });
+  const out = applyInlineRating([a], "a", null);
+  const updated = out.find((e) => e.id === "a")!;
+  expect(updated.rating).toBeNull();
+  expect(updated.status).toBe("watching");
+});
+
+test("applyInlineRating does not mutate the input array or entries", () => {
+  const a = entry({ id: "a", status: "want", rating: null });
+  const input = [a];
+  applyInlineRating(input, "a", 5);
+  expect(input[0].rating).toBeNull();
+  expect(input[0].status).toBe("want");
+});
+
+test("applyInlineRating tolerates non-array input by returning it unchanged", () => {
+  expect(applyInlineRating(undefined, "a", 5)).toBeUndefined();
 });

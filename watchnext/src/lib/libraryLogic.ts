@@ -2,6 +2,23 @@ import type { WatchlistEntry } from "../types/db";
 
 export type LibrarySort = "recent" | "oldest" | "title" | "title-desc" | "rating";
 
+// Pure optimistic update for inline rating: returns a new list where the entry
+// with `entryId` has its rating set. Setting a rating implies the title was
+// watched, so status flips to "watched"; clearing (null) leaves status as-is.
+// Tolerant of undefined input so it can be used directly in setQueryData.
+export function applyInlineRating<T extends WatchlistEntry[] | undefined>(
+  entries: T,
+  entryId: string,
+  rating: number | null,
+): T {
+  if (!Array.isArray(entries)) return entries;
+  return entries.map((entry) =>
+    entry.id === entryId
+      ? { ...entry, rating, status: rating != null ? "watched" : entry.status }
+      : entry,
+  ) as T;
+}
+
 export function sortLibrary(entries: WatchlistEntry[], sort: LibrarySort): WatchlistEntry[] {
   const copy = [...entries];
   switch (sort) {

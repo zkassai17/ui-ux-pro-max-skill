@@ -60,6 +60,14 @@ export async function removeFromLibrary(entryId: string): Promise<void> {
   if (error) throw error;
 }
 
+// Rate an existing library entry by id. Setting a rating marks it watched
+// (you only rate what you've seen); clearing (null) leaves the status alone.
+export async function rateEntry(entryId: string, rating: number | null): Promise<void> {
+  const patch = rating != null ? { rating, status: "watched" as WatchStatus } : { rating };
+  const { error } = await supabase.from("watchlist").update(patch).eq("id", entryId);
+  if (error) throw error;
+}
+
 // Sets (or clears, with null) the user's personal 1–5 rating. Rating a title
 // you haven't added yet files it under "watched" — you only rate what you've seen.
 export async function rateTitle(title: Title, rating: number | null): Promise<void> {
