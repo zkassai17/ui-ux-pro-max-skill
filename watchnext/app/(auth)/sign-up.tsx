@@ -10,7 +10,10 @@ export default function SignUp() {
 
   async function handleSignUp() {
     setBusy(true);
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email: email.trim().toLowerCase(),
+      password,
+    });
     setBusy(false);
     if (error) return Alert.alert("Sign up failed", error.message);
     router.replace("/onboarding/username");
@@ -23,6 +26,7 @@ export default function SignUp() {
         value={email} onChangeText={setEmail}
         style={{ borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12 }} />
       <TextInput placeholder="Password" secureTextEntry
+        autoCapitalize="none" autoCorrect={false} textContentType="newPassword"
         value={password} onChangeText={setPassword}
         style={{ borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12 }} />
       <Button title={busy ? "…" : "Sign up"} onPress={handleSignUp} disabled={busy} />

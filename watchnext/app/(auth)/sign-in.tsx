@@ -10,7 +10,10 @@ export default function SignIn() {
 
   async function handleSignIn() {
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
     setBusy(false);
     if (error) return Alert.alert("Sign in failed", error.message);
     router.replace("/");
@@ -23,6 +26,7 @@ export default function SignIn() {
         value={email} onChangeText={setEmail}
         style={{ borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12 }} />
       <TextInput placeholder="Password" secureTextEntry
+        autoCapitalize="none" autoCorrect={false} textContentType="password"
         value={password} onChangeText={setPassword}
         style={{ borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12 }} />
       <Button title={busy ? "…" : "Sign in"} onPress={handleSignIn} disabled={busy} />

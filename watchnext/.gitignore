@@ -43,3 +43,6 @@ yarn-error.*
 
 # Local npm cache (workaround artifact)
 .npm-cache/
+
+# Brainstorming visual companion
+.superpowers/
