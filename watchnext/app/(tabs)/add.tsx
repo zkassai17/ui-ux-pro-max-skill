@@ -12,6 +12,7 @@ import {
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { searchTitles, discoverTitles, getGenres } from "../../src/services/tmdb";
+import { getLibrary } from "../../src/services/watchlist";
 import { TitleRow } from "../../src/components/TitleRow";
 import { QuickAddButton } from "../../src/components/QuickAddButton";
 import { TOP_PROVIDERS } from "../../src/lib/providers";
@@ -44,6 +45,10 @@ export default function AddScreen() {
     queryKey: ["tmdb-genres", mediaType],
     queryFn: () => getGenres(mediaType),
   });
+  const library = useQuery({
+    queryKey: ["library"],
+    queryFn: () => getLibrary(),
+  });
   const discover = useInfiniteQuery({
     queryKey: ["tmdb-discover", mediaType, genreId, providerId],
     queryFn: ({ pageParam }) => discoverTitles({ mediaType, genreId, providerId, page: pageParam }),
@@ -61,7 +66,10 @@ export default function AddScreen() {
   const rawResults: Title[] = searching
     ? search.data ?? []
     : discover.data?.pages.flatMap((p) => p.results) ?? [];
-  const results: Title[] = dedupeByKey(rawResults);
+  const inLibrary = new Set((library.data ?? []).map((e) => `${e.media_type}:${e.tmdb_id}`));
+  const results: Title[] = dedupeByKey(rawResults).filter(
+    (t) => !inLibrary.has(`${t.mediaType}:${t.tmdbId}`)
+  );
   const isLoading = searching ? search.isLoading : discover.isLoading;
   const isError = searching ? search.isError : discover.isError;
   const error = searching ? search.error : discover.error;
