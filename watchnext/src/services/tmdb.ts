@@ -65,3 +65,8 @@ export async function getWatchProviders(mediaType: MediaType, id: number): Promi
   const raw = await tmdbGet(`/${mediaType}/${id}/watch/providers`);
   return normalizeWatchProviders(raw, WATCH_REGION);
 }
+
+export async function getRecommendations(mediaType: MediaType, id: number): Promise<Title[]> {
+  const raw = await tmdbGet(`/${mediaType}/${id}/recommendations`);
+  return normalizeDiscoverResults(raw, mediaType);
+}
