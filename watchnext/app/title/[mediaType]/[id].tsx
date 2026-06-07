@@ -62,7 +62,24 @@ export default function TitleDetailScreen() {
           const current = entry.data?.status ?? null;
           return (
             <>
-              <PosterImage path={d.posterPath} width={140} height={210} radius={12} />
+              <View style={styles.headerRow}>
+                <PosterImage path={d.posterPath} width={130} height={195} radius={12} />
+                <View style={styles.statusCol}>
+                  <Text style={styles.statusHeading}>Add to library</Text>
+                  {STATUSES.map((s) => (
+                    <Pressable
+                      key={s.key}
+                      disabled={saving}
+                      style={[styles.statusBtn, current === s.key && styles.statusBtnOn]}
+                      onPress={() => setStatus(s.key, d)}
+                    >
+                      <Text style={[styles.statusBtnText, current === s.key && styles.statusBtnTextOn]}>
+                        {s.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
               <Text style={styles.title}>{d.title}</Text>
               <Text style={styles.sub}>
                 {[d.year, d.mediaType === "movie" ? "Movie" : "TV", d.rating ? `⭐ ${d.rating}` : null]
@@ -106,20 +123,6 @@ export default function TitleDetailScreen() {
                 })()
               )}
 
-              <Text style={styles.section}>Add to library</Text>
-              <View style={styles.segRow}>
-                {STATUSES.map((s) => (
-                  <Pressable
-                    key={s.key}
-                    disabled={saving}
-                    style={[styles.chip, current === s.key && styles.chipOn]}
-                    onPress={() => setStatus(s.key, d)}
-                  >
-                    <Text style={[styles.chipText, current === s.key && styles.chipTextOn]}>{s.label}</Text>
-                  </Pressable>
-                ))}
-              </View>
-
               <Pressable style={styles.btn} onPress={() => router.push(`/recommend/${d.mediaType}/${d.tmdbId}`)}>
                 <Text style={styles.btnText}>Recommend to a friend</Text>
               </Pressable>
@@ -144,11 +147,13 @@ const styles = StyleSheet.create({
   providerRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, alignItems: "center" },
   providerLogo: { width: 40, height: 40, borderRadius: 8, backgroundColor: "#f0f0f3" },
   providerName: { fontSize: 12, color: "#444", backgroundColor: "#f0f0f3", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6 },
-  segRow: { flexDirection: "row", gap: 8 },
-  chip: { backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
-  chipOn: { backgroundColor: "#5b6cff" },
-  chipText: { fontSize: 13, color: "#666", fontWeight: "600" },
-  chipTextOn: { color: "#fff" },
+  headerRow: { flexDirection: "row", gap: 14, alignSelf: "stretch" },
+  statusCol: { flex: 1, gap: 8 },
+  statusHeading: { fontSize: 13, fontWeight: "700", marginBottom: 2 },
+  statusBtn: { borderWidth: 1.5, borderColor: "#5b6cff", borderRadius: 10, paddingVertical: 11, alignItems: "center" },
+  statusBtnOn: { backgroundColor: "#5b6cff" },
+  statusBtnText: { fontSize: 14, color: "#5b6cff", fontWeight: "600" },
+  statusBtnTextOn: { color: "#fff" },
   btn: { backgroundColor: "#5b6cff", borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20, marginTop: 24, alignSelf: "stretch", alignItems: "center" },
   btnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
   msg: { color: "#888", fontSize: 13, margin: 24, textAlign: "center" },
