@@ -1,7 +1,23 @@
-import type { Title } from "../types/tmdb";
+import type { MediaType, Title } from "../types/tmdb";
+import type { WatchlistEntry } from "../types/db";
 
 export function titleKey(t: { mediaType: string; tmdbId: number }): string {
   return `${t.mediaType}:${t.tmdbId}`;
+}
+
+// Choose which watched titles to seed recommendations from. Considers the whole
+// library (up to `max`), prioritizing the user's highest-rated titles, then the
+// most recently added. Unrated titles sort after rated ones.
+export function selectSeeds(entries: WatchlistEntry[], mediaType: MediaType, max: number): WatchlistEntry[] {
+  return entries
+    .filter((entry) => entry.status === "watched" && entry.media_type === mediaType)
+    .sort((a, b) => {
+      const ra = a.rating ?? -1;
+      const rb = b.rating ?? -1;
+      if (rb !== ra) return rb - ra;
+      return b.added_at.localeCompare(a.added_at);
+    })
+    .slice(0, max);
 }
 
 // Aggregates TMDB recommendation lists (one per watched "seed" title) into a

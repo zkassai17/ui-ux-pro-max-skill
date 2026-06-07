@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { getFeed } from "../../src/services/feed";
 import { getLibrary } from "../../src/services/watchlist";
 import { getRecommendations } from "../../src/services/tmdb";
-import { rankRecommendations, titleKey } from "../../src/lib/forYouLogic";
+import { rankRecommendations, selectSeeds, titleKey } from "../../src/lib/forYouLogic";
 import { PosterImage } from "../../src/components/PosterImage";
 import type { Title, MediaType } from "../../src/types/tmdb";
 
@@ -14,7 +14,7 @@ const WATCH_VERB: Record<string, string> = {
   want: "wants to watch",
 };
 
-const MAX_SEEDS = 12;
+const MAX_SEEDS = 40;
 const MAX_SUGGESTIONS = 15;
 
 function WatchTogetherCard() {
@@ -32,9 +32,7 @@ function ForYouRail({ mediaType, heading }: { mediaType: MediaType; heading: str
   const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
 
   const entries = library.data ?? [];
-  const seeds = entries
-    .filter((e) => e.status === "watched" && e.media_type === mediaType)
-    .slice(0, MAX_SEEDS);
+  const seeds = selectSeeds(entries, mediaType, MAX_SEEDS);
   const excludeKeys = new Set(entries.map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id })));
   const seedKey = seeds.map((s) => `${s.media_type}:${s.tmdb_id}`).join(",");
 
