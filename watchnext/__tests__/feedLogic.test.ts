@@ -2,8 +2,8 @@ import { buildFeed } from "../src/lib/feedLogic";
 import type { WatchlistEntry, Recommendation } from "../src/types/db";
 
 const wl: WatchlistEntry[] = [
-  { id: "w1", user_id: "a", tmdb_id: 1, media_type: "tv", title: "Severance", poster_path: null, status: "watched", added_at: "2026-06-01T10:00:00Z" },
-  { id: "w2", user_id: "b", tmdb_id: 2, media_type: "movie", title: "Dune", poster_path: null, status: "watching", added_at: "2026-06-03T10:00:00Z" },
+  { id: "w1", user_id: "a", tmdb_id: 1, media_type: "tv", title: "Severance", poster_path: null, status: "watched", rating: null, added_at: "2026-06-01T10:00:00Z" },
+  { id: "w2", user_id: "b", tmdb_id: 2, media_type: "movie", title: "Dune", poster_path: null, status: "watching", rating: null, added_at: "2026-06-03T10:00:00Z" },
 ];
 const recs: Recommendation[] = [
   { id: "r1", from_user: "c", to_user: "x", tmdb_id: 3, media_type: "movie", title: "Oppenheimer", poster_path: null, note: null, status: "pending", created_at: "2026-06-02T10:00:00Z" },

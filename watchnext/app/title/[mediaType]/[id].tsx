@@ -3,8 +3,9 @@ import { ScrollView, View, Text, Image, StyleSheet, Pressable, ActivityIndicator
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getTitleDetails, getWatchProviders } from "../../../src/services/tmdb";
-import { addToLibrary, getLibraryEntry, updateStatus } from "../../../src/services/watchlist";
+import { addToLibrary, getLibraryEntry, updateStatus, rateTitle } from "../../../src/services/watchlist";
 import { PosterImage } from "../../../src/components/PosterImage";
+import { StarRating } from "../../../src/components/StarRating";
 import { posterUrl } from "../../../src/lib/tmdbNormalize";
 import type { MediaType, TitleDetail, WatchProvider } from "../../../src/types/tmdb";
 import type { WatchStatus } from "../../../src/types/db";
@@ -21,6 +22,7 @@ export default function TitleDetailScreen() {
   const qc = useQueryClient();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [rating, setRating] = useState(false);
 
   const detail = useQuery({
     queryKey: ["tmdb-detail", mediaType, tmdbId],
@@ -46,6 +48,19 @@ export default function TitleDetailScreen() {
       Alert.alert("Couldn't save", (e as Error).message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function setRating_(next: number | null, d: TitleDetail) {
+    try {
+      setRating(true);
+      await rateTitle(d, next);
+      await qc.invalidateQueries({ queryKey: ["library-entry", mediaType, tmdbId] });
+      await qc.invalidateQueries({ queryKey: ["library"] });
+    } catch (e) {
+      Alert.alert("Couldn't save rating", (e as Error).message);
+    } finally {
+      setRating(false);
     }
   }
 
@@ -82,12 +97,29 @@ export default function TitleDetailScreen() {
               </View>
               <Text style={styles.title}>{d.title}</Text>
               <Text style={styles.sub}>
-                {[d.year, d.mediaType === "movie" ? "Movie" : "TV", d.rating ? `⭐ ${d.rating}` : null]
+                {[d.year, d.mediaType === "movie" ? "Movie" : "TV", d.rating ? `⭐ ${d.rating} community` : null]
                   .filter(Boolean)
                   .join(" · ")}
               </Text>
               {d.genres.length > 0 ? <Text style={styles.genres}>{d.genres.join(" · ")}</Text> : null}
               {d.overview ? <Text style={styles.overview}>{d.overview}</Text> : null}
+
+              <View style={styles.ratingBox}>
+                <View style={styles.ratingHeader}>
+                  <Text style={styles.section}>Your rating</Text>
+                  {rating ? <ActivityIndicator size="small" style={{ marginLeft: 10 }} /> : null}
+                </View>
+                <StarRating
+                  value={entry.data?.rating ?? null}
+                  disabled={rating}
+                  onRate={(next) => setRating_(next, d)}
+                />
+                <Text style={styles.ratingHint}>
+                  {entry.data?.rating
+                    ? `You rated this ${entry.data.rating}/5`
+                    : "Tap a star to rate — adds it to Watched."}
+                </Text>
+              </View>
 
               <Text style={styles.section}>Where to watch</Text>
               {providers.isLoading ? (
@@ -141,6 +173,9 @@ const styles = StyleSheet.create({
   genres: { fontSize: 12, color: "#5b6cff", marginTop: 8 },
   overview: { fontSize: 14, color: "#444", lineHeight: 21, marginTop: 12 },
   section: { fontSize: 13, fontWeight: "700", marginTop: 22, marginBottom: 8 },
+  ratingBox: { alignSelf: "stretch" },
+  ratingHeader: { flexDirection: "row", alignItems: "center" },
+  ratingHint: { fontSize: 12, color: "#999", marginTop: 6 },
   notAvailable: { fontSize: 13, color: "#888" },
   providerGroup: { marginBottom: 10 },
   providerLabel: { fontSize: 11, color: "#888", fontWeight: "700", marginBottom: 6 },

@@ -17,6 +17,7 @@ export type WatchlistEntry = {
   title: string;
   poster_path: string | null;
   status: WatchStatus;
+  rating: number | null;
   added_at: string;
 };
 

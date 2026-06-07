@@ -35,6 +35,7 @@ const SORTS: { key: LibrarySort; label: string }[] = [
   { key: "oldest", label: "Oldest first" },
   { key: "title", label: "Title A–Z" },
   { key: "title-desc", label: "Title Z–A" },
+  { key: "rating", label: "My rating" },
 ];
 
 const STATUS_LABEL: Record<WatchStatus, string> = {
@@ -119,7 +120,7 @@ export default function LibraryScreen() {
           renderItem={({ item }) => (
             <TitleRow
               title={item.title}
-              subtitle={STATUS_LABEL[item.status]}
+              subtitle={`${STATUS_LABEL[item.status]}${item.rating ? ` · ★ ${item.rating}/5` : ""}`}
               mediaType={item.media_type}
               posterPath={item.poster_path}
               onPress={() => router.push(`/title/${item.media_type}/${item.tmdb_id}`)}

@@ -10,6 +10,7 @@ function entry(over: Partial<WatchlistEntry>): WatchlistEntry {
     title: "X",
     poster_path: null,
     status: "want",
+    rating: null,
     added_at: "2026-01-01T00:00:00Z",
     ...over,
   };
@@ -41,6 +42,20 @@ test("title-desc sort orders reverse-alphabetically, case-insensitive", () => {
   const b = entry({ id: "b", title: "Apple" });
   const c = entry({ id: "c", title: "cherry" });
   expect(sortLibrary([a, b, c], "title-desc").map((e) => e.id)).toEqual(["c", "a", "b"]);
+});
+
+test("rating sort orders by rating descending, unrated last", () => {
+  const a = entry({ id: "a", rating: 3 });
+  const b = entry({ id: "b", rating: 5 });
+  const c = entry({ id: "c", rating: null });
+  const d = entry({ id: "d", rating: 4 });
+  expect(sortLibrary([a, b, c, d], "rating").map((e) => e.id)).toEqual(["b", "d", "a", "c"]);
+});
+
+test("rating sort breaks ties by most recently added", () => {
+  const a = entry({ id: "a", rating: 5, added_at: "2026-01-01T00:00:00Z" });
+  const b = entry({ id: "b", rating: 5, added_at: "2026-03-01T00:00:00Z" });
+  expect(sortLibrary([a, b], "rating").map((e) => e.id)).toEqual(["b", "a"]);
 });
 
 test("does not mutate the input array", () => {

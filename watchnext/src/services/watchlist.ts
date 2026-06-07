@@ -59,3 +59,29 @@ export async function removeFromLibrary(entryId: string): Promise<void> {
   const { error } = await supabase.from("watchlist").delete().eq("id", entryId);
   if (error) throw error;
 }
+
+// Sets (or clears, with null) the user's personal 1–5 rating. Rating a title
+// you haven't added yet files it under "watched" — you only rate what you've seen.
+export async function rateTitle(title: Title, rating: number | null): Promise<void> {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Not signed in");
+  const existing = await getLibraryEntry(title.tmdbId, title.mediaType);
+  if (existing) {
+    const { error } = await supabase.from("watchlist").update({ rating }).eq("id", existing.id);
+    if (error) throw error;
+    return;
+  }
+  const { error } = await supabase.from("watchlist").upsert(
+    {
+      user_id: uid,
+      tmdb_id: title.tmdbId,
+      media_type: title.mediaType,
+      title: title.title,
+      poster_path: title.posterPath,
+      status: "watched",
+      rating,
+    },
+    { onConflict: "user_id,tmdb_id,media_type" }
+  );
+  if (error) throw error;
+}
