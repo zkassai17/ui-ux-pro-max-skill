@@ -33,6 +33,7 @@ Turn WatchNext from an empty shell into a working social app centered on a recom
 - All responses normalized to app types; the rest of the app never sees raw TMDB JSON.
 - `posterUrl(path, size='w500')` builds `https://image.tmdb.org/t/p/{size}{path}`.
 - All fetching wrapped in **React Query** (`@tanstack/react-query`, already installed) for caching, loading, and error states.
+- **Posters everywhere:** every title rendered in the app (search results, title detail, library, feed, recs, friend profile, send-recommendation) shows its real TMDB poster image via `posterUrl(posterPath)`. A neutral placeholder block is shown only when `posterPath` is null. `poster_path` is persisted on `watchlist` and `recommendations` rows so lists render without an extra TMDB fetch.
 
 ### Normalized types (`src/types/tmdb.ts`)
 ```ts
