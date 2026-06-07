@@ -86,15 +86,24 @@ export async function getIncomingRequests(): Promise<IncomingRequest[]> {
   }));
 }
 
-export async function getFriendStats(
-  userId: string
-): Promise<{ want: number; watching: number; watched: number }> {
-  const { data, error } = await supabase.from("watchlist").select("status").eq("user_id", userId);
+export type StatBucket = { want: number; watching: number; watched: number };
+export type FriendStats = StatBucket & { movie: StatBucket; tv: StatBucket };
+
+export async function getFriendStats(userId: string): Promise<FriendStats> {
+  const { data, error } = await supabase
+    .from("watchlist")
+    .select("status, media_type")
+    .eq("user_id", userId);
   if (error) throw error;
-  const rows = (data as { status: string }[]) ?? [];
+  const rows = (data as { status: string; media_type: string }[]) ?? [];
+  const bucket = (keep: (r: { media_type: string }) => boolean): StatBucket => ({
+    want: rows.filter((r) => r.status === "want" && keep(r)).length,
+    watching: rows.filter((r) => r.status === "watching" && keep(r)).length,
+    watched: rows.filter((r) => r.status === "watched" && keep(r)).length,
+  });
   return {
-    want: rows.filter((r) => r.status === "want").length,
-    watching: rows.filter((r) => r.status === "watching").length,
-    watched: rows.filter((r) => r.status === "watched").length,
+    ...bucket(() => true),
+    movie: bucket((r) => r.media_type === "movie"),
+    tv: bucket((r) => r.media_type === "tv"),
   };
 }

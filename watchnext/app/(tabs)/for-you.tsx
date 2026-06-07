@@ -6,7 +6,7 @@ import { getLibrary } from "../../src/services/watchlist";
 import { getRecommendations } from "../../src/services/tmdb";
 import { rankRecommendations, titleKey } from "../../src/lib/forYouLogic";
 import { PosterImage } from "../../src/components/PosterImage";
-import type { Title } from "../../src/types/tmdb";
+import type { Title, MediaType } from "../../src/types/tmdb";
 
 const WATCH_VERB: Record<string, string> = {
   watched: "finished watching",
@@ -17,17 +17,19 @@ const WATCH_VERB: Record<string, string> = {
 const MAX_SEEDS = 12;
 const MAX_SUGGESTIONS = 15;
 
-function ForYouRail() {
+function ForYouRail({ mediaType, heading }: { mediaType: MediaType; heading: string }) {
   const router = useRouter();
   const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
 
   const entries = library.data ?? [];
-  const seeds = entries.filter((e) => e.status === "watched").slice(0, MAX_SEEDS);
+  const seeds = entries
+    .filter((e) => e.status === "watched" && e.media_type === mediaType)
+    .slice(0, MAX_SEEDS);
   const excludeKeys = new Set(entries.map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id })));
   const seedKey = seeds.map((s) => `${s.media_type}:${s.tmdb_id}`).join(",");
 
   const recs = useQuery({
-    queryKey: ["for-you", seedKey],
+    queryKey: ["for-you", mediaType, seedKey],
     enabled: seeds.length > 0,
     queryFn: async () => {
       const lists = await Promise.all(seeds.map((s) => getRecommendations(s.media_type, s.tmdb_id)));
@@ -41,7 +43,7 @@ function ForYouRail() {
 
   return (
     <View style={styles.rail}>
-      <Text style={styles.sectionHeading}>For You</Text>
+      <Text style={styles.sectionHeading}>{heading}</Text>
       {recs.isLoading ? (
         <ActivityIndicator style={{ marginVertical: 16 }} />
       ) : titles.length === 0 ? null : (
@@ -77,7 +79,8 @@ export default function HomeScreen() {
       keyExtractor={(r) => r.item.id}
       ListHeaderComponent={
         <View>
-          <ForYouRail />
+          <ForYouRail mediaType="movie" heading="Movies for you" />
+          <ForYouRail mediaType="tv" heading="Shows for you" />
           <Text style={styles.sectionHeading}>Activity</Text>
         </View>
       }

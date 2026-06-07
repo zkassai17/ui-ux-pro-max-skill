@@ -2,7 +2,7 @@ import { View, Text, Pressable, FlatList, StyleSheet, ActivityIndicator } from "
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../src/auth/AuthProvider";
-import { getFriends, getFriendStats } from "../../src/services/friends";
+import { getFriends, getFriendStats, type StatBucket } from "../../src/services/friends";
 
 export default function ProfileScreen() {
   const { profile, session, signOut } = useAuth();
@@ -31,6 +31,9 @@ export default function ProfileScreen() {
             <Stat n={stats.data?.watching ?? 0} label="watching" />
             <Stat n={stats.data?.want ?? 0} label="want" />
           </View>
+
+          <BreakdownRow label="🎬 Movies" bucket={stats.data?.movie} />
+          <BreakdownRow label="📺 TV Shows" bucket={stats.data?.tv} />
 
           <Pressable style={styles.btn} onPress={() => router.push("/friends/add")}>
             <Text style={styles.btnText}>Add a friend</Text>
@@ -67,6 +70,18 @@ function Stat({ n, label }: { n: number; label: string }) {
   );
 }
 
+function BreakdownRow({ label, bucket }: { label: string; bucket?: StatBucket }) {
+  const b = bucket ?? { want: 0, watching: 0, watched: 0 };
+  return (
+    <View style={styles.breakdownRow}>
+      <Text style={styles.breakdownLabel}>{label}</Text>
+      <Text style={styles.breakdownText}>
+        {b.watched} watched · {b.watching} watching · {b.want} want
+      </Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   username: { fontSize: 22, fontWeight: "700" },
@@ -75,6 +90,9 @@ const styles = StyleSheet.create({
   stat: { alignItems: "flex-start" },
   statN: { fontSize: 18, fontWeight: "700" },
   statLabel: { fontSize: 12, color: "#888" },
+  breakdownRow: { marginTop: 12 },
+  breakdownLabel: { fontSize: 13, fontWeight: "700" },
+  breakdownText: { fontSize: 12, color: "#888", marginTop: 2 },
   btn: { backgroundColor: "#5b6cff", borderRadius: 10, paddingVertical: 11, alignItems: "center", marginTop: 18 },
   btnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
   section: { fontSize: 13, fontWeight: "700", marginTop: 22, marginBottom: 6 },

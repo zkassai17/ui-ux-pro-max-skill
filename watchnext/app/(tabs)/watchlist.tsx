@@ -6,12 +6,19 @@ import { getLibrary } from "../../src/services/watchlist";
 import { sortLibrary, type LibrarySort } from "../../src/lib/libraryLogic";
 import { TitleRow } from "../../src/components/TitleRow";
 import type { WatchStatus } from "../../src/types/db";
+import type { MediaType } from "../../src/types/tmdb";
 
 const FILTERS: { key: "all" | WatchStatus; label: string }[] = [
   { key: "all", label: "All" },
   { key: "want", label: "Want" },
   { key: "watching", label: "Watching" },
   { key: "watched", label: "Watched" },
+];
+
+const MEDIA_FILTERS: { key: "all" | MediaType; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "movie", label: "Movies" },
+  { key: "tv", label: "TV" },
 ];
 
 const SORTS: { key: LibrarySort; label: string }[] = [
@@ -27,14 +34,30 @@ const STATUS_LABEL: Record<WatchStatus, string> = {
 
 export default function LibraryScreen() {
   const [filter, setFilter] = useState<"all" | WatchStatus>("all");
+  const [media, setMedia] = useState<"all" | MediaType>("all");
   const [sort, setSort] = useState<LibrarySort>("recent");
   const router = useRouter();
   const { data, isLoading } = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
-  const filtered = (data ?? []).filter((e) => filter === "all" || e.status === filter);
+  const filtered = (data ?? []).filter(
+    (e) =>
+      (filter === "all" || e.status === filter) &&
+      (media === "all" || e.media_type === media)
+  );
   const rows = sortLibrary(filtered, sort);
 
   return (
     <View style={styles.container}>
+      <View style={styles.filters}>
+        {MEDIA_FILTERS.map((m) => (
+          <Pressable
+            key={m.key}
+            style={[styles.chip, media === m.key && styles.chipOn]}
+            onPress={() => setMedia(m.key)}
+          >
+            <Text style={[styles.chipText, media === m.key && styles.chipTextOn]}>{m.label}</Text>
+          </Pressable>
+        ))}
+      </View>
       <View style={styles.filters}>
         {FILTERS.map((f) => (
           <Pressable
