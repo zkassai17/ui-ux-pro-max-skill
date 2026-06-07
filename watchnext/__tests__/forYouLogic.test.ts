@@ -60,14 +60,16 @@ test("deduplicates within a single seed list (one vote per seed)", () => {
   expect(ranked.map((x) => x.tmdbId)).toEqual([1, 2]);
 });
 
-test("selectSeeds keeps only watched entries of the requested media type", () => {
+test("selectSeeds keeps only rated, watched entries of the requested media type", () => {
   const entries = [
-    e({ tmdb_id: 1, media_type: "movie", status: "watched" }),
-    e({ tmdb_id: 2, media_type: "movie", status: "want" }),
-    e({ tmdb_id: 3, media_type: "tv", status: "watched" }),
-    e({ tmdb_id: 4, media_type: "movie", status: "watching" }),
+    e({ tmdb_id: 1, media_type: "movie", status: "watched", rating: 4 }),
+    e({ tmdb_id: 2, media_type: "movie", status: "want", rating: 5 }),
+    e({ tmdb_id: 3, media_type: "tv", status: "watched", rating: 5 }),
+    e({ tmdb_id: 4, media_type: "movie", status: "watching", rating: 5 }),
+    e({ tmdb_id: 5, media_type: "movie", status: "watched", rating: null }),
   ];
   const seeds = selectSeeds(entries, "movie", 40);
+  // only #1: watched + movie + rated (want/watching/tv/unrated all excluded)
   expect(seeds.map((s) => s.tmdb_id)).toEqual([1]);
 });
 
@@ -76,16 +78,15 @@ test("selectSeeds prioritizes higher ratings, then recency", () => {
     e({ tmdb_id: 1, rating: 3, added_at: "2026-05-01T00:00:00Z" }),
     e({ tmdb_id: 2, rating: 5, added_at: "2026-01-01T00:00:00Z" }),
     e({ tmdb_id: 3, rating: 5, added_at: "2026-02-01T00:00:00Z" }),
-    e({ tmdb_id: 4, rating: null, added_at: "2026-06-01T00:00:00Z" }),
   ];
   const seeds = selectSeeds(entries, "movie", 40);
-  // rating 5 (newer first): 3, 2; then rating 3: 1; then unrated: 4
-  expect(seeds.map((s) => s.tmdb_id)).toEqual([3, 2, 1, 4]);
+  // rating 5 (newer first): 3, 2; then rating 3: 1
+  expect(seeds.map((s) => s.tmdb_id)).toEqual([3, 2, 1]);
 });
 
-test("selectSeeds caps the number of seeds", () => {
+test("selectSeeds caps to the top N by rating", () => {
   const entries = Array.from({ length: 50 }, (_, i) =>
-    e({ tmdb_id: i + 1, rating: null, added_at: `2026-01-${String((i % 28) + 1).padStart(2, "0")}T00:00:00Z` }),
+    e({ tmdb_id: i + 1, rating: (i % 5) + 1, added_at: `2026-01-${String((i % 28) + 1).padStart(2, "0")}T00:00:00Z` }),
   );
   expect(selectSeeds(entries, "movie", 40)).toHaveLength(40);
 });
