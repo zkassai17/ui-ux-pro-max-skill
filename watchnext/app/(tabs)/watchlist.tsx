@@ -3,6 +3,7 @@ import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator } from "
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { getLibrary } from "../../src/services/watchlist";
+import { sortLibrary, type LibrarySort } from "../../src/lib/libraryLogic";
 import { TitleRow } from "../../src/components/TitleRow";
 import type { WatchStatus } from "../../src/types/db";
 
@@ -13,6 +14,11 @@ const FILTERS: { key: "all" | WatchStatus; label: string }[] = [
   { key: "watched", label: "Watched" },
 ];
 
+const SORTS: { key: LibrarySort; label: string }[] = [
+  { key: "recent", label: "Recently added" },
+  { key: "title", label: "Title A–Z" },
+];
+
 const STATUS_LABEL: Record<WatchStatus, string> = {
   want: "Want to watch",
   watching: "Watching",
@@ -21,9 +27,11 @@ const STATUS_LABEL: Record<WatchStatus, string> = {
 
 export default function LibraryScreen() {
   const [filter, setFilter] = useState<"all" | WatchStatus>("all");
+  const [sort, setSort] = useState<LibrarySort>("recent");
   const router = useRouter();
   const { data, isLoading } = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
-  const rows = (data ?? []).filter((e) => filter === "all" || e.status === filter);
+  const filtered = (data ?? []).filter((e) => filter === "all" || e.status === filter);
+  const rows = sortLibrary(filtered, sort);
 
   return (
     <View style={styles.container}>
@@ -35,6 +43,18 @@ export default function LibraryScreen() {
             onPress={() => setFilter(f.key)}
           >
             <Text style={[styles.chipText, filter === f.key && styles.chipTextOn]}>{f.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+      <View style={styles.sortRow}>
+        <Text style={styles.sortLabel}>Sort</Text>
+        {SORTS.map((s) => (
+          <Pressable
+            key={s.key}
+            style={[styles.sortChip, sort === s.key && styles.sortChipOn]}
+            onPress={() => setSort(s.key)}
+          >
+            <Text style={[styles.sortChipText, sort === s.key && styles.sortChipTextOn]}>{s.label}</Text>
           </Pressable>
         ))}
       </View>
@@ -63,10 +83,16 @@ export default function LibraryScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  filters: { flexDirection: "row", gap: 8, marginBottom: 14 },
+  filters: { flexDirection: "row", gap: 8, marginBottom: 10 },
   chip: { backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
   chipOn: { backgroundColor: "#5b6cff" },
   chipText: { fontSize: 12, color: "#666" },
   chipTextOn: { color: "#fff", fontWeight: "600" },
+  sortRow: { flexDirection: "row", gap: 8, alignItems: "center", marginBottom: 14 },
+  sortLabel: { fontSize: 11, color: "#999", fontWeight: "700" },
+  sortChip: { backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+  sortChipOn: { backgroundColor: "#111" },
+  sortChipText: { fontSize: 11, color: "#666" },
+  sortChipTextOn: { color: "#fff", fontWeight: "600" },
   msg: { color: "#888", fontSize: 13, marginTop: 16, textAlign: "center" },
 });

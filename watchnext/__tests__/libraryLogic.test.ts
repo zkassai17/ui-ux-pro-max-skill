@@ -1,0 +1,38 @@
+import { sortLibrary } from "../src/lib/libraryLogic";
+import type { WatchlistEntry } from "../src/types/db";
+
+function entry(over: Partial<WatchlistEntry>): WatchlistEntry {
+  return {
+    id: "1",
+    user_id: "u",
+    tmdb_id: 1,
+    media_type: "movie",
+    title: "X",
+    poster_path: null,
+    status: "want",
+    added_at: "2026-01-01T00:00:00Z",
+    ...over,
+  };
+}
+
+test("recent sort orders by added_at descending", () => {
+  const a = entry({ id: "a", added_at: "2026-01-01T00:00:00Z" });
+  const b = entry({ id: "b", added_at: "2026-03-01T00:00:00Z" });
+  const c = entry({ id: "c", added_at: "2026-02-01T00:00:00Z" });
+  expect(sortLibrary([a, b, c], "recent").map((e) => e.id)).toEqual(["b", "c", "a"]);
+});
+
+test("title sort orders alphabetically, case-insensitive", () => {
+  const a = entry({ id: "a", title: "banana" });
+  const b = entry({ id: "b", title: "Apple" });
+  const c = entry({ id: "c", title: "cherry" });
+  expect(sortLibrary([a, b, c], "title").map((e) => e.id)).toEqual(["b", "a", "c"]);
+});
+
+test("does not mutate the input array", () => {
+  const a = entry({ id: "a", title: "z" });
+  const b = entry({ id: "b", title: "a" });
+  const input = [a, b];
+  sortLibrary(input, "title");
+  expect(input.map((e) => e.id)).toEqual(["a", "b"]);
+});
