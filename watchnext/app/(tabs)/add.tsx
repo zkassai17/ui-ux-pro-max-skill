@@ -13,6 +13,7 @@ import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { searchTitles, discoverTitles, getGenres } from "../../src/services/tmdb";
 import { TitleRow } from "../../src/components/TitleRow";
+import { QuickAddButton } from "../../src/components/QuickAddButton";
 import { TOP_PROVIDERS } from "../../src/lib/providers";
 import type { MediaType, Title } from "../../src/types/tmdb";
 
@@ -146,6 +147,7 @@ export default function AddScreen() {
               mediaType={item.mediaType}
               posterPath={item.posterPath}
               onPress={() => router.push(`/title/${item.mediaType}/${item.tmdbId}`)}
+              accessory={<QuickAddButton title={item} />}
             />
           )}
         />

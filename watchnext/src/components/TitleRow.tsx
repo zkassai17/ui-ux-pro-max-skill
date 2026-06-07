@@ -1,4 +1,5 @@
 import { Pressable, View, Text, StyleSheet } from "react-native";
+import type { ReactNode } from "react";
 import { PosterImage } from "./PosterImage";
 import type { MediaType } from "../types/tmdb";
 
@@ -8,12 +9,14 @@ export function TitleRow({
   mediaType,
   posterPath,
   onPress,
+  accessory,
 }: {
   title: string;
   subtitle?: string;
   mediaType: MediaType;
   posterPath: string | null;
   onPress?: () => void;
+  accessory?: ReactNode;
 }) {
   return (
     <Pressable style={styles.row} onPress={onPress}>
@@ -25,6 +28,7 @@ export function TitleRow({
           <Text style={styles.pillText}>{mediaType === "movie" ? "MOVIE" : "TV"}</Text>
         </View>
       </View>
+      {accessory ? <View style={styles.accessory}>{accessory}</View> : null}
     </Pressable>
   );
 }
@@ -36,4 +40,5 @@ const styles = StyleSheet.create({
   sub: { fontSize: 12, color: "#888", marginTop: 2 },
   pill: { alignSelf: "flex-start", marginTop: 4, backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2 },
   pillText: { fontSize: 9, color: "#5b6cff", fontWeight: "600" },
+  accessory: { marginLeft: 8 },
 });
