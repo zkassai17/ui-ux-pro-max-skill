@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getTitleDetails, getWatchProviders } from "../../../src/services/tmdb";
 import { addToLibrary, getLibraryEntry, updateStatus, rateTitle } from "../../../src/services/watchlist";
 import { PosterImage } from "../../../src/components/PosterImage";
-import { StarRating } from "../../../src/components/StarRating";
+import { EmojiRating } from "../../../src/components/EmojiRating";
 import { posterUrl } from "../../../src/lib/tmdbNormalize";
 import type { MediaType, TitleDetail, WatchProvider } from "../../../src/types/tmdb";
 import type { WatchStatus } from "../../../src/types/db";
@@ -109,16 +109,12 @@ export default function TitleDetailScreen() {
                   <Text style={styles.section}>Your rating</Text>
                   {rating ? <ActivityIndicator size="small" style={{ marginLeft: 10 }} /> : null}
                 </View>
-                <StarRating
+                <EmojiRating
                   value={entry.data?.rating ?? null}
                   disabled={rating}
                   onRate={(next) => setRating_(next, d)}
+                  emptyLabel="Tap to rate — adds it to Watched"
                 />
-                <Text style={styles.ratingHint}>
-                  {entry.data?.rating
-                    ? `You rated this ${entry.data.rating}/5`
-                    : "Tap a star to rate — adds it to Watched."}
-                </Text>
               </View>
 
               <Text style={styles.section}>Where to watch</Text>
@@ -175,7 +171,6 @@ const styles = StyleSheet.create({
   section: { fontSize: 13, fontWeight: "700", marginTop: 22, marginBottom: 8 },
   ratingBox: { alignSelf: "stretch" },
   ratingHeader: { flexDirection: "row", alignItems: "center" },
-  ratingHint: { fontSize: 12, color: "#999", marginTop: 6 },
   notAvailable: { fontSize: 13, color: "#888" },
   providerGroup: { marginBottom: 10 },
   providerLabel: { fontSize: 11, color: "#888", fontWeight: "700", marginBottom: 6 },

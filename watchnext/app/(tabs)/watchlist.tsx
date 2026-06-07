@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { getLibrary } from "../../src/services/watchlist";
 import { sortLibrary, type LibrarySort } from "../../src/lib/libraryLogic";
+import { ratingEmoji } from "../../src/lib/ratingScale";
 import { TitleRow } from "../../src/components/TitleRow";
 import type { WatchStatus } from "../../src/types/db";
 import type { MediaType } from "../../src/types/tmdb";
@@ -120,7 +121,7 @@ export default function LibraryScreen() {
           renderItem={({ item }) => (
             <TitleRow
               title={item.title}
-              subtitle={`${STATUS_LABEL[item.status]}${item.rating ? ` · ★ ${item.rating}/5` : ""}`}
+              subtitle={`${STATUS_LABEL[item.status]}${item.rating ? ` · ${ratingEmoji(item.rating)}` : ""}`}
               mediaType={item.media_type}
               posterPath={item.poster_path}
               onPress={() => router.push(`/title/${item.media_type}/${item.tmdb_id}`)}
