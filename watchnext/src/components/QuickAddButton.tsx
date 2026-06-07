@@ -1,6 +1,6 @@
 import { Pressable, Text, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getLibraryEntry, addToLibrary, updateStatus } from "../services/watchlist";
+import { getLibraryEntry, addToLibrary, updateStatus, removeFromLibrary } from "../services/watchlist";
 import type { Title } from "../types/tmdb";
 import type { WatchStatus } from "../types/db";
 
@@ -10,7 +10,15 @@ const STATUS_LABEL: Record<WatchStatus, string> = {
   watched: "Watched",
 };
 
-export function QuickAddButton({ title }: { title: Title }) {
+export function QuickAddButton({
+  title,
+  onAdded,
+  onRemoved,
+}: {
+  title: Title;
+  onAdded?: () => void;
+  onRemoved?: () => void;
+}) {
   const qc = useQueryClient();
   const entryKey = ["library-entry", title.mediaType, title.tmdbId];
 
@@ -19,6 +27,11 @@ export function QuickAddButton({ title }: { title: Title }) {
     queryFn: () => getLibraryEntry(title.tmdbId, title.mediaType),
   });
 
+  function refresh() {
+    qc.invalidateQueries({ queryKey: entryKey });
+    qc.invalidateQueries({ queryKey: ["library"] });
+  }
+
   const set = useMutation({
     mutationFn: async (status: WatchStatus) => {
       const existing = entry.data;
@@ -26,8 +39,19 @@ export function QuickAddButton({ title }: { title: Title }) {
       else await addToLibrary(title, status);
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: entryKey });
-      qc.invalidateQueries({ queryKey: ["library"] });
+      refresh();
+      onAdded?.();
+    },
+  });
+
+  const remove = useMutation({
+    mutationFn: async () => {
+      const existing = entry.data;
+      if (existing) await removeFromLibrary(existing.id);
+    },
+    onSuccess: () => {
+      refresh();
+      onRemoved?.();
     },
   });
 
@@ -40,14 +64,14 @@ export function QuickAddButton({ title }: { title: Title }) {
     ]);
   }
 
-  const busy = entry.isLoading || set.isPending;
+  const busy = entry.isLoading || set.isPending || remove.isPending;
   const status = entry.data?.status ?? null;
   const added = status !== null;
 
   return (
     <Pressable
       style={[styles.btn, added && styles.btnAdded]}
-      onPress={() => set.mutate("watched")}
+      onPress={() => (added ? remove.mutate() : set.mutate("watched"))}
       onLongPress={pickStatus}
       disabled={busy}
       hitSlop={8}

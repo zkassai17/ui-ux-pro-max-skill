@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   TextInput,
@@ -27,6 +27,9 @@ function dedupeByKey(titles: Title[]): Title[] {
     return true;
   });
 }
+
+// How long a just-added title lingers in the Add list so an accidental add can be undone.
+const GRACE_MS = 10000;
 
 export default function AddScreen() {
   const [q, setQ] = useState("");
@@ -63,13 +66,57 @@ export default function AddScreen() {
     setGenreId(null); // genre IDs differ between movie and tv
   }
 
+  // Keys kept visible despite being in the library — a just-added title stays on
+  // screen for GRACE_MS (or until the next search/filter) so an accidental add can be undone.
+  const [grace, setGrace] = useState<Set<string>>(new Set());
+  const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  // A new search or filter change clears the grace window — added titles drop out then.
+  const context = `${q.trim()}|${mediaType}|${genreId}|${providerId}`;
+  useEffect(() => {
+    timers.current.forEach((t) => clearTimeout(t));
+    timers.current.clear();
+    setGrace(new Set());
+  }, [context]);
+
+  useEffect(() => () => timers.current.forEach((t) => clearTimeout(t)), []);
+
+  const onAdded = useCallback((key: string) => {
+    setGrace((prev) => new Set(prev).add(key));
+    const existing = timers.current.get(key);
+    if (existing) clearTimeout(existing);
+    timers.current.set(
+      key,
+      setTimeout(() => {
+        timers.current.delete(key);
+        setGrace((prev) => {
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        });
+      }, GRACE_MS)
+    );
+  }, []);
+
+  const onRemoved = useCallback((key: string) => {
+    const existing = timers.current.get(key);
+    if (existing) clearTimeout(existing);
+    timers.current.delete(key);
+    setGrace((prev) => {
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
+  }, []);
+
   const rawResults: Title[] = searching
     ? search.data ?? []
     : discover.data?.pages.flatMap((p) => p.results) ?? [];
   const inLibrary = new Set((library.data ?? []).map((e) => `${e.media_type}:${e.tmdb_id}`));
-  const results: Title[] = dedupeByKey(rawResults).filter(
-    (t) => !inLibrary.has(`${t.mediaType}:${t.tmdbId}`)
-  );
+  const results: Title[] = dedupeByKey(rawResults).filter((t) => {
+    const key = `${t.mediaType}:${t.tmdbId}`;
+    return !inLibrary.has(key) || grace.has(key);
+  });
   const isLoading = searching ? search.isLoading : discover.isLoading;
   const isError = searching ? search.isError : discover.isError;
   const error = searching ? search.error : discover.error;
@@ -155,7 +202,13 @@ export default function AddScreen() {
               mediaType={item.mediaType}
               posterPath={item.posterPath}
               onPress={() => router.push(`/title/${item.mediaType}/${item.tmdbId}`)}
-              accessory={<QuickAddButton title={item} />}
+              accessory={
+                <QuickAddButton
+                  title={item}
+                  onAdded={() => onAdded(`${item.mediaType}:${item.tmdbId}`)}
+                  onRemoved={() => onRemoved(`${item.mediaType}:${item.tmdbId}`)}
+                />
+              }
             />
           )}
         />
