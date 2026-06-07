@@ -72,6 +72,7 @@ export default function LibraryScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.filterScroll}
         contentContainerStyle={styles.filterRow}
       >
         {FILTERS.map((f) => (
@@ -136,7 +137,8 @@ export default function LibraryScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
 
-  filterRow: { gap: 8, paddingRight: 8, paddingBottom: 2 },
+  filterScroll: { flexGrow: 0 },
+  filterRow: { gap: 8, paddingRight: 8, paddingBottom: 2, alignItems: "center" },
   chip: { backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
   chipOn: { backgroundColor: "#5b6cff" },
   chipText: { fontSize: 13, color: "#666", fontWeight: "600" },
