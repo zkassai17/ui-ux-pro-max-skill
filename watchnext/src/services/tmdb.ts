@@ -7,6 +7,7 @@ import {
   normalizeWatchProviders,
 } from "../lib/tmdbNormalize";
 import { WATCH_REGION } from "../lib/providers";
+import { relaxQuery, rankByFuzzy } from "../lib/searchLogic";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 
@@ -23,11 +24,21 @@ async function tmdbGet(path: string): Promise<any> {
   return res.json();
 }
 
+async function fetchSearch(query: string): Promise<Title[]> {
+  const raw = await tmdbGet(`/search/multi?include_adult=false&query=${encodeURIComponent(query)}`);
+  return normalizeSearchResults(raw);
+}
+
 export async function searchTitles(query: string): Promise<Title[]> {
   const q = query.trim();
   if (!q) return [];
-  const raw = await tmdbGet(`/search/multi?include_adult=false&query=${encodeURIComponent(q)}`);
-  return normalizeSearchResults(raw);
+  const exact = await fetchSearch(q);
+  if (exact.length > 0) return exact;
+  // No exact hits — relax the query (typo leeway) and fuzzy-rank the fallback.
+  const relaxed = relaxQuery(q);
+  if (!relaxed || relaxed === q) return exact;
+  const loose = await fetchSearch(relaxed);
+  return rankByFuzzy(q, loose);
 }
 
 export async function getTrending(): Promise<Title[]> {
