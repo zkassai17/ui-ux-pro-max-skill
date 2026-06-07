@@ -139,9 +139,9 @@ const styles = StyleSheet.create({
 
   filterScroll: { flexGrow: 0 },
   filterRow: { gap: 8, paddingRight: 8, paddingBottom: 2, alignItems: "center" },
-  chip: { backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
+  chip: { backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   chipOn: { backgroundColor: "#5b6cff" },
-  chipText: { fontSize: 13, color: "#666", fontWeight: "600" },
+  chipText: { fontSize: 13, lineHeight: 18, color: "#666", fontWeight: "600" },
   chipTextOn: { color: "#fff" },
 
   toolbar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 },
