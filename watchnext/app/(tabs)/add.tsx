@@ -16,6 +16,16 @@ import { TitleRow } from "../../src/components/TitleRow";
 import { TOP_PROVIDERS } from "../../src/lib/providers";
 import type { MediaType, Title } from "../../src/types/tmdb";
 
+function dedupeByKey(titles: Title[]): Title[] {
+  const seen = new Set<string>();
+  return titles.filter((t) => {
+    const key = `${t.mediaType}:${t.tmdbId}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export default function AddScreen() {
   const [q, setQ] = useState("");
   const [mediaType, setMediaType] = useState<MediaType>("movie");
@@ -47,9 +57,10 @@ export default function AddScreen() {
     setGenreId(null); // genre IDs differ between movie and tv
   }
 
-  const results: Title[] = searching
+  const rawResults: Title[] = searching
     ? search.data ?? []
     : discover.data?.pages.flatMap((p) => p.results) ?? [];
+  const results: Title[] = dedupeByKey(rawResults);
   const isLoading = searching ? search.isLoading : discover.isLoading;
   const isError = searching ? search.isError : discover.isError;
   const error = searching ? search.error : discover.error;
