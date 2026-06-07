@@ -17,6 +17,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   async function loadProfile(userId: string) {
     const { data, error } = await supabase
@@ -32,22 +33,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    // onAuthStateChange fires immediately with the restored session on mount,
-    // so it drives both initial load and subsequent changes. getSession() only
-    // flips the loading flag once the persisted session has been read.
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, s) => {
+    // The callback MUST stay synchronous and never await another Supabase call:
+    // it runs while the GoTrue auth lock is held, and loadProfile() needs that
+    // same lock — awaiting it here deadlocks getSession(), so loading never
+    // resolves. Profile loading is driven by the session effect below instead.
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
-      if (s) await loadProfile(s.user.id);
-      else setProfile(null);
     });
 
     supabase.auth
       .getSession()
+      .then(({ data }) => setSession(data.session))
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => setInitialized(true));
 
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  // Gate `loading` on the profile fetch too: index routing distinguishes
+  // "logged in, needs onboarding" (no profile) from "logged in, has profile",
+  // so loading must stay true until the profile is actually resolved — not
+  // merely until getSession() returns — or we race a redirect to onboarding.
+  useEffect(() => {
+    if (!initialized) return;
+    let cancelled = false;
+    (async () => {
+      if (session) await loadProfile(session.user.id);
+      else setProfile(null);
+      if (!cancelled) setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialized, session]);
 
   const refreshProfile = async () => {
     if (session) await loadProfile(session.user.id);
