@@ -28,16 +28,10 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="inbox"
-        options={{
-          title: "Recs",
-          tabBarIcon: ({ color, size }) => <Ionicons name="film" color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
+          headerRight: () => <EnvelopeButton />,
           tabBarIcon: ({ color, size }) => <Ionicons name="person" color={color} size={size} />,
         }}
       />

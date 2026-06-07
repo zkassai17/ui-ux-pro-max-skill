@@ -3,11 +3,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { getIncomingRequests } from "../services/friends";
+import { getReceived } from "../services/recommendations";
 
 export function EnvelopeButton() {
   const router = useRouter();
-  const { data } = useQuery({ queryKey: ["incoming-requests"], queryFn: getIncomingRequests });
-  const count = data?.length ?? 0;
+  const requests = useQuery({ queryKey: ["incoming-requests"], queryFn: getIncomingRequests });
+  const recs = useQuery({ queryKey: ["received-recs"], queryFn: getReceived });
+  const count = (requests.data?.length ?? 0) + (recs.data?.length ?? 0);
   return (
     <Pressable onPress={() => router.push("/requests")} style={styles.btn} hitSlop={8}>
       <Ionicons name="mail-outline" size={22} color="#111" />
