@@ -3,6 +3,9 @@ import {
   normalizeSearchItem,
   normalizeSearchResults,
   normalizeDetail,
+  normalizeDiscoverResults,
+  normalizeGenres,
+  normalizeWatchProviders,
 } from "../src/lib/tmdbNormalize";
 
 test("posterUrl builds a CDN url and handles null", () => {
@@ -86,5 +89,58 @@ test("normalizeDetail includes overview and genre names", () => {
     rating: 8.1,
     overview: "A physicist...",
     genres: ["Drama", "History"],
+  });
+});
+
+test("normalizeDiscoverResults injects mediaType (discover omits media_type)", () => {
+  const out = normalizeDiscoverResults(
+    {
+      results: [
+        { id: 1, name: "Severance", first_air_date: "2022-02-18", poster_path: "/s.jpg", vote_average: 8.4 },
+        { id: 2 }, // no name → dropped
+      ],
+    },
+    "tv"
+  );
+  expect(out).toEqual([
+    { tmdbId: 1, mediaType: "tv", title: "Severance", year: "2022", posterPath: "/s.jpg", rating: 8.4 },
+  ]);
+});
+
+test("normalizeGenres maps id/name pairs and tolerates missing data", () => {
+  expect(normalizeGenres({ genres: [{ id: 28, name: "Action" }, { id: 35, name: "Comedy" }] })).toEqual([
+    { id: 28, name: "Action" },
+    { id: 35, name: "Comedy" },
+  ]);
+  expect(normalizeGenres({})).toEqual([]);
+});
+
+test("normalizeWatchProviders groups flatrate/rent/buy for a region", () => {
+  const out = normalizeWatchProviders(
+    {
+      results: {
+        US: {
+          link: "https://tmdb/watch",
+          flatrate: [{ provider_id: 8, provider_name: "Netflix", logo_path: "/n.jpg" }],
+          rent: [{ provider_id: 9, provider_name: "Prime Video", logo_path: null }],
+        },
+      },
+    },
+    "US"
+  );
+  expect(out).toEqual({
+    link: "https://tmdb/watch",
+    flatrate: [{ providerId: 8, name: "Netflix", logoPath: "/n.jpg" }],
+    rent: [{ providerId: 9, name: "Prime Video", logoPath: null }],
+    buy: [],
+  });
+});
+
+test("normalizeWatchProviders returns empty groups when region absent", () => {
+  expect(normalizeWatchProviders({ results: {} }, "US")).toEqual({
+    link: null,
+    flatrate: [],
+    rent: [],
+    buy: [],
   });
 });

@@ -13,3 +13,18 @@ export type TitleDetail = Title & {
   overview: string;
   genres: string[];
 };
+
+export type Genre = { id: number; name: string };
+
+export type WatchProvider = {
+  providerId: number;
+  name: string;
+  logoPath: string | null;
+};
+
+export type WatchProviders = {
+  link: string | null;
+  flatrate: WatchProvider[];
+  rent: WatchProvider[];
+  buy: WatchProvider[];
+};

@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { ScrollView, View, Text, StyleSheet, Pressable, ActivityIndicator, Alert } from "react-native";
+import { ScrollView, View, Text, Image, StyleSheet, Pressable, ActivityIndicator, Alert } from "react-native";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getTitleDetails } from "../../../src/services/tmdb";
+import { getTitleDetails, getWatchProviders } from "../../../src/services/tmdb";
 import { addToLibrary, getLibraryEntry, updateStatus } from "../../../src/services/watchlist";
 import { PosterImage } from "../../../src/components/PosterImage";
-import type { MediaType, TitleDetail } from "../../../src/types/tmdb";
+import { posterUrl } from "../../../src/lib/tmdbNormalize";
+import type { MediaType, TitleDetail, WatchProvider } from "../../../src/types/tmdb";
 import type { WatchStatus } from "../../../src/types/db";
 
 const STATUSES: { key: WatchStatus; label: string }[] = [
@@ -28,6 +29,10 @@ export default function TitleDetailScreen() {
   const entry = useQuery({
     queryKey: ["library-entry", mediaType, tmdbId],
     queryFn: () => getLibraryEntry(tmdbId, mediaType as MediaType),
+  });
+  const providers = useQuery({
+    queryKey: ["watch-providers", mediaType, tmdbId],
+    queryFn: () => getWatchProviders(mediaType as MediaType, tmdbId),
   });
 
   async function setStatus(status: WatchStatus, d: TitleDetail) {
@@ -67,6 +72,40 @@ export default function TitleDetailScreen() {
               {d.genres.length > 0 ? <Text style={styles.genres}>{d.genres.join(" · ")}</Text> : null}
               {d.overview ? <Text style={styles.overview}>{d.overview}</Text> : null}
 
+              <Text style={styles.section}>Where to watch</Text>
+              {providers.isLoading ? (
+                <ActivityIndicator />
+              ) : (
+                (() => {
+                  const p = providers.data;
+                  const groups: { label: string; list: WatchProvider[] }[] = [
+                    { label: "Stream", list: p?.flatrate ?? [] },
+                    { label: "Rent", list: p?.rent ?? [] },
+                    { label: "Buy", list: p?.buy ?? [] },
+                  ].filter((g) => g.list.length > 0);
+                  if (groups.length === 0) {
+                    return <Text style={styles.notAvailable}>Not available on US streaming right now.</Text>;
+                  }
+                  return groups.map((g) => (
+                    <View key={g.label} style={styles.providerGroup}>
+                      <Text style={styles.providerLabel}>{g.label}</Text>
+                      <View style={styles.providerRow}>
+                        {g.list.map((prov) => {
+                          const logo = posterUrl(prov.logoPath, "w92");
+                          return logo ? (
+                            <Image key={prov.providerId} source={{ uri: logo }} style={styles.providerLogo} />
+                          ) : (
+                            <Text key={prov.providerId} style={styles.providerName}>
+                              {prov.name}
+                            </Text>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  ));
+                })()
+              )}
+
               <Text style={styles.section}>Add to library</Text>
               <View style={styles.segRow}>
                 {STATUSES.map((s) => (
@@ -99,6 +138,12 @@ const styles = StyleSheet.create({
   genres: { fontSize: 12, color: "#5b6cff", marginTop: 8 },
   overview: { fontSize: 14, color: "#444", lineHeight: 21, marginTop: 12 },
   section: { fontSize: 13, fontWeight: "700", marginTop: 22, marginBottom: 8 },
+  notAvailable: { fontSize: 13, color: "#888" },
+  providerGroup: { marginBottom: 10 },
+  providerLabel: { fontSize: 11, color: "#888", fontWeight: "700", marginBottom: 6 },
+  providerRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, alignItems: "center" },
+  providerLogo: { width: 40, height: 40, borderRadius: 8, backgroundColor: "#f0f0f3" },
+  providerName: { fontSize: 12, color: "#444", backgroundColor: "#f0f0f3", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6 },
   segRow: { flexDirection: "row", gap: 8 },
   chip: { backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
   chipOn: { backgroundColor: "#5b6cff" },

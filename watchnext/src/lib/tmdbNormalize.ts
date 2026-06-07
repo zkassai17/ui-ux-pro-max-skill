@@ -1,4 +1,4 @@
-import type { MediaType, Title, TitleDetail } from "../types/tmdb";
+import type { MediaType, Title, TitleDetail, Genre, WatchProvider, WatchProviders } from "../types/tmdb";
 
 const IMAGE_BASE = "https://image.tmdb.org/t/p";
 
@@ -39,6 +39,39 @@ export function normalizeSearchResults(raw: any): Title[] {
   return results
     .map(normalizeSearchItem)
     .filter((t: Title | null): t is Title => t !== null);
+}
+
+export function normalizeDiscoverResults(raw: any, mediaType: MediaType): Title[] {
+  const results = Array.isArray(raw?.results) ? raw.results : [];
+  return results
+    .map((item: any) => normalizeSearchItem({ ...item, media_type: mediaType }))
+    .filter((t: Title | null): t is Title => t !== null);
+}
+
+export function normalizeGenres(raw: any): Genre[] {
+  const genres = Array.isArray(raw?.genres) ? raw.genres : [];
+  return genres
+    .filter((g: any) => g && typeof g.id === "number" && g.name)
+    .map((g: any) => ({ id: g.id, name: g.name }));
+}
+
+function normalizeProviderList(list: any): WatchProvider[] {
+  if (!Array.isArray(list)) return [];
+  return list.map((p: any) => ({
+    providerId: p.provider_id,
+    name: p.provider_name,
+    logoPath: p.logo_path ?? null,
+  }));
+}
+
+export function normalizeWatchProviders(raw: any, region: string): WatchProviders {
+  const r = raw?.results?.[region];
+  return {
+    link: r?.link ?? null,
+    flatrate: normalizeProviderList(r?.flatrate),
+    rent: normalizeProviderList(r?.rent),
+    buy: normalizeProviderList(r?.buy),
+  };
 }
 
 export function normalizeDetail(raw: any, mediaType: MediaType): TitleDetail {

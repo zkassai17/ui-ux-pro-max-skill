@@ -1,5 +1,12 @@
-import type { MediaType, Title, TitleDetail } from "../types/tmdb";
-import { normalizeSearchResults, normalizeDetail } from "../lib/tmdbNormalize";
+import type { MediaType, Title, TitleDetail, Genre, WatchProviders } from "../types/tmdb";
+import {
+  normalizeSearchResults,
+  normalizeDetail,
+  normalizeDiscoverResults,
+  normalizeGenres,
+  normalizeWatchProviders,
+} from "../lib/tmdbNormalize";
+import { WATCH_REGION } from "../lib/providers";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 
@@ -31,4 +38,30 @@ export async function getTrending(): Promise<Title[]> {
 export async function getTitleDetails(mediaType: MediaType, id: number): Promise<TitleDetail> {
   const raw = await tmdbGet(`/${mediaType}/${id}`);
   return normalizeDetail(raw, mediaType);
+}
+
+export async function getGenres(mediaType: MediaType): Promise<Genre[]> {
+  const raw = await tmdbGet(`/genre/${mediaType}/list`);
+  return normalizeGenres(raw);
+}
+
+export async function discoverTitles(opts: {
+  mediaType: MediaType;
+  genreId?: number | null;
+  providerId?: number | null;
+}): Promise<Title[]> {
+  const params = new URLSearchParams({
+    include_adult: "false",
+    sort_by: "popularity.desc",
+    watch_region: WATCH_REGION,
+  });
+  if (opts.genreId) params.set("with_genres", String(opts.genreId));
+  if (opts.providerId) params.set("with_watch_providers", String(opts.providerId));
+  const raw = await tmdbGet(`/discover/${opts.mediaType}?${params.toString()}`);
+  return normalizeDiscoverResults(raw, opts.mediaType);
+}
+
+export async function getWatchProviders(mediaType: MediaType, id: number): Promise<WatchProviders> {
+  const raw = await tmdbGet(`/${mediaType}/${id}/watch/providers`);
+  return normalizeWatchProviders(raw, WATCH_REGION);
 }
