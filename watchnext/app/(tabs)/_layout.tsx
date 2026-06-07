@@ -8,7 +8,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="for-you"
         options={{
-          title: "Feed",
+          title: "Home",
           headerRight: () => <EnvelopeButton />,
           tabBarIcon: ({ color, size }) => <Ionicons name="home" color={color} size={size} />,
         }}
@@ -25,13 +25,6 @@ export default function TabsLayout() {
         options={{
           title: "Add",
           tabBarIcon: ({ color, size }) => <Ionicons name="add-circle" color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="discover"
-        options={{
-          title: "For You",
-          tabBarIcon: ({ color, size }) => <Ionicons name="sparkles" color={color} size={size} />,
         }}
       />
       <Tabs.Screen
