@@ -3,7 +3,7 @@ import { ScrollView, View, Text, Image, StyleSheet, Pressable, ActivityIndicator
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getTitleDetails, getWatchProviders } from "../../../src/services/tmdb";
-import { addToLibrary, getLibraryEntry, updateStatus, rateTitle } from "../../../src/services/watchlist";
+import { addToLibrary, getLibraryEntry, updateStatus, rateTitle, removeFromLibrary } from "../../../src/services/watchlist";
 import { PosterImage } from "../../../src/components/PosterImage";
 import { EmojiRating } from "../../../src/components/EmojiRating";
 import { posterUrl } from "../../../src/lib/tmdbNormalize";
@@ -23,6 +23,7 @@ export default function TitleDetailScreen() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [rating, setRating] = useState(false);
+  const [removing, setRemoving] = useState(false);
 
   const detail = useQuery({
     queryKey: ["tmdb-detail", mediaType, tmdbId],
@@ -64,6 +65,26 @@ export default function TitleDetailScreen() {
     }
   }
 
+  async function doRemove(entryId: string) {
+    try {
+      setRemoving(true);
+      await removeFromLibrary(entryId);
+      await qc.invalidateQueries({ queryKey: ["library-entry", mediaType, tmdbId] });
+      await qc.invalidateQueries({ queryKey: ["library"] });
+    } catch (e) {
+      Alert.alert("Couldn't remove", (e as Error).message);
+    } finally {
+      setRemoving(false);
+    }
+  }
+
+  function confirmRemove(entryId: string, title: string) {
+    Alert.alert("Remove from library?", `“${title}” will be removed from your library.`, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Remove", style: "destructive", onPress: () => doRemove(entryId) },
+    ]);
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Stack.Screen options={{ headerShown: true, title: detail.data?.title ?? "Title" }} />
@@ -80,11 +101,11 @@ export default function TitleDetailScreen() {
               <View style={styles.headerRow}>
                 <PosterImage path={d.posterPath} width={130} height={195} radius={12} />
                 <View style={styles.statusCol}>
-                  <Text style={styles.statusHeading}>Add to library</Text>
+                  <Text style={styles.statusHeading}>{current ? "In your library" : "Add to library"}</Text>
                   {STATUSES.map((s) => (
                     <Pressable
                       key={s.key}
-                      disabled={saving}
+                      disabled={saving || removing}
                       style={[styles.statusBtn, current === s.key && styles.statusBtnOn]}
                       onPress={() => setStatus(s.key, d)}
                     >
@@ -93,6 +114,15 @@ export default function TitleDetailScreen() {
                       </Text>
                     </Pressable>
                   ))}
+                  {entry.data ? (
+                    <Pressable
+                      disabled={saving || removing}
+                      style={styles.removeBtn}
+                      onPress={() => confirmRemove(entry.data!.id, d.title)}
+                    >
+                      <Text style={styles.removeBtnText}>{removing ? "Removing…" : "Remove from library"}</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
               </View>
               <Text style={styles.title}>{d.title}</Text>
@@ -184,6 +214,8 @@ const styles = StyleSheet.create({
   statusBtnOn: { backgroundColor: "#5b6cff" },
   statusBtnText: { fontSize: 14, color: "#5b6cff", fontWeight: "600" },
   statusBtnTextOn: { color: "#fff" },
+  removeBtn: { paddingVertical: 8, alignItems: "center", marginTop: 2 },
+  removeBtnText: { fontSize: 13, color: "#d23", fontWeight: "600" },
   btn: { backgroundColor: "#5b6cff", borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20, marginTop: 24, alignSelf: "stretch", alignItems: "center" },
   btnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
   msg: { color: "#888", fontSize: 13, margin: 24, textAlign: "center" },
