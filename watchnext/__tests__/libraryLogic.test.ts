@@ -22,11 +22,25 @@ test("recent sort orders by added_at descending", () => {
   expect(sortLibrary([a, b, c], "recent").map((e) => e.id)).toEqual(["b", "c", "a"]);
 });
 
+test("oldest sort orders by added_at ascending", () => {
+  const a = entry({ id: "a", added_at: "2026-01-01T00:00:00Z" });
+  const b = entry({ id: "b", added_at: "2026-03-01T00:00:00Z" });
+  const c = entry({ id: "c", added_at: "2026-02-01T00:00:00Z" });
+  expect(sortLibrary([a, b, c], "oldest").map((e) => e.id)).toEqual(["a", "c", "b"]);
+});
+
 test("title sort orders alphabetically, case-insensitive", () => {
   const a = entry({ id: "a", title: "banana" });
   const b = entry({ id: "b", title: "Apple" });
   const c = entry({ id: "c", title: "cherry" });
   expect(sortLibrary([a, b, c], "title").map((e) => e.id)).toEqual(["b", "a", "c"]);
+});
+
+test("title-desc sort orders reverse-alphabetically, case-insensitive", () => {
+  const a = entry({ id: "a", title: "banana" });
+  const b = entry({ id: "b", title: "Apple" });
+  const c = entry({ id: "c", title: "cherry" });
+  expect(sortLibrary([a, b, c], "title-desc").map((e) => e.id)).toEqual(["c", "a", "b"]);
 });
 
 test("does not mutate the input array", () => {

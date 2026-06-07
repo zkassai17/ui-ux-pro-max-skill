@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { getLibrary } from "../../src/services/watchlist";
@@ -23,7 +32,9 @@ const MEDIA_FILTERS: { key: "all" | MediaType; label: string }[] = [
 
 const SORTS: { key: LibrarySort; label: string }[] = [
   { key: "recent", label: "Recently added" },
+  { key: "oldest", label: "Oldest first" },
   { key: "title", label: "Title A–Z" },
+  { key: "title-desc", label: "Title Z–A" },
 ];
 
 const STATUS_LABEL: Record<WatchStatus, string> = {
@@ -38,27 +49,29 @@ export default function LibraryScreen() {
   const [sort, setSort] = useState<LibrarySort>("recent");
   const router = useRouter();
   const { data, isLoading } = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
+
   const filtered = (data ?? []).filter(
     (e) =>
       (filter === "all" || e.status === filter) &&
       (media === "all" || e.media_type === media)
   );
   const rows = sortLibrary(filtered, sort);
+  const sortLabel = SORTS.find((s) => s.key === sort)?.label ?? "Sort";
+
+  function pickSort() {
+    Alert.alert("Sort by", undefined, [
+      ...SORTS.map((s) => ({ text: s.label, onPress: () => setSort(s.key) })),
+      { text: "Cancel", style: "cancel" as const },
+    ]);
+  }
 
   return (
     <View style={styles.container}>
-      <View style={styles.filters}>
-        {MEDIA_FILTERS.map((m) => (
-          <Pressable
-            key={m.key}
-            style={[styles.chip, media === m.key && styles.chipOn]}
-            onPress={() => setMedia(m.key)}
-          >
-            <Text style={[styles.chipText, media === m.key && styles.chipTextOn]}>{m.label}</Text>
-          </Pressable>
-        ))}
-      </View>
-      <View style={styles.filters}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filterRow}
+      >
         {FILTERS.map((f) => (
           <Pressable
             key={f.key}
@@ -68,19 +81,33 @@ export default function LibraryScreen() {
             <Text style={[styles.chipText, filter === f.key && styles.chipTextOn]}>{f.label}</Text>
           </Pressable>
         ))}
+      </ScrollView>
+
+      <View style={styles.toolbar}>
+        <View style={styles.segment}>
+          {MEDIA_FILTERS.map((m) => (
+            <Pressable
+              key={m.key}
+              style={[styles.segmentBtn, media === m.key && styles.segmentBtnOn]}
+              onPress={() => setMedia(m.key)}
+            >
+              <Text style={[styles.segmentText, media === m.key && styles.segmentTextOn]}>
+                {m.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        <Pressable style={styles.sortBtn} onPress={pickSort} hitSlop={6}>
+          <Text style={styles.sortBtnText}>⇅ {sortLabel}</Text>
+        </Pressable>
       </View>
-      <View style={styles.sortRow}>
-        <Text style={styles.sortLabel}>Sort</Text>
-        {SORTS.map((s) => (
-          <Pressable
-            key={s.key}
-            style={[styles.sortChip, sort === s.key && styles.sortChipOn]}
-            onPress={() => setSort(s.key)}
-          >
-            <Text style={[styles.sortChipText, sort === s.key && styles.sortChipTextOn]}>{s.label}</Text>
-          </Pressable>
-        ))}
-      </View>
+
+      {!isLoading ? (
+        <Text style={styles.count}>
+          {rows.length} {rows.length === 1 ? "title" : "titles"}
+        </Text>
+      ) : null}
+
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
       ) : rows.length === 0 ? (
@@ -106,16 +133,22 @@ export default function LibraryScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  filters: { flexDirection: "row", gap: 8, marginBottom: 10 },
-  chip: { backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+
+  filterRow: { gap: 8, paddingRight: 8, paddingBottom: 2 },
+  chip: { backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
   chipOn: { backgroundColor: "#5b6cff" },
-  chipText: { fontSize: 12, color: "#666" },
-  chipTextOn: { color: "#fff", fontWeight: "600" },
-  sortRow: { flexDirection: "row", gap: 8, alignItems: "center", marginBottom: 14 },
-  sortLabel: { fontSize: 11, color: "#999", fontWeight: "700" },
-  sortChip: { backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
-  sortChipOn: { backgroundColor: "#111" },
-  sortChipText: { fontSize: 11, color: "#666" },
-  sortChipTextOn: { color: "#fff", fontWeight: "600" },
+  chipText: { fontSize: 13, color: "#666", fontWeight: "600" },
+  chipTextOn: { color: "#fff" },
+
+  toolbar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 },
+  segment: { flexDirection: "row", backgroundColor: "#f0f0f3", borderRadius: 999, padding: 3 },
+  segmentBtn: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999 },
+  segmentBtnOn: { backgroundColor: "#111" },
+  segmentText: { fontSize: 12, color: "#666", fontWeight: "600" },
+  segmentTextOn: { color: "#fff" },
+  sortBtn: { paddingHorizontal: 10, paddingVertical: 6 },
+  sortBtnText: { fontSize: 12, color: "#5b6cff", fontWeight: "700" },
+
+  count: { fontSize: 11, color: "#aaa", fontWeight: "600", marginTop: 10, marginBottom: 4 },
   msg: { color: "#888", fontSize: 13, marginTop: 16, textAlign: "center" },
 });
