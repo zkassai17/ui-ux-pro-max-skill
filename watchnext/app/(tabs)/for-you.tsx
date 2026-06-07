@@ -17,6 +17,16 @@ const WATCH_VERB: Record<string, string> = {
 const MAX_SEEDS = 12;
 const MAX_SUGGESTIONS = 15;
 
+function WatchTogetherCard() {
+  const router = useRouter();
+  return (
+    <Pressable style={styles.wtCard} onPress={() => router.push("/watch-together")}>
+      <Text style={styles.wtTitle}>What should we watch?</Text>
+      <Text style={styles.wtSub}>Find something you and your friends both want to see →</Text>
+    </Pressable>
+  );
+}
+
 function ForYouRail({ mediaType, heading }: { mediaType: MediaType; heading: string }) {
   const router = useRouter();
   const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
@@ -79,6 +89,7 @@ export default function HomeScreen() {
       keyExtractor={(r) => r.item.id}
       ListHeaderComponent={
         <View>
+          <WatchTogetherCard />
           <ForYouRail mediaType="movie" heading="Movies for you" />
           <ForYouRail mediaType="tv" heading="Shows for you" />
           <Text style={styles.sectionHeading}>Activity</Text>
@@ -131,6 +142,9 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  wtCard: { backgroundColor: "#5b6cff", borderRadius: 16, padding: 16, marginBottom: 18 },
+  wtTitle: { color: "#fff", fontSize: 17, fontWeight: "800" },
+  wtSub: { color: "#dfe3ff", fontSize: 12, marginTop: 6, lineHeight: 17 },
   rail: { marginBottom: 8 },
   sectionHeading: { fontSize: 13, fontWeight: "700", color: "#888", marginBottom: 10 },
   railRow: { gap: 12, paddingBottom: 4, paddingRight: 8 },
