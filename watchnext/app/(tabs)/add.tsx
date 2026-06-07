@@ -134,9 +134,6 @@ export default function AddScreen() {
 
       {!searching ? (
         <View style={styles.filters}>
-          <Pressable style={styles.importLink} onPress={() => router.push("/import")}>
-            <Text style={styles.importLinkText}>↓ Import your watch history</Text>
-          </Pressable>
           <View style={styles.toggleRow}>
             {(["movie", "tv"] as MediaType[]).map((m) => (
               <Pressable
@@ -224,8 +221,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   search: { backgroundColor: "#f0f0f3", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, marginBottom: 12 },
   filters: { marginBottom: 8 },
-  importLink: { backgroundColor: "#eef0ff", borderRadius: 10, paddingVertical: 10, alignItems: "center", marginBottom: 10 },
-  importLinkText: { color: "#5b6cff", fontWeight: "700", fontSize: 13 },
   toggleRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
   toggle: { backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 16, paddingVertical: 7 },
   toggleOn: { backgroundColor: "#111" },

@@ -39,6 +39,10 @@ export default function ProfileScreen() {
             <Text style={styles.btnText}>Add a friend</Text>
           </Pressable>
 
+          <Pressable style={styles.importBtn} onPress={() => router.push("/import")}>
+            <Text style={styles.importBtnText}>↓ Import your watch history</Text>
+          </Pressable>
+
           <Text style={styles.section}>Friends</Text>
           {friends.isLoading ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
         </View>
@@ -95,6 +99,8 @@ const styles = StyleSheet.create({
   breakdownText: { fontSize: 12, color: "#888", marginTop: 2 },
   btn: { backgroundColor: "#5b6cff", borderRadius: 10, paddingVertical: 11, alignItems: "center", marginTop: 18 },
   btnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  importBtn: { backgroundColor: "#eef0ff", borderRadius: 10, paddingVertical: 11, alignItems: "center", marginTop: 10 },
+  importBtnText: { color: "#5b6cff", fontWeight: "700", fontSize: 14 },
   section: { fontSize: 13, fontWeight: "700", marginTop: 22, marginBottom: 6 },
   friendRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#eee" },
   friendName: { fontSize: 15, fontWeight: "600" },
