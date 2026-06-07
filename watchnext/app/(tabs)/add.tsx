@@ -9,7 +9,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { searchTitles, discoverTitles, getGenres } from "../../src/services/tmdb";
 import { TitleRow } from "../../src/components/TitleRow";
@@ -33,10 +33,12 @@ export default function AddScreen() {
     queryKey: ["tmdb-genres", mediaType],
     queryFn: () => getGenres(mediaType),
   });
-  const discover = useQuery({
+  const discover = useInfiniteQuery({
     queryKey: ["tmdb-discover", mediaType, genreId, providerId],
-    queryFn: () => discoverTitles({ mediaType, genreId, providerId }),
+    queryFn: ({ pageParam }) => discoverTitles({ mediaType, genreId, providerId, page: pageParam }),
     enabled: !searching,
+    initialPageParam: 1,
+    getNextPageParam: (last) => (last.page < last.totalPages ? last.page + 1 : undefined),
   });
 
   function switchMedia(next: MediaType) {
@@ -45,8 +47,12 @@ export default function AddScreen() {
     setGenreId(null); // genre IDs differ between movie and tv
   }
 
-  const active = searching ? search : discover;
-  const results: Title[] = active.data ?? [];
+  const results: Title[] = searching
+    ? search.data ?? []
+    : discover.data?.pages.flatMap((p) => p.results) ?? [];
+  const isLoading = searching ? search.isLoading : discover.isLoading;
+  const isError = searching ? search.isError : discover.isError;
+  const error = searching ? search.error : discover.error;
 
   return (
     <View style={styles.container}>
@@ -101,9 +107,9 @@ export default function AddScreen() {
         </View>
       ) : null}
 
-      {active.isError ? (
-        <Text style={styles.msg}>{(active.error as Error).message}</Text>
-      ) : active.isLoading ? (
+      {isError ? (
+        <Text style={styles.msg}>{(error as Error).message}</Text>
+      ) : isLoading ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
       ) : results.length === 0 ? (
         <Text style={styles.msg}>{searching ? "No results." : "Nothing matches those filters."}</Text>
@@ -111,6 +117,17 @@ export default function AddScreen() {
         <FlatList
           data={results}
           keyExtractor={(t) => `${t.mediaType}:${t.tmdbId}`}
+          onEndReached={() => {
+            if (!searching && discover.hasNextPage && !discover.isFetchingNextPage) {
+              discover.fetchNextPage();
+            }
+          }}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            !searching && discover.isFetchingNextPage ? (
+              <ActivityIndicator style={{ marginVertical: 16 }} />
+            ) : null
+          }
           renderItem={({ item }) => (
             <TitleRow
               title={item.title}
