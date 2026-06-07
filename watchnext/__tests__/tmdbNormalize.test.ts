@@ -6,6 +6,7 @@ import {
   normalizeDiscoverResults,
   normalizeGenres,
   normalizeWatchProviders,
+  normalizeSuggestions,
 } from "../src/lib/tmdbNormalize";
 
 test("posterUrl builds a CDN url and handles null", () => {
@@ -143,4 +144,27 @@ test("normalizeWatchProviders returns empty groups when region absent", () => {
     rent: [],
     buy: [],
   });
+});
+
+test("normalizeSuggestions keeps genre ids and injects mediaType", () => {
+  const out = normalizeSuggestions(
+    {
+      results: [
+        { id: 1, name: "Severance", first_air_date: "2022-02-18", poster_path: "/s.jpg", vote_average: 8.4, genre_ids: [18, 9648] },
+        { id: 2 }, // no name → dropped
+      ],
+    },
+    "tv"
+  );
+  expect(out).toEqual([
+    { tmdbId: 1, mediaType: "tv", title: "Severance", year: "2022", posterPath: "/s.jpg", rating: 8.4, genreIds: [18, 9648] },
+  ]);
+});
+
+test("normalizeSuggestions defaults missing genre_ids to an empty array", () => {
+  const out = normalizeSuggestions(
+    { results: [{ media_type: "movie", id: 5, title: "A", release_date: "2020-01-01", vote_average: 5 }] },
+    "movie"
+  );
+  expect(out[0].genreIds).toEqual([]);
 });

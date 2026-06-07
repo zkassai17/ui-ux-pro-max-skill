@@ -9,6 +9,8 @@ export type Title = {
   rating: number | null;
 };
 
+export type Suggestion = Title & { genreIds: number[] };
+
 export type TitleDetail = Title & {
   overview: string;
   genres: string[];

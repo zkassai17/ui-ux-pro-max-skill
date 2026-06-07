@@ -1,10 +1,11 @@
-import type { MediaType, Title, TitleDetail, Genre, WatchProviders } from "../types/tmdb";
+import type { MediaType, Title, Suggestion, TitleDetail, Genre, WatchProviders } from "../types/tmdb";
 import {
   normalizeSearchResults,
   normalizeDetail,
   normalizeDiscoverResults,
   normalizeGenres,
   normalizeWatchProviders,
+  normalizeSuggestions,
 } from "../lib/tmdbNormalize";
 import { WATCH_REGION } from "../lib/providers";
 import { relaxQueries, rankByFuzzy } from "../lib/searchLogic";
@@ -95,4 +96,9 @@ export async function getWatchProviders(mediaType: MediaType, id: number): Promi
 export async function getRecommendations(mediaType: MediaType, id: number): Promise<Title[]> {
   const raw = await tmdbGet(`/${mediaType}/${id}/recommendations`);
   return normalizeDiscoverResults(raw, mediaType);
+}
+
+export async function getGroupRecommendations(mediaType: MediaType, id: number): Promise<Suggestion[]> {
+  const raw = await tmdbGet(`/${mediaType}/${id}/recommendations`);
+  return normalizeSuggestions(raw, mediaType);
 }

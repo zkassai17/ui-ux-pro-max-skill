@@ -1,4 +1,4 @@
-import type { MediaType, Title, TitleDetail, Genre, WatchProvider, WatchProviders } from "../types/tmdb";
+import type { MediaType, Title, Suggestion, TitleDetail, Genre, WatchProvider, WatchProviders } from "../types/tmdb";
 
 const IMAGE_BASE = "https://image.tmdb.org/t/p";
 
@@ -46,6 +46,20 @@ export function normalizeDiscoverResults(raw: any, mediaType: MediaType): Title[
   return results
     .map((item: any) => normalizeSearchItem({ ...item, media_type: mediaType }))
     .filter((t: Title | null): t is Title => t !== null);
+}
+
+export function normalizeSuggestions(raw: any, mediaType: MediaType): Suggestion[] {
+  const results = Array.isArray(raw?.results) ? raw.results : [];
+  return results
+    .map((item: any) => {
+      const base = normalizeSearchItem({ ...item, media_type: mediaType });
+      if (!base) return null;
+      const genreIds = Array.isArray(item.genre_ids)
+        ? item.genre_ids.filter((g: any) => typeof g === "number")
+        : [];
+      return { ...base, genreIds };
+    })
+    .filter((s: Suggestion | null): s is Suggestion => s !== null);
 }
 
 export function normalizeGenres(raw: any): Genre[] {
