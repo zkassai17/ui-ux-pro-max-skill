@@ -14,7 +14,7 @@ const WATCH_VERB: Record<string, string> = {
   want: "wants to watch",
 };
 
-const MAX_SEEDS = 40;
+const MAX_SEEDS = 20;
 const MAX_SUGGESTIONS = 15;
 
 function WatchTogetherCard() {

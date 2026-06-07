@@ -5,13 +5,15 @@ export function titleKey(t: { mediaType: string; tmdbId: number }): string {
   return `${t.mediaType}:${t.tmdbId}`;
 }
 
-// Choose which titles to seed recommendations from: the user's top-rated
-// watched titles of the given media type (up to `max`), ranked by rating then
-// recency. Only rated titles count — unrated watches are ignored so picks
-// reflect what the user actually liked, not everything they logged.
+// Choose which titles to seed recommendations from (hybrid). Considers all
+// watched titles of the given media type, but leads with the user's highest-
+// rated ones so favorites are guaranteed seeds, then fills the rest with other
+// watched titles. Capped at `max` to keep the seed set focused — a tighter set
+// produces stronger consensus in rankRecommendations. Upload order (added_at)
+// is only a last-resort tiebreak since users don't add titles in watch order.
 export function selectSeeds(entries: WatchlistEntry[], mediaType: MediaType, max: number): WatchlistEntry[] {
   return entries
-    .filter((entry) => entry.status === "watched" && entry.media_type === mediaType && entry.rating != null)
+    .filter((entry) => entry.status === "watched" && entry.media_type === mediaType)
     .sort((a, b) => {
       const ra = a.rating ?? -1;
       const rb = b.rating ?? -1;
