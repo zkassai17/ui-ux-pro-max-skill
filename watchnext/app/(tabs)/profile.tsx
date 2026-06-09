@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { View, Text, Pressable, FlatList, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import { useAuth } from "../../src/auth/AuthProvider";
 import { getFriends, getFriendStats, type StatBucket } from "../../src/services/friends";
@@ -15,8 +15,10 @@ function initials(username?: string): string {
 export default function ProfileScreen() {
   const { profile, session, signOut } = useAuth();
   const router = useRouter();
+  const qc = useQueryClient();
   const uid = session?.user.id;
   const [copied, setCopied] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const friends = useQuery({ queryKey: ["friends"], queryFn: getFriends });
   const stats = useQuery({
@@ -24,6 +26,17 @@ export default function ProfileScreen() {
     queryFn: () => getFriendStats(uid as string),
     enabled: !!uid,
   });
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["friends"] }),
+      qc.invalidateQueries({ queryKey: ["my-stats", uid] }),
+      qc.invalidateQueries({ queryKey: ["incoming-requests"] }),
+      qc.invalidateQueries({ queryKey: ["received-recs"] }),
+    ]);
+    setRefreshing(false);
+  }
 
   async function copyCode() {
     if (!profile?.friend_code) return;
@@ -36,6 +49,7 @@ export default function ProfileScreen() {
     <FlatList
       style={styles.container}
       contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       data={friends.data ?? []}
       keyExtractor={(p) => p.id}
       ListHeaderComponent={

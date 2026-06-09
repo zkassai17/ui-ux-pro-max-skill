@@ -1,5 +1,6 @@
-import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator, ScrollView } from "react-native";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator, ScrollView, RefreshControl } from "react-native";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { getFeed } from "../../src/services/feed";
 import { getLibrary } from "../../src/services/watchlist";
@@ -75,7 +76,21 @@ function ForYouRail({ mediaType, heading }: { mediaType: MediaType; heading: str
 }
 
 export default function HomeScreen() {
+  const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["feed"], queryFn: getFeed });
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["feed"] }),
+      qc.invalidateQueries({ queryKey: ["library"] }),
+      qc.invalidateQueries({ queryKey: ["for-you"] }),
+      qc.invalidateQueries({ queryKey: ["incoming-requests"] }),
+      qc.invalidateQueries({ queryKey: ["received-recs"] }),
+    ]);
+    setRefreshing(false);
+  }
 
   if (isLoading) return <ActivityIndicator style={{ marginTop: 40 }} />;
 
@@ -83,6 +98,7 @@ export default function HomeScreen() {
     <FlatList
       style={styles.container}
       contentContainerStyle={{ padding: 16 }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       data={data ?? []}
       keyExtractor={(r) => r.item.id}
       ListHeaderComponent={
