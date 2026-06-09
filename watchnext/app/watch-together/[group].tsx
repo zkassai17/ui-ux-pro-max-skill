@@ -14,6 +14,7 @@ type HeroItem = { tmdbId: number; mediaType: MediaType; title: string; posterPat
 export default function WatchTogetherResultsScreen() {
   const { group } = useLocalSearchParams<{ group: string }>();
   const friendIds = (group ?? "").split(",").filter(Boolean);
+  const groupSize = friendIds.length + 1; // +1 for me
   const router = useRouter();
   const [genreIds, setGenreIds] = useState<number[]>([]);
   const [shuffle, setShuffle] = useState(0);
@@ -40,14 +41,14 @@ export default function WatchTogetherResultsScreen() {
         <Text style={styles.msg}>Couldn't load picks. Go back and try again.</Text>
       ) : (
         (() => {
-          const shared = data.shared;
+          const picks = data.picks;
           const suggestions = filterByGenre(data.suggestions, genreIds);
 
-          const sharedHero: HeroItem[] = shared.map((e) => ({
-            tmdbId: e.tmdb_id,
-            mediaType: e.media_type,
-            title: e.title,
-            posterPath: e.poster_path,
+          const sharedHero: HeroItem[] = picks.map((p) => ({
+            tmdbId: p.entry.tmdb_id,
+            mediaType: p.entry.media_type,
+            title: p.entry.title,
+            posterPath: p.entry.poster_path,
           }));
           const suggHero: HeroItem[] = suggestions.map((s) => ({
             tmdbId: s.tmdbId,
@@ -102,19 +103,29 @@ export default function WatchTogetherResultsScreen() {
                 </View>
               ) : null}
 
-              {/* Shared want-to-watch */}
-              {shared.length > 0 ? (
+              {/* Group wishlist picks */}
+              {picks.length > 0 ? (
                 <>
-                  <Text style={styles.section}>You all want to watch</Text>
-                  {shared.map((e) => (
-                    <TitleRow
-                      key={`${e.media_type}:${e.tmdb_id}`}
-                      title={e.title}
-                      mediaType={e.media_type}
-                      posterPath={e.poster_path}
-                      onPress={() => open(e.media_type, e.tmdb_id)}
-                    />
-                  ))}
+                  <Text style={styles.section}>Up next for the group</Text>
+                  {picks.map((p) => {
+                    const e = p.entry;
+                    const everyone = p.wantedBy >= groupSize && groupSize > 1;
+                    const tag = everyone
+                      ? "Everyone wants this"
+                      : p.wantedBy >= 2
+                      ? `🔥 ${p.wantedBy} want this`
+                      : "On a wishlist";
+                    return (
+                      <TitleRow
+                        key={`${e.media_type}:${e.tmdb_id}`}
+                        title={e.title}
+                        mediaType={e.media_type}
+                        posterPath={e.poster_path}
+                        subtitle={tag}
+                        onPress={() => open(e.media_type, e.tmdb_id)}
+                      />
+                    );
+                  })}
                 </>
               ) : null}
 
@@ -122,8 +133,8 @@ export default function WatchTogetherResultsScreen() {
               <Text style={styles.section}>Because you've all been watching</Text>
               {suggestions.length === 0 ? (
                 <Text style={styles.msg}>
-                  {shared.length === 0
-                    ? "No shared picks yet — add more titles to your want lists to get matches."
+                  {picks.length === 0
+                    ? "Nothing on your wishlists yet that the group hasn't seen. Add titles to your Want list to get picks."
                     : "No suggestions match that genre. Try clearing a filter."}
                 </Text>
               ) : (

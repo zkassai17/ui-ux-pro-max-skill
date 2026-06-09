@@ -2,33 +2,47 @@ import type { WatchlistEntry } from "../types/db";
 import type { Suggestion } from "../types/tmdb";
 import { titleKey } from "./forYouLogic";
 
-// Titles every participant has with status "want", matched on tmdb_id+media_type.
-// A title is dropped if any participant has it with a different status. Sorted by
-// the newest added_at across participants (freshest mutual interest first).
-export function sharedWantToWatch(libraries: WatchlistEntry[][]): WatchlistEntry[] {
+export type GroupPick = {
+  // A representative "want" entry for the title (newest, so the freshest
+  // poster/title wins).
+  entry: WatchlistEntry;
+  // How many participants want it (1 = one person's pick, 2+ = mutual interest).
+  wantedBy: number;
+};
+
+// Titles at least one participant WANTS that NOBODY in the group has already
+// watched — "one of us is excited, and nobody's seen it yet." This is the
+// realistic version of "what should we watch": it doesn't require everyone to
+// independently have the same title on their want-list (which almost never
+// happens), it just needs one spark plus no spoiler. Matched on
+// tmdb_id+media_type. Ranked by how many people want it (mutual interest
+// first), then by the freshest "want". Pure: order-independent, no side effects.
+export function groupPicks(libraries: WatchlistEntry[][]): GroupPick[] {
   if (libraries.length === 0) return [];
-  const maps = libraries.map((lib) => {
-    const m = new Map<string, WatchlistEntry>();
-    for (const e of lib) m.set(`${e.media_type}:${e.tmdb_id}`, e);
-    return m;
-  });
-  const [first, ...rest] = maps;
-  const picked: { entry: WatchlistEntry; maxAdded: string }[] = [];
-  for (const [key, entry] of Array.from(first.entries())) {
-    if (entry.status !== "want") continue;
-    let ok = true;
-    let maxAdded = entry.added_at;
-    for (const m of rest) {
-      const e = m.get(key);
-      if (!e || e.status !== "want") {
-        ok = false;
-        break;
-      }
-      if (e.added_at > maxAdded) maxAdded = e.added_at;
+
+  // Bucket every participant's entry for a title together.
+  const byKey = new Map<string, WatchlistEntry[]>();
+  for (const lib of libraries) {
+    for (const e of lib) {
+      const k = `${e.media_type}:${e.tmdb_id}`;
+      const arr = byKey.get(k);
+      if (arr) arr.push(e);
+      else byKey.set(k, [e]);
     }
-    if (ok) picked.push({ entry, maxAdded });
   }
-  return picked.sort((a, b) => b.maxAdded.localeCompare(a.maxAdded)).map((p) => p.entry);
+
+  const picks: { entry: WatchlistEntry; wantedBy: number; freshest: string }[] = [];
+  for (const entries of byKey.values()) {
+    if (entries.some((e) => e.status === "watched")) continue; // someone's seen it
+    const wants = entries.filter((e) => e.status === "want");
+    if (wants.length === 0) continue; // nobody actually wants it
+    const rep = wants.reduce((a, b) => (b.added_at > a.added_at ? b : a));
+    picks.push({ entry: rep, wantedBy: wants.length, freshest: rep.added_at });
+  }
+
+  return picks
+    .sort((a, b) => b.wantedBy - a.wantedBy || b.freshest.localeCompare(a.freshest))
+    .map((p) => ({ entry: p.entry, wantedBy: p.wantedBy }));
 }
 
 // Aggregates per-person TMDB recommendation lists into one ranked list. A

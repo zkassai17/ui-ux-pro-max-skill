@@ -1,8 +1,7 @@
 import { getLibrary } from "./watchlist";
 import { getGroupRecommendations } from "./tmdb";
-import { sharedWantToWatch, rankSuggestions } from "../lib/watchTogetherLogic";
+import { groupPicks, rankSuggestions, type GroupPick } from "../lib/watchTogetherLogic";
 import { titleKey } from "../lib/forYouLogic";
-import type { WatchlistEntry } from "../types/db";
 import type { Suggestion } from "../types/tmdb";
 
 // How many recent watched titles per person seed the TMDB suggestion engine.
@@ -10,14 +9,14 @@ import type { Suggestion } from "../types/tmdb";
 const SEEDS_PER_PERSON = 6;
 
 export type WatchTogetherResult = {
-  shared: WatchlistEntry[];
+  picks: GroupPick[];
   suggestions: Suggestion[];
 };
 
 export async function getWatchTogether(friendIds: string[]): Promise<WatchTogetherResult> {
   const libraries = await Promise.all([getLibrary(), ...friendIds.map((id) => getLibrary(id))]);
 
-  const shared = sharedWantToWatch(libraries);
+  const picks = groupPicks(libraries);
 
   const excludeKeys = new Set(
     libraries.flat().map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id }))
@@ -36,5 +35,5 @@ export async function getWatchTogether(friendIds: string[]): Promise<WatchTogeth
   );
 
   const suggestions = rankSuggestions(candidatesByPerson, excludeKeys);
-  return { shared, suggestions };
+  return { picks, suggestions };
 }

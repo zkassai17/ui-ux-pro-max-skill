@@ -1,4 +1,4 @@
-import { sharedWantToWatch, rankSuggestions, filterByGenre, pickHero } from "../src/lib/watchTogetherLogic";
+import { groupPicks, rankSuggestions, filterByGenre, pickHero } from "../src/lib/watchTogetherLogic";
 import type { WatchlistEntry } from "../src/types/db";
 import type { Suggestion } from "../src/types/tmdb";
 
@@ -22,49 +22,61 @@ function wl(over: Partial<WatchlistEntry>): WatchlistEntry {
   };
 }
 
-test("returns titles every participant wants, matched on id+media_type", () => {
-  const mine = [wl({ tmdb_id: 1, status: "want" }), wl({ tmdb_id: 2, status: "want" })];
-  const theirs = [wl({ tmdb_id: 1, status: "want" }), wl({ tmdb_id: 3, status: "want" })];
-  const out = sharedWantToWatch([mine, theirs]);
-  expect(out.map((e) => e.tmdb_id)).toEqual([1]);
+test("surfaces a title that one person wants and nobody has watched", () => {
+  const mine = [wl({ tmdb_id: 1, status: "want" })];
+  const theirs = [wl({ tmdb_id: 2, status: "want" })]; // friend doesn't have title 1 at all
+  const out = groupPicks([mine, theirs]);
+  expect(out.map((p) => p.entry.tmdb_id).sort()).toEqual([1, 2]);
 });
 
-test("excludes a title if any participant has it as not-want", () => {
+test("drops a title if any participant has already watched it", () => {
   const mine = [wl({ tmdb_id: 1, status: "want" })];
-  const theirs = [wl({ tmdb_id: 1, status: "watched" })];
-  expect(sharedWantToWatch([mine, theirs])).toEqual([]);
+  const theirs = [wl({ tmdb_id: 1, status: "watched" })]; // friend already saw it
+  expect(groupPicks([mine, theirs])).toEqual([]);
+});
+
+test("excludes titles nobody actually wants (e.g. only watching)", () => {
+  const mine = [wl({ tmdb_id: 1, status: "watching" })];
+  const theirs = [wl({ tmdb_id: 1, status: "watching" })];
+  expect(groupPicks([mine, theirs])).toEqual([]);
+});
+
+test("counts how many participants want each title (wantedBy)", () => {
+  const mine = [wl({ tmdb_id: 1, status: "want" }), wl({ tmdb_id: 2, status: "want" })];
+  const theirs = [wl({ tmdb_id: 1, status: "want" })]; // both want 1, only I want 2
+  const out = groupPicks([mine, theirs]);
+  const byId = Object.fromEntries(out.map((p) => [p.entry.tmdb_id, p.wantedBy]));
+  expect(byId).toEqual({ 1: 2, 2: 1 });
+});
+
+test("ranks mutual wants ahead of single wants, then freshest", () => {
+  const mine = [
+    wl({ tmdb_id: 1, status: "want", added_at: "2026-01-01T00:00:00Z" }),
+    wl({ tmdb_id: 2, status: "want", added_at: "2026-05-01T00:00:00Z" }),
+  ];
+  const theirs = [wl({ tmdb_id: 1, status: "want", added_at: "2026-02-01T00:00:00Z" })];
+  // title 1 wanted by 2 → first; title 2 wanted by 1 → after
+  const out = groupPicks([mine, theirs]);
+  expect(out.map((p) => p.entry.tmdb_id)).toEqual([1, 2]);
 });
 
 test("matches on media_type, not just id", () => {
   const mine = [wl({ tmdb_id: 1, media_type: "movie", status: "want" })];
-  const theirs = [wl({ tmdb_id: 1, media_type: "tv", status: "want" })];
-  expect(sharedWantToWatch([mine, theirs])).toEqual([]);
+  const theirs = [wl({ tmdb_id: 1, media_type: "tv", status: "watched" })];
+  // different media types → the movie is still an unseen want; tv is watched & separate
+  const out = groupPicks([mine, theirs]);
+  expect(out.map((p) => `${p.entry.media_type}:${p.entry.tmdb_id}`)).toEqual(["movie:1"]);
 });
 
-test("works for 4 participants (intersection across all)", () => {
-  const a = [wl({ tmdb_id: 1 }), wl({ tmdb_id: 2 })];
-  const b = [wl({ tmdb_id: 1 }), wl({ tmdb_id: 2 })];
-  const c = [wl({ tmdb_id: 1 }), wl({ tmdb_id: 2 })];
-  const d = [wl({ tmdb_id: 1 })]; // d only wants 1
-  const out = sharedWantToWatch([a, b, c, d]);
-  expect(out.map((e) => e.tmdb_id)).toEqual([1]);
-});
-
-test("sorts by most-recent added_at across participants, descending", () => {
-  const mine = [
-    wl({ tmdb_id: 1, added_at: "2026-01-01T00:00:00Z" }),
-    wl({ tmdb_id: 2, added_at: "2026-05-01T00:00:00Z" }),
-  ];
-  const theirs = [
-    wl({ tmdb_id: 1, added_at: "2026-06-01T00:00:00Z" }), // pushes title 1 to newest
-    wl({ tmdb_id: 2, added_at: "2026-02-01T00:00:00Z" }),
-  ];
-  const out = sharedWantToWatch([mine, theirs]);
-  expect(out.map((e) => e.tmdb_id)).toEqual([1, 2]);
+test("the representative entry is the freshest want", () => {
+  const mine = [wl({ tmdb_id: 1, status: "want", added_at: "2026-01-01T00:00:00Z", title: "Old" })];
+  const theirs = [wl({ tmdb_id: 1, status: "want", added_at: "2026-09-01T00:00:00Z", title: "New" })];
+  const out = groupPicks([mine, theirs]);
+  expect(out[0].entry.title).toBe("New");
 });
 
 test("empty input returns empty", () => {
-  expect(sharedWantToWatch([])).toEqual([]);
+  expect(groupPicks([])).toEqual([]);
 });
 
 test("rankSuggestions scores by number of distinct people surfacing a title", () => {
