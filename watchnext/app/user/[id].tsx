@@ -6,7 +6,9 @@ import { supabase } from "../../src/services/supabase";
 import { getFriendStats, unfriend } from "../../src/services/friends";
 import { getLibrary } from "../../src/services/watchlist";
 import { friendshipWith } from "../../src/lib/friendsLogic";
+import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
 import { TitleRow } from "../../src/components/TitleRow";
+import { TasteMatchCard } from "../../src/components/TasteMatchCard";
 import type { Friendship, Profile, WatchStatus } from "../../src/types/db";
 
 async function getProfile(id: string): Promise<Profile | null> {
@@ -36,9 +38,11 @@ export default function FriendProfileScreen() {
   const profile = useQuery({ queryKey: ["profile", id], queryFn: () => getProfile(id) });
   const stats = useQuery({ queryKey: ["friend-stats", id], queryFn: () => getFriendStats(id) });
   const library = useQuery({ queryKey: ["friend-library", id], queryFn: () => getLibrary(id) });
+  const myLibrary = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
   const friendships = useQuery({ queryKey: ["friendships-raw"], queryFn: getMyFriendships });
 
   const rows = (library.data ?? []).filter((e) => e.status === tab);
+  const tasteMatch = computeTasteMatch(myLibrary.data ?? [], library.data ?? []);
 
   async function doUnfriend() {
     try {
@@ -78,6 +82,10 @@ export default function FriendProfileScreen() {
               <Text style={styles.ghostText}>Unfriend</Text>
             </Pressable>
           </View>
+
+          {!myLibrary.isLoading && !library.isLoading ? (
+            <TasteMatchCard match={tasteMatch} username={profile.data?.username} />
+          ) : null}
 
           <View style={styles.tabs}>
             {TABS.map((t) => (

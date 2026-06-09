@@ -16,6 +16,7 @@ export type WatchlistEntry = {
   media_type: "movie" | "tv";
   title: string;
   poster_path: string | null;
+  year: string | null;
   status: WatchStatus;
   rating: number | null;
   added_at: string;

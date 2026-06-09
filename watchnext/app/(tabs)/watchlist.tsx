@@ -181,7 +181,13 @@ export default function LibraryScreen() {
                     <View style={styles.meta}>
                       <Text style={styles.itemTitle} numberOfLines={1}>{item.title}</Text>
                       <Text style={styles.itemSub} numberOfLines={1}>
-                        {`${STATUS_LABEL[item.status]} · ${item.media_type === "movie" ? "Movie" : "TV"}`}
+                        {[
+                          STATUS_LABEL[item.status],
+                          item.media_type === "movie" ? "Movie" : "TV",
+                          item.year,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </Text>
                     </View>
                   </Pressable>

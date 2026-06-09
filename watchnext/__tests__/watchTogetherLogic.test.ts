@@ -14,6 +14,7 @@ function wl(over: Partial<WatchlistEntry>): WatchlistEntry {
     media_type: "movie",
     title: "X",
     poster_path: null,
+    year: null,
     status: "want",
     rating: null,
     added_at: "2026-01-01T00:00:00Z",

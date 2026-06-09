@@ -43,6 +43,7 @@ export async function addToLibrary(title: Title, status: WatchStatus): Promise<v
       media_type: title.mediaType,
       title: title.title,
       poster_path: title.posterPath,
+      year: title.year,
       status,
     },
     { onConflict: "user_id,tmdb_id,media_type" }
@@ -86,6 +87,7 @@ export async function rateTitle(title: Title, rating: number | null): Promise<vo
       media_type: title.mediaType,
       title: title.title,
       poster_path: title.posterPath,
+      year: title.year,
       status: "watched",
       rating,
     },
