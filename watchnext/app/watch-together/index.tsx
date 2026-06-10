@@ -3,15 +3,41 @@ import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator } from "
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, Stack } from "expo-router";
 import { getFriends } from "../../src/services/friends";
+import { getLibrary } from "../../src/services/watchlist";
+import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
 import type { Profile } from "../../src/types/db";
 
 const MAX_FRIENDS = 3;
+
+// Cold→warm scale so the % reads at a glance (mirrors TasteMatchCard).
+function matchColor(score: number): string {
+  if (score >= 80) return "#1dd1a1";
+  if (score >= 60) return "#5b6cff";
+  if (score >= 40) return "#ffc048";
+  return "#ff9f43";
+}
 
 export default function GroupChooserScreen() {
   const router = useRouter();
   const { data, isLoading } = useQuery({ queryKey: ["friends"], queryFn: getFriends });
   const [selected, setSelected] = useState<string[]>([]);
   const friends = data ?? [];
+
+  // Taste-match % per friend: load my library once + each friend's, score each.
+  const friendIds = friends.map((f) => f.id);
+  const { data: scores } = useQuery({
+    queryKey: ["watch-together-compat", friendIds.join(",")],
+    enabled: friendIds.length > 0,
+    queryFn: async () => {
+      const mine = await getLibrary();
+      const libs = await Promise.all(friendIds.map((id) => getLibrary(id).catch(() => [])));
+      const map: Record<string, number | null> = {};
+      friendIds.forEach((id, i) => {
+        map[id] = computeTasteMatch(mine, libs[i]).score;
+      });
+      return map;
+    },
+  });
 
   function toggle(id: string) {
     setSelected((cur) =>
@@ -48,9 +74,17 @@ export default function GroupChooserScreen() {
             contentContainerStyle={{ paddingBottom: 12 }}
             renderItem={({ item }: { item: Profile }) => {
               const on = selected.includes(item.id);
+              const score = scores?.[item.id];
               return (
                 <Pressable style={[styles.row, on && styles.rowOn]} onPress={() => toggle(item.id)}>
-                  <Text style={styles.username}>@{item.username}</Text>
+                  <View style={styles.rowLeft}>
+                    <Text style={styles.username}>@{item.username}</Text>
+                    {score != null ? (
+                      <Text style={[styles.compat, { color: matchColor(score) }]}>{score}% match</Text>
+                    ) : scores ? (
+                      <Text style={styles.compatNone}>New match</Text>
+                    ) : null}
+                  </View>
                   <Text style={[styles.check, on && styles.checkOn]}>{on ? "✓" : "+"}</Text>
                 </Pressable>
               );
@@ -84,7 +118,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   rowOn: { borderColor: "#5b6cff", backgroundColor: "#eef0ff" },
+  rowLeft: { flex: 1, minWidth: 0 },
   username: { fontSize: 15, fontWeight: "600" },
+  compat: { fontSize: 12, fontWeight: "700", marginTop: 3 },
+  compatNone: { fontSize: 12, color: "#bbb", fontWeight: "600", marginTop: 3 },
   check: { fontSize: 18, color: "#bbb", fontWeight: "700", lineHeight: 22 },
   checkOn: { color: "#5b6cff" },
   primaryBtn: { backgroundColor: "#5b6cff", borderRadius: 12, paddingVertical: 14, alignItems: "center", marginTop: 4 },

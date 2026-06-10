@@ -197,19 +197,21 @@ export default function LibraryScreen() {
                       </Text>
                     </View>
                   </Pressable>
-                  <Pressable
-                    style={[styles.ratingTap, open && styles.ratingTapOn]}
-                    onPress={() => setOpenRatingId(open ? null : item.id)}
-                    hitSlop={8}
-                  >
-                    {item.rating != null ? (
-                      <Text style={styles.ratingEmoji}>{ratingEmoji(item.rating)}</Text>
-                    ) : (
-                      <Text style={styles.ratePrompt}>Rate</Text>
-                    )}
-                  </Pressable>
+                  {item.status !== "want" ? (
+                    <Pressable
+                      style={[styles.ratingTap, open && styles.ratingTapOn]}
+                      onPress={() => setOpenRatingId(open ? null : item.id)}
+                      hitSlop={8}
+                    >
+                      {item.rating != null ? (
+                        <Text style={styles.ratingEmoji}>{ratingEmoji(item.rating)}</Text>
+                      ) : (
+                        <Text style={styles.ratePrompt}>Rate</Text>
+                      )}
+                    </Pressable>
+                  ) : null}
                 </View>
-                {open ? (
+                {open && item.status !== "want" ? (
                   <View style={styles.pickerWrap}>
                     <InlineRating
                       value={item.rating}
