@@ -119,7 +119,12 @@ export default function AddScreen() {
   });
   const isLoading = searching ? search.isLoading : discover.isLoading;
   const isError = searching ? search.isError : discover.isError;
-  const error = searching ? search.error : discover.error;
+  const isFetching = searching ? search.isFetching : discover.isFetching;
+
+  function retry() {
+    if (searching) search.refetch();
+    else discover.refetch();
+  }
 
   return (
     <View style={styles.container}>
@@ -175,7 +180,15 @@ export default function AddScreen() {
       ) : null}
 
       {isError ? (
-        <Text style={styles.msg}>{(error as Error).message}</Text>
+        <View style={styles.errorBox}>
+          <Text style={styles.errorTitle}>Couldn't reach the catalog</Text>
+          <Text style={styles.errorHint}>
+            Your connection dropped for a moment. Check your internet and try again.
+          </Text>
+          <Pressable style={styles.retryBtn} onPress={retry} disabled={isFetching}>
+            <Text style={styles.retryBtnText}>{isFetching ? "Retrying…" : "Try again"}</Text>
+          </Pressable>
+        </View>
       ) : isLoading ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
       ) : results.length === 0 ? (
@@ -232,4 +245,9 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 12, color: "#666", fontWeight: "600" },
   chipTextOn: { color: "#fff" },
   msg: { color: "#888", fontSize: 13, marginTop: 16, textAlign: "center" },
+  errorBox: { marginTop: 40, alignItems: "center", paddingHorizontal: 24, gap: 8 },
+  errorTitle: { fontSize: 15, fontWeight: "700", color: "#333" },
+  errorHint: { fontSize: 13, color: "#888", textAlign: "center", lineHeight: 19 },
+  retryBtn: { marginTop: 8, backgroundColor: "#5b6cff", borderRadius: 10, paddingVertical: 11, paddingHorizontal: 28 },
+  retryBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
 });

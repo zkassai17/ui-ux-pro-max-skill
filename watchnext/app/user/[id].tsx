@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, Pressable, FlatList, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import { View, Text, Pressable, FlatList, StyleSheet, ActivityIndicator, Alert, RefreshControl } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../src/services/supabase";
@@ -35,14 +35,40 @@ export default function FriendProfileScreen() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<WatchStatus>("watched");
 
+  const [refreshing, setRefreshing] = useState(false);
+
+  // A friend's library/stats change on their device, not ours — so the cache here
+  // goes stale silently (RN has no window-focus refetch). Always pull fresh on mount,
+  // and offer pull-to-refresh, so we never show their old status.
   const profile = useQuery({ queryKey: ["profile", id], queryFn: () => getProfile(id) });
-  const stats = useQuery({ queryKey: ["friend-stats", id], queryFn: () => getFriendStats(id) });
-  const library = useQuery({ queryKey: ["friend-library", id], queryFn: () => getLibrary(id) });
+  const stats = useQuery({
+    queryKey: ["friend-stats", id],
+    queryFn: () => getFriendStats(id),
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
+  const library = useQuery({
+    queryKey: ["friend-library", id],
+    queryFn: () => getLibrary(id),
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
   const myLibrary = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
   const friendships = useQuery({ queryKey: ["friendships-raw"], queryFn: getMyFriendships });
 
   const rows = (library.data ?? []).filter((e) => e.status === tab);
   const tasteMatch = computeTasteMatch(myLibrary.data ?? [], library.data ?? []);
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["friend-library", id] }),
+      qc.invalidateQueries({ queryKey: ["friend-stats", id] }),
+      qc.invalidateQueries({ queryKey: ["profile", id] }),
+      qc.invalidateQueries({ queryKey: ["library"] }),
+    ]);
+    setRefreshing(false);
+  }
 
   async function doUnfriend() {
     try {
@@ -101,6 +127,7 @@ export default function FriendProfileScreen() {
             <FlatList
               data={rows}
               keyExtractor={(e) => e.id}
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
               ListEmptyComponent={<Text style={styles.msg}>Nothing in “{TABS.find((t) => t.key === tab)?.label}”.</Text>}
               renderItem={({ item }) => (
                 <TitleRow
