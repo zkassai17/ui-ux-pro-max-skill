@@ -29,7 +29,7 @@ export default function ChooseUsername() {
       return Alert.alert("Could not save", msg);
     }
     await refreshProfile();
-    router.replace("/(tabs)/for-you");
+    router.replace("/quick-seen?from=onboarding");
   }
 
   return (

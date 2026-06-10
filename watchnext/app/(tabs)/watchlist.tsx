@@ -158,11 +158,17 @@ export default function LibraryScreen() {
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
       ) : rows.length === 0 ? (
-        <Text style={styles.msg}>
-          {q !== ""
-            ? `No titles match "${query.trim()}".`
-            : "Nothing here yet. Use the Add tab to find something to watch."}
-        </Text>
+        q !== "" ? (
+          <Text style={styles.msg}>No titles match "{query.trim()}".</Text>
+        ) : (
+          <View style={styles.empty}>
+            <Text style={styles.msg}>Nothing here yet.</Text>
+            <Pressable style={styles.quickBtn} onPress={() => router.push("/quick-seen")}>
+              <Text style={styles.quickBtnText}>⚡ Quick-add what you've seen</Text>
+            </Pressable>
+            <Text style={styles.emptyHint}>Tap through popular titles — fastest way to fill your list.</Text>
+          </View>
+        )
       ) : (
         <FlatList
           data={rows}
@@ -265,6 +271,10 @@ const styles = StyleSheet.create({
 
   count: { fontSize: 11, color: "#aaa", fontWeight: "600", marginTop: 10, marginBottom: 4 },
   msg: { color: "#888", fontSize: 13, marginTop: 16, textAlign: "center" },
+  empty: { alignItems: "center", marginTop: 40, paddingHorizontal: 24 },
+  quickBtn: { backgroundColor: "#5b6cff", borderRadius: 12, paddingVertical: 13, paddingHorizontal: 22, marginTop: 14 },
+  quickBtnText: { color: "#fff", fontWeight: "800", fontSize: 14 },
+  emptyHint: { color: "#aaa", fontSize: 12, marginTop: 12, textAlign: "center", lineHeight: 17 },
 
   item: { marginBottom: 14 },
   itemMain: { flexDirection: "row", gap: 12, alignItems: "center" },
