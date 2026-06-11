@@ -7,6 +7,7 @@ import { getLibrary } from "../../src/services/watchlist";
 import { getRecommendations } from "../../src/services/tmdb";
 import { rankRecommendations, selectSeeds, titleKey } from "../../src/lib/forYouLogic";
 import { PosterImage } from "../../src/components/PosterImage";
+import { CDrawLoader } from "../../src/components/CDrawLoader";
 import type { Title, MediaType } from "../../src/types/tmdb";
 
 const WATCH_VERB: Record<string, string> = {
@@ -92,7 +93,9 @@ export default function HomeScreen() {
     setRefreshing(false);
   }
 
-  if (isLoading) return <ActivityIndicator style={{ marginTop: 40 }} />;
+  // Branded "c drawing itself" loader — appears only once the feed has been
+  // loading long enough to warrant it, so fast loads don't flash it.
+  if (isLoading) return <CDrawLoader delay={450} />;
 
   return (
     <FlatList
