@@ -4,9 +4,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { getFeed } from "../../src/services/feed";
 import { getLibrary } from "../../src/services/watchlist";
-import { getRecommendations } from "../../src/services/tmdb";
-import { rankRecommendations, selectSeeds, titleKey } from "../../src/lib/forYouLogic";
+import { getRecommendations, getTrending } from "../../src/services/tmdb";
+import { rankForYou, selectWeightedSeeds, titleKey } from "../../src/lib/forYouLogic";
 import { PosterImage } from "../../src/components/PosterImage";
+import { QuickAddButton } from "../../src/components/QuickAddButton";
 import { CDrawLoader } from "../../src/components/CDrawLoader";
 import type { Title, MediaType } from "../../src/types/tmdb";
 
@@ -18,6 +19,10 @@ const WATCH_VERB: Record<string, string> = {
 
 const MAX_SEEDS = 20;
 const MAX_SUGGESTIONS = 15;
+// Trending counts for less than the weakest taste seed (a "want" = 0.6), so your
+// own list always leads — but trending still boosts ties and fills the rail when
+// your library is thin or empty.
+const TRENDING_WEIGHT = 0.4;
 
 function WatchTogetherCard() {
   const router = useRouter();
@@ -32,46 +37,61 @@ function WatchTogetherCard() {
 function ForYouRail({ mediaType, heading }: { mediaType: MediaType; heading: string }) {
   const router = useRouter();
   const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
+  // Shared across both rails (same key) — trending fuels the boost + fallback.
+  const trending = useQuery({ queryKey: ["trending"], queryFn: getTrending, staleTime: 10 * 60 * 1000 });
 
   const entries = library.data ?? [];
-  const seeds = selectSeeds(entries, mediaType, MAX_SEEDS);
+  const seeds = selectWeightedSeeds(entries, mediaType, MAX_SEEDS);
   const excludeKeys = new Set(entries.map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id })));
-  const seedKey = seeds.map((s) => `${s.media_type}:${s.tmdb_id}`).join(",");
+  const seedKey = seeds.map((s) => `${s.entry.media_type}:${s.entry.tmdb_id}:${s.weight.toFixed(2)}`).join(",");
+  const trendingForType = (trending.data ?? []).filter((t) => t.mediaType === mediaType);
 
   const recs = useQuery({
-    queryKey: ["for-you", mediaType, seedKey],
-    enabled: seeds.length > 0,
+    queryKey: ["for-you", mediaType, seedKey, trendingForType.length],
+    enabled: !trending.isLoading, // wait until the trending blend is available
     queryFn: async () => {
-      const lists = await Promise.all(seeds.map((s) => getRecommendations(s.media_type, s.tmdb_id)));
-      return rankRecommendations(lists, excludeKeys).slice(0, MAX_SUGGESTIONS);
+      const seedLists = await Promise.all(
+        seeds.map(async (s) => ({
+          weight: s.weight,
+          titles: await getRecommendations(s.entry.media_type, s.entry.tmdb_id).catch(() => [] as Title[]),
+        }))
+      );
+      return rankForYou(seedLists, trendingForType, TRENDING_WEIGHT, excludeKeys).slice(0, MAX_SUGGESTIONS);
     },
   });
 
-  if (seeds.length === 0) return null;
+  // Re-filter on every render so a title you just added drops out instantly —
+  // before the query has a chance to refetch.
+  const titles = (recs.data ?? []).filter((t) => !excludeKeys.has(titleKey(t)));
 
-  const titles = recs.data ?? [];
+  if (recs.isLoading || trending.isLoading) {
+    return (
+      <View style={styles.rail}>
+        <Text style={styles.sectionHeading}>{heading}</Text>
+        <ActivityIndicator style={{ marginVertical: 16 }} />
+      </View>
+    );
+  }
+  if (titles.length === 0) return null;
 
   return (
     <View style={styles.rail}>
       <Text style={styles.sectionHeading}>{heading}</Text>
-      {recs.isLoading ? (
-        <ActivityIndicator style={{ marginVertical: 16 }} />
-      ) : titles.length === 0 ? null : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.railRow}>
-          {titles.map((t: Title) => (
-            <Pressable
-              key={`${t.mediaType}:${t.tmdbId}`}
-              style={styles.suggestion}
-              onPress={() => router.push(`/title/${t.mediaType}/${t.tmdbId}`)}
-            >
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.railRow}>
+        {titles.map((t: Title) => (
+          <View key={`${t.mediaType}:${t.tmdbId}`} style={styles.suggestion}>
+            <Pressable onPress={() => router.push(`/title/${t.mediaType}/${t.tmdbId}`)}>
               <PosterImage path={t.posterPath} width={104} height={156} radius={10} />
               <Text style={styles.suggestionTitle} numberOfLines={2}>
                 {t.title}
               </Text>
             </Pressable>
-          ))}
-        </ScrollView>
-      )}
+            <View style={styles.suggestionAdd}>
+              <QuickAddButton title={t} />
+            </View>
+          </View>
+        ))}
+      </ScrollView>
     </View>
   );
 }
@@ -87,6 +107,7 @@ export default function HomeScreen() {
       qc.invalidateQueries({ queryKey: ["feed"] }),
       qc.invalidateQueries({ queryKey: ["library"] }),
       qc.invalidateQueries({ queryKey: ["for-you"] }),
+      qc.invalidateQueries({ queryKey: ["trending"] }),
       qc.invalidateQueries({ queryKey: ["incoming-requests"] }),
       qc.invalidateQueries({ queryKey: ["received-recs"] }),
     ]);
@@ -167,6 +188,7 @@ const styles = StyleSheet.create({
   railRow: { gap: 12, paddingBottom: 4, paddingRight: 8 },
   suggestion: { width: 104 },
   suggestionTitle: { fontSize: 11, fontWeight: "600", marginTop: 6 },
+  suggestionAdd: { marginTop: 6, alignItems: "flex-start" },
   card: { borderWidth: 1, borderColor: "#eee", borderRadius: 12, padding: 10, marginBottom: 10 },
   head: { fontSize: 12, marginBottom: 8 },
   name: { fontWeight: "700" },
