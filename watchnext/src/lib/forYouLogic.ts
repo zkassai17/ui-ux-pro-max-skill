@@ -1,4 +1,4 @@
-import type { MediaType, Title } from "../types/tmdb";
+import type { MediaType } from "../types/tmdb";
 import type { WatchlistEntry } from "../types/db";
 
 export function titleKey(t: { mediaType: string; tmdbId: number }): string {
@@ -36,58 +36,3 @@ export function selectWeightedSeeds(
     .slice(0, max);
 }
 
-export interface WeightedList {
-  weight: number;
-  titles: Title[];
-}
-
-// Build the ranked "for you" feed. Each seed's TMDB "more like this" list votes
-// for its candidates, weighted by how much we trust that seed. Trending titles
-// get a small additive boost AND seed the pool themselves — so the rail is
-// never empty (a brand-new user still sees trending) and a trending pick edges
-// out an equally-recommended non-trending one. Library titles (excludeKeys) are
-// removed. Ties break by TMDB rating then title.
-export function rankForYou(
-  seedLists: WeightedList[],
-  trending: Title[],
-  trendingWeight: number,
-  excludeKeys: Set<string>,
-): Title[] {
-  const byKey = new Map<string, { title: Title; score: number }>();
-
-  const bump = (cand: Title, amount: number) => {
-    const key = titleKey(cand);
-    if (excludeKeys.has(key)) return;
-    const existing = byKey.get(key);
-    if (existing) existing.score += amount;
-    else byKey.set(key, { title: cand, score: amount });
-  };
-
-  for (const { weight, titles } of seedLists) {
-    const seenThisSeed = new Set<string>();
-    for (const cand of titles) {
-      const key = titleKey(cand);
-      if (seenThisSeed.has(key)) continue; // one vote per seed
-      seenThisSeed.add(key);
-      bump(cand, weight);
-    }
-  }
-
-  const seenTrending = new Set<string>();
-  for (const cand of trending) {
-    const key = titleKey(cand);
-    if (seenTrending.has(key)) continue;
-    seenTrending.add(key);
-    bump(cand, trendingWeight);
-  }
-
-  return [...byKey.values()]
-    .sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
-      const ra = a.title.rating ?? -1;
-      const rb = b.title.rating ?? -1;
-      if (rb !== ra) return rb - ra;
-      return a.title.title.localeCompare(b.title.title);
-    })
-    .map((e) => e.title);
-}

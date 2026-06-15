@@ -88,6 +88,24 @@ export async function discoverTitles(opts: {
   };
 }
 
+// Like discoverTitles but keeps each result's genre ids — our own recommendation
+// engine needs them to content-score candidates.
+export async function discoverSuggestions(opts: {
+  mediaType: MediaType;
+  genreId?: number | null;
+  page?: number;
+}): Promise<Suggestion[]> {
+  const params = new URLSearchParams({
+    include_adult: "false",
+    sort_by: "popularity.desc",
+    watch_region: WATCH_REGION,
+    page: String(opts.page ?? 1),
+  });
+  if (opts.genreId) params.set("with_genres", String(opts.genreId));
+  const raw = await tmdbGet(`/discover/${opts.mediaType}?${params.toString()}`);
+  return normalizeSuggestions(raw, opts.mediaType);
+}
+
 export async function getWatchProviders(mediaType: MediaType, id: number): Promise<WatchProviders> {
   const raw = await tmdbGet(`/${mediaType}/${id}/watch/providers`);
   return normalizeWatchProviders(raw, WATCH_REGION);

@@ -4,8 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { getFeed } from "../../src/services/feed";
 import { getLibrary } from "../../src/services/watchlist";
-import { getRecommendations, getTrending } from "../../src/services/tmdb";
-import { rankForYou, selectWeightedSeeds, titleKey } from "../../src/lib/forYouLogic";
+import { getForYou } from "../../src/services/forYou";
+import { titleKey } from "../../src/lib/forYouLogic";
 import { PosterImage } from "../../src/components/PosterImage";
 import { QuickAddButton } from "../../src/components/QuickAddButton";
 import { CDrawLoader } from "../../src/components/CDrawLoader";
@@ -16,13 +16,6 @@ const WATCH_VERB: Record<string, string> = {
   watching: "is watching",
   want: "wants to watch",
 };
-
-const MAX_SEEDS = 20;
-const MAX_SUGGESTIONS = 15;
-// Trending counts for less than the weakest taste seed (a "want" = 0.6), so your
-// own list always leads — but trending still boosts ties and fills the rail when
-// your library is thin or empty.
-const TRENDING_WEIGHT = 0.4;
 
 function WatchTogetherCard() {
   const router = useRouter();
@@ -37,34 +30,26 @@ function WatchTogetherCard() {
 function ForYouRail({ mediaType, heading }: { mediaType: MediaType; heading: string }) {
   const router = useRouter();
   const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
-  // Shared across both rails (same key) — trending fuels the boost + fallback.
-  const trending = useQuery({ queryKey: ["trending"], queryFn: getTrending, staleTime: 10 * 60 * 1000 });
 
   const entries = library.data ?? [];
-  const seeds = selectWeightedSeeds(entries, mediaType, MAX_SEEDS);
   const excludeKeys = new Set(entries.map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id })));
-  const seedKey = seeds.map((s) => `${s.entry.media_type}:${s.entry.tmdb_id}:${s.weight.toFixed(2)}`).join(",");
-  const trendingForType = (trending.data ?? []).filter((t) => t.mediaType === mediaType);
+  // Re-derive whenever the library changes (status/rating included) so recs stay fresh.
+  const libHash = entries
+    .map((e) => `${e.media_type}:${e.tmdb_id}:${e.status}:${e.rating ?? ""}`)
+    .join("|");
 
   const recs = useQuery({
-    queryKey: ["for-you", mediaType, seedKey, trendingForType.length],
-    enabled: !trending.isLoading, // wait until the trending blend is available
-    queryFn: async () => {
-      const seedLists = await Promise.all(
-        seeds.map(async (s) => ({
-          weight: s.weight,
-          titles: await getRecommendations(s.entry.media_type, s.entry.tmdb_id).catch(() => [] as Title[]),
-        }))
-      );
-      return rankForYou(seedLists, trendingForType, TRENDING_WEIGHT, excludeKeys).slice(0, MAX_SUGGESTIONS);
-    },
+    queryKey: ["for-you", mediaType, libHash],
+    enabled: !library.isLoading,
+    staleTime: 5 * 60 * 1000,
+    queryFn: () => getForYou(mediaType, entries),
   });
 
   // Re-filter on every render so a title you just added drops out instantly —
   // before the query has a chance to refetch.
   const titles = (recs.data ?? []).filter((t) => !excludeKeys.has(titleKey(t)));
 
-  if (recs.isLoading || trending.isLoading) {
+  if (recs.isLoading || library.isLoading) {
     return (
       <View style={styles.rail}>
         <Text style={styles.sectionHeading}>{heading}</Text>

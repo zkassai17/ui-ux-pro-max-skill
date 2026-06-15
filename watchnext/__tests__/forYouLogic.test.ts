@@ -1,15 +1,5 @@
-import {
-  rankForYou,
-  selectWeightedSeeds,
-  seedWeight,
-  titleKey,
-} from "../src/lib/forYouLogic";
-import type { Title } from "../src/types/tmdb";
+import { selectWeightedSeeds, seedWeight } from "../src/lib/forYouLogic";
 import type { WatchlistEntry } from "../src/types/db";
-
-function t(over: Partial<Title>): Title {
-  return { tmdbId: 1, mediaType: "movie", title: "X", year: null, posterPath: null, rating: null, ...over };
-}
 
 function e(over: Partial<WatchlistEntry>): WatchlistEntry {
   return {
@@ -70,81 +60,5 @@ describe("selectWeightedSeeds", () => {
   it("caps the count", () => {
     const entries = Array.from({ length: 40 }, (_, i) => e({ tmdb_id: i + 1 }));
     expect(selectWeightedSeeds(entries, "movie", 20)).toHaveLength(20);
-  });
-});
-
-describe("rankForYou", () => {
-  it("weights a strong seed's picks above a weak seed's picks", () => {
-    const fromWatched = t({ tmdbId: 1, title: "A" });
-    const fromWant = t({ tmdbId: 2, title: "B" });
-    const ranked = rankForYou(
-      [
-        { weight: 1.7, titles: [fromWatched] }, // watched+loved seed
-        { weight: 0.6, titles: [fromWant] }, // want seed
-      ],
-      [],
-      0.4,
-      new Set(),
-    );
-    expect(ranked.map((x) => x.tmdbId)).toEqual([1, 2]);
-  });
-
-  it("gives trending a small boost over an equally-recommended non-trending title", () => {
-    const trendy = t({ tmdbId: 1, title: "A" });
-    const plain = t({ tmdbId: 2, title: "B" });
-    // both recommended once at weight 1.0; #1 is also trending -> edges ahead
-    const ranked = rankForYou(
-      [{ weight: 1.0, titles: [trendy, plain] }],
-      [trendy],
-      0.4,
-      new Set(),
-    );
-    expect(ranked.map((x) => x.tmdbId)).toEqual([1, 2]);
-  });
-
-  it("falls back to trending when there are no seeds (never empty)", () => {
-    const a = t({ tmdbId: 1, title: "A" });
-    const b = t({ tmdbId: 2, title: "B" });
-    const ranked = rankForYou([], [a, b], 0.4, new Set());
-    expect(ranked).toHaveLength(2);
-  });
-
-  it("excludes titles already in the library, even if trending", () => {
-    const a = t({ tmdbId: 1, title: "A" });
-    const b = t({ tmdbId: 2, title: "B" });
-    const ranked = rankForYou([{ weight: 1, titles: [a, b] }], [a], 0.4, new Set([titleKey(a)]));
-    expect(ranked.map((x) => x.tmdbId)).toEqual([2]);
-  });
-
-  it("counts one vote per seed (dedupes within a seed list)", () => {
-    const a = t({ tmdbId: 1, title: "A" });
-    const b = t({ tmdbId: 2, title: "B" });
-    const ranked = rankForYou([{ weight: 1, titles: [a, a, b] }], [], 0.4, new Set());
-    // A and B both scored 1; tie broken alphabetically
-    expect(ranked.map((x) => x.tmdbId)).toEqual([1, 2]);
-  });
-
-  it("accumulates weight across seeds that surface the same title", () => {
-    const shared = t({ tmdbId: 1, title: "Shared" });
-    const solo = t({ tmdbId: 2, title: "Solo" });
-    const ranked = rankForYou(
-      [
-        { weight: 0.6, titles: [shared] },
-        { weight: 0.6, titles: [shared] },
-        { weight: 1.0, titles: [solo] },
-      ],
-      [],
-      0.4,
-      new Set(),
-    );
-    // shared = 1.2 > solo = 1.0
-    expect(ranked.map((x) => x.tmdbId)).toEqual([1, 2]);
-  });
-
-  it("a single Want-recommended title still outranks a purely trending one", () => {
-    const wanted = t({ tmdbId: 1, title: "A" });
-    const trendOnly = t({ tmdbId: 2, title: "B" });
-    const ranked = rankForYou([{ weight: 0.6, titles: [wanted] }], [trendOnly], 0.4, new Set());
-    expect(ranked.map((x) => x.tmdbId)).toEqual([1, 2]);
   });
 });
