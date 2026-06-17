@@ -1,0 +1,162 @@
+import { useState } from "react";
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator } from "react-native";
+import { Stack } from "expo-router";
+import Constants from "expo-constants";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useAuth } from "../src/auth/AuthProvider";
+import { supabase } from "../src/services/supabase";
+import { isValidUsername, normalizeUsername } from "../src/lib/username";
+import { getDefaultLibraryTab, setDefaultLibraryTab } from "../src/services/prefs";
+import type { WatchStatus } from "../src/types/db";
+
+const TABS: { key: WatchStatus; label: string }[] = [
+  { key: "want", label: "Want" },
+  { key: "watching", label: "Watching" },
+  { key: "watched", label: "Watched" },
+];
+
+export default function SettingsScreen() {
+  const { profile, session, refreshProfile, signOut } = useAuth();
+  const qc = useQueryClient();
+
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(profile?.username ?? "");
+
+  const defaultTab = useQuery({ queryKey: ["pref-default-tab"], queryFn: getDefaultLibraryTab });
+
+  const saveUsername = useMutation({
+    mutationFn: async () => {
+      const username = normalizeUsername(value);
+      if (!isValidUsername(username)) {
+        throw new Error("3–20 chars, start with a letter, letters/numbers/underscore only.");
+      }
+      if (username === profile?.username) return; // no change
+      const { error } = await supabase.from("profiles").update({ username }).eq("id", session!.user.id);
+      if (error) throw new Error(error.code === "23505" ? "That username is taken." : error.message);
+    },
+    onSuccess: async () => {
+      await refreshProfile();
+      qc.invalidateQueries({ queryKey: ["friends"] });
+      setEditing(false);
+    },
+    onError: (e) => Alert.alert("Couldn't save username", (e as Error).message),
+  });
+
+  const setTab = useMutation({
+    mutationFn: (tab: WatchStatus) => setDefaultLibraryTab(tab),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["pref-default-tab"] }),
+  });
+
+  function confirmSignOut() {
+    Alert.alert("Sign out?", "You'll need to sign back in to use watchnext.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Sign out", style: "destructive", onPress: () => signOut() },
+    ]);
+  }
+
+  const version = Constants.expoConfig?.version ?? "1.0.0";
+  const current = defaultTab.data ?? "want";
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+      <Stack.Screen options={{ headerShown: true, title: "Settings" }} />
+
+      {/* Account */}
+      <Text style={styles.section}>Account</Text>
+      <View style={styles.card}>
+        <Text style={styles.label}>Username</Text>
+        {editing ? (
+          <View style={styles.editRow}>
+            <Text style={styles.at}>@</Text>
+            <TextInput
+              style={styles.input}
+              value={value}
+              onChangeText={setValue}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoFocus
+              maxLength={20}
+            />
+            <Pressable onPress={() => saveUsername.mutate()} disabled={saveUsername.isPending} hitSlop={6}>
+              {saveUsername.isPending ? (
+                <ActivityIndicator size="small" />
+              ) : (
+                <Text style={styles.save}>Save</Text>
+              )}
+            </Pressable>
+            <Pressable onPress={() => { setValue(profile?.username ?? ""); setEditing(false); }} hitSlop={6}>
+              <Text style={styles.cancel}>Cancel</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.valueRow}>
+            <Text style={styles.value}>@{profile?.username ?? "you"}</Text>
+            <Pressable onPress={() => setEditing(true)} hitSlop={6}>
+              <Text style={styles.edit}>Edit</Text>
+            </Pressable>
+          </View>
+        )}
+        <View style={styles.divider} />
+        <Text style={styles.label}>Email</Text>
+        <Text style={styles.valueMuted}>{session?.user.email ?? "—"}</Text>
+      </View>
+
+      {/* Preferences */}
+      <Text style={styles.section}>Preferences</Text>
+      <View style={styles.card}>
+        <Text style={styles.label}>Library opens on</Text>
+        <View style={styles.segment}>
+          {TABS.map((t) => {
+            const on = current === t.key;
+            return (
+              <Pressable
+                key={t.key}
+                style={[styles.seg, on && styles.segOn]}
+                onPress={() => setTab.mutate(t.key)}
+              >
+                <Text style={[styles.segText, on && styles.segTextOn]}>{t.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* About */}
+      <Text style={styles.section}>About</Text>
+      <View style={styles.card}>
+        <View style={styles.valueRow}>
+          <Text style={styles.label}>Version</Text>
+          <Text style={styles.valueMuted}>{version}</Text>
+        </View>
+      </View>
+
+      <Pressable style={styles.signOut} onPress={confirmSignOut}>
+        <Text style={styles.signOutText}>Sign out</Text>
+      </Pressable>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#fff" },
+  section: { fontSize: 12, fontWeight: "700", color: "#888", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 22, marginBottom: 8 },
+  card: { backgroundColor: "#f6f6f8", borderRadius: 14, padding: 16 },
+  label: { fontSize: 12, color: "#888", fontWeight: "600" },
+  valueRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 },
+  value: { fontSize: 16, fontWeight: "700" },
+  valueMuted: { fontSize: 15, color: "#444", marginTop: 4 },
+  edit: { color: "#5b6cff", fontWeight: "700", fontSize: 14 },
+  editRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6 },
+  at: { fontSize: 16, color: "#aaa", fontWeight: "700" },
+  input: { flex: 1, fontSize: 16, fontWeight: "600", borderBottomWidth: 1.5, borderColor: "#5b6cff", paddingVertical: 2, color: "#111" },
+  save: { color: "#5b6cff", fontWeight: "800", fontSize: 14 },
+  cancel: { color: "#999", fontWeight: "600", fontSize: 14 },
+  divider: { height: 1, backgroundColor: "#e8e8ee", marginVertical: 14 },
+  segment: { flexDirection: "row", backgroundColor: "#e9e9ef", borderRadius: 999, padding: 3, marginTop: 8 },
+  seg: { flex: 1, paddingVertical: 8, borderRadius: 999, alignItems: "center" },
+  segOn: { backgroundColor: "#5b6cff" },
+  segText: { fontSize: 13, fontWeight: "700", color: "#666" },
+  segTextOn: { color: "#fff" },
+  signOut: { marginTop: 28, alignItems: "center", paddingVertical: 12 },
+  signOutText: { color: "#ff3b5b", fontWeight: "700", fontSize: 15 },
+});

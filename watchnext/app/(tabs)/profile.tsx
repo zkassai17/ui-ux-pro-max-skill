@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View, Text, Pressable, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import { useAuth } from "../../src/auth/AuthProvider";
@@ -13,7 +14,7 @@ function initials(username?: string): string {
 }
 
 export default function ProfileScreen() {
-  const { profile, session, signOut } = useAuth();
+  const { profile, session } = useAuth();
   const router = useRouter();
   const qc = useQueryClient();
   const uid = session?.user.id;
@@ -68,6 +69,9 @@ export default function ProfileScreen() {
                 </Pressable>
               ) : null}
             </View>
+            <Pressable onPress={() => router.push("/settings")} hitSlop={10} style={styles.gear}>
+              <Ionicons name="settings-outline" size={24} color="#666" />
+            </Pressable>
           </View>
 
           <View style={styles.statRow}>
@@ -110,11 +114,6 @@ export default function ProfileScreen() {
           </View>
         )
       }
-      ListFooterComponent={
-        <Pressable style={styles.signOut} onPress={signOut}>
-          <Text style={styles.signOutText}>Sign out</Text>
-        </Pressable>
-      }
     />
   );
 }
@@ -144,6 +143,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16 },
   header: { flexDirection: "row", alignItems: "center", gap: 14 },
+  gear: { padding: 2 },
   avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: "#5b6cff", alignItems: "center", justifyContent: "center" },
   avatarText: { color: "#fff", fontSize: 22, fontWeight: "800" },
   headerMeta: { flex: 1, minWidth: 0 },
@@ -178,7 +178,4 @@ const styles = StyleSheet.create({
   empty: { paddingVertical: 20, alignItems: "center" },
   emptyText: { fontSize: 14, fontWeight: "600", color: "#666" },
   emptySub: { fontSize: 12, color: "#aaa", marginTop: 4 },
-
-  signOut: { marginTop: 28, alignItems: "center" },
-  signOutText: { color: "#ff3b5b", fontWeight: "600", fontSize: 13 },
 });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { sortLibrary, applyInlineRating, type LibrarySort } from "../../src/lib/
 import { PosterImage } from "../../src/components/PosterImage";
 import { InlineRating } from "../../src/components/InlineRating";
 import { ratingEmoji } from "../../src/lib/ratingScale";
+import { getDefaultLibraryTab } from "../../src/services/prefs";
 import type { WatchStatus, WatchlistEntry } from "../../src/types/db";
 import type { MediaType } from "../../src/types/tmdb";
 
@@ -48,6 +49,10 @@ const STATUS_LABEL: Record<WatchStatus, string> = {
 
 export default function LibraryScreen() {
   const [filter, setFilter] = useState<WatchStatus>("want");
+  // Honor the user's "Library opens on" preference on first mount.
+  useEffect(() => {
+    getDefaultLibraryTab().then(setFilter);
+  }, []);
   const [media, setMedia] = useState<"all" | MediaType>("all");
   const [sort, setSort] = useState<LibrarySort>("recent");
   const [openRatingId, setOpenRatingId] = useState<string | null>(null);
