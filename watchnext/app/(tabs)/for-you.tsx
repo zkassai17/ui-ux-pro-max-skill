@@ -66,14 +66,16 @@ function ForYouRail({ mediaType, heading }: { mediaType: MediaType; heading: str
         {titles.map((t: Title) => (
           <View key={`${t.mediaType}:${t.tmdbId}`} style={styles.suggestion}>
             <Pressable onPress={() => router.push(`/title/${t.mediaType}/${t.tmdbId}`)}>
-              <PosterImage path={t.posterPath} width={104} height={156} radius={10} />
+              <View>
+                <PosterImage path={t.posterPath} width={104} height={156} radius={10} />
+                <View style={styles.posterAdd}>
+                  <QuickAddButton title={t} compact />
+                </View>
+              </View>
               <Text style={styles.suggestionTitle} numberOfLines={2}>
                 {t.title}
               </Text>
             </Pressable>
-            <View style={styles.suggestionAdd}>
-              <QuickAddButton title={t} />
-            </View>
           </View>
         ))}
       </ScrollView>
@@ -173,7 +175,7 @@ const styles = StyleSheet.create({
   railRow: { gap: 12, paddingBottom: 4, paddingRight: 8 },
   suggestion: { width: 104 },
   suggestionTitle: { fontSize: 11, fontWeight: "600", marginTop: 6 },
-  suggestionAdd: { marginTop: 6, alignItems: "flex-start" },
+  posterAdd: { position: "absolute", top: 6, right: 6 },
   card: { borderWidth: 1, borderColor: "#eee", borderRadius: 12, padding: 10, marginBottom: 10 },
   head: { fontSize: 12, marginBottom: 8 },
   name: { fontWeight: "700" },

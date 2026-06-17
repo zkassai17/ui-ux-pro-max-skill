@@ -1,4 +1,4 @@
-import { Pressable, Text, View, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import { Pressable, Text, View, StyleSheet, Alert } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getLibraryEntry, addToLibrary, updateStatus, removeFromLibrary } from "../services/watchlist";
 import type { Title } from "../types/tmdb";
@@ -55,25 +55,23 @@ export function StatusButtons({
   const current = entry.data?.status ?? null;
   const busy = entry.isLoading || choose.isPending;
 
+  // One compact segmented control instead of three big pills — the active
+  // segment fills in, the rest stay quiet, so the row reads cleanly.
   return (
-    <View style={styles.row}>
+    <View style={[styles.group, busy && styles.groupBusy]}>
       {OPTIONS.map((o) => {
         const active = current === o.key;
         return (
           <Pressable
             key={o.key}
-            style={[styles.btn, active && styles.btnActive]}
+            style={[styles.seg, active && styles.segActive]}
             onPress={() => choose.mutate(o.key)}
             disabled={busy}
             hitSlop={4}
           >
-            {busy && active ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={[styles.label, active && styles.labelActive]} numberOfLines={1}>
-                {active ? `✓ ${o.label}` : o.label}
-              </Text>
-            )}
+            <Text style={[styles.segText, active && styles.segTextActive]} numberOfLines={1}>
+              {o.label}
+            </Text>
           </Pressable>
         );
       })}
@@ -82,16 +80,16 @@ export function StatusButtons({
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", gap: 6 },
-  btn: {
-    flex: 1,
-    paddingVertical: 8,
+  group: {
+    flexDirection: "row",
+    alignSelf: "flex-start",
+    backgroundColor: "#f0f0f3",
     borderRadius: 999,
-    backgroundColor: "#eef0ff",
-    alignItems: "center",
-    justifyContent: "center",
+    padding: 3,
   },
-  btnActive: { backgroundColor: "#5b6cff" },
-  label: { fontSize: 12, fontWeight: "700", color: "#5b6cff" },
-  labelActive: { color: "#fff" },
+  groupBusy: { opacity: 0.5 },
+  seg: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999 },
+  segActive: { backgroundColor: "#5b6cff" },
+  segText: { fontSize: 12, fontWeight: "700", color: "#777" },
+  segTextActive: { color: "#fff" },
 });

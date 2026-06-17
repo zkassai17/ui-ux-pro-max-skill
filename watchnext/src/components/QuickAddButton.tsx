@@ -14,10 +14,13 @@ export function QuickAddButton({
   title,
   onAdded,
   onRemoved,
+  compact,
 }: {
   title: Title;
   onAdded?: () => void;
   onRemoved?: () => void;
+  // compact = a small circular +/✓ meant to sit on top of a poster
+  compact?: boolean;
 }) {
   const qc = useQueryClient();
   const entryKey = ["library-entry", title.mediaType, title.tmdbId];
@@ -68,6 +71,26 @@ export function QuickAddButton({
   const status = entry.data?.status ?? null;
   const added = status !== null;
 
+  if (compact) {
+    // Small circular button designed to overlay a poster corner. Tap to add as
+    // Watched (or remove); long-press for the Want/Watching/Watched chooser.
+    return (
+      <Pressable
+        style={[styles.fab, added && styles.fabAdded]}
+        onPress={() => (added ? remove.mutate() : set.mutate("watched"))}
+        onLongPress={pickStatus}
+        disabled={busy}
+        hitSlop={8}
+      >
+        {busy ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={styles.fabText}>{added ? "✓" : "+"}</Text>
+        )}
+      </Pressable>
+    );
+  }
+
   return (
     <Pressable
       style={[styles.btn, added && styles.btnAdded]}
@@ -100,4 +123,16 @@ const styles = StyleSheet.create({
   btnAdded: { backgroundColor: "#5b6cff" },
   label: { fontSize: 12, fontWeight: "700", color: "#5b6cff" },
   labelAdded: { color: "#fff" },
+  fab: {
+    width: 30,
+    height: 30,
+    borderRadius: 999,
+    backgroundColor: "rgba(91,108,255,0.95)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.9)",
+  },
+  fabAdded: { backgroundColor: "rgba(29,209,161,0.95)" },
+  fabText: { color: "#fff", fontSize: 16, fontWeight: "800", lineHeight: 18 },
 });
