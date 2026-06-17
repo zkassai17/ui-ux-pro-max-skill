@@ -25,7 +25,7 @@ test("searchTitles calls /search/multi with bearer auth and normalizes", async (
   expect(url).toContain("query=dune");
   expect(opts.headers.Authorization).toBe("Bearer test-token");
   expect(out).toEqual([
-    { tmdbId: 1, mediaType: "movie", title: "Dune", year: "2021", posterPath: null, rating: 8 },
+    { tmdbId: 1, mediaType: "movie", title: "Dune", year: "2021", posterPath: null, rating: 8, originalLanguage: null },
   ]);
 });
 

@@ -31,6 +31,7 @@ export function normalizeSearchItem(raw: any): Title | null {
     year: yearFrom(date),
     posterPath: raw.poster_path ?? null,
     rating: roundRating(raw.vote_average),
+    originalLanguage: raw.original_language ?? null,
   };
 }
 
@@ -147,6 +148,7 @@ export function normalizeDetail(raw: any, mediaType: MediaType): TitleDetail {
     year: yearFrom(date),
     posterPath: raw.poster_path ?? null,
     rating: roundRating(raw.vote_average),
+    originalLanguage: raw.original_language ?? null,
     overview: raw.overview ?? "",
     genres: Array.isArray(raw.genres) ? raw.genres.map((g: any) => g.name) : [],
   };

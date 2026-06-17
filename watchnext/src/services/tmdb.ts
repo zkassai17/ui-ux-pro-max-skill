@@ -94,6 +94,8 @@ export async function discoverTitles(opts: {
 export async function discoverSuggestions(opts: {
   mediaType: MediaType;
   genreId?: number | null;
+  originalLanguage?: string | null; // restrict to one language at the source for a richer pool
+  minVotes?: number; // drop obscure titles below this vote count
   page?: number;
 }): Promise<Suggestion[]> {
   const params = new URLSearchParams({
@@ -103,6 +105,8 @@ export async function discoverSuggestions(opts: {
     page: String(opts.page ?? 1),
   });
   if (opts.genreId) params.set("with_genres", String(opts.genreId));
+  if (opts.originalLanguage) params.set("with_original_language", opts.originalLanguage);
+  if (opts.minVotes) params.set("vote_count.gte", String(opts.minVotes));
   const raw = await tmdbGet(`/discover/${opts.mediaType}?${params.toString()}`);
   return normalizeSuggestions(raw, opts.mediaType);
 }

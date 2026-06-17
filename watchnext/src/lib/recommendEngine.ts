@@ -70,6 +70,35 @@ export function collaborativeWeight(neighborCount: number, max: number): number 
   return max * (neighborCount / (neighborCount + 3));
 }
 
+// The languages a user actually watches, learned from the original languages of
+// titles in their library. Drives the "match my languages" candidate filter.
+export function learnLanguages(langs: (string | null | undefined)[]): Set<string> {
+  const s = new Set<string>();
+  for (const l of langs) if (l) s.add(l);
+  return s;
+}
+
+// The single most common language (for a server-side discover filter). null if unknown.
+export function dominantLanguage(langs: (string | null | undefined)[]): string | null {
+  const counts = new Map<string, number>();
+  for (const l of langs) if (l) counts.set(l, (counts.get(l) ?? 0) + 1);
+  let best: string | null = null;
+  let bestN = 0;
+  for (const [l, n] of counts) if (n > bestN) ((best = l), (bestN = n));
+  return best;
+}
+
+// Keep only candidates in a language the user watches. If we couldn't learn any
+// languages (empty library / cold start) we don't filter. Candidates with
+// unknown language are kept (better to allow than wrongly drop).
+export function filterByLanguage<T extends { originalLanguage?: string | null }>(
+  items: T[],
+  allowed: Set<string>,
+): T[] {
+  if (allowed.size === 0) return items;
+  return items.filter((i) => !i.originalLanguage || allowed.has(i.originalLanguage));
+}
+
 export interface HybridWeights {
   content: number;
   collaborative: number;

@@ -7,6 +7,7 @@ export type Title = {
   year: string | null;
   posterPath: string | null;
   rating: number | null;
+  originalLanguage?: string | null; // ISO code, e.g. "en", "hi" — used to match a user's languages
 };
 
 export type Suggestion = Title & { genreIds: number[] };

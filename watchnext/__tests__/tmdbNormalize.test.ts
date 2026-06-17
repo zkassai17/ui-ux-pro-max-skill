@@ -23,6 +23,7 @@ test("normalizeSearchItem maps a movie and rounds rating", () => {
     release_date: "2024-03-01",
     poster_path: "/d.jpg",
     vote_average: 8.234,
+    original_language: "en",
   });
   expect(t).toEqual({
     tmdbId: 1,
@@ -31,6 +32,7 @@ test("normalizeSearchItem maps a movie and rounds rating", () => {
     year: "2024",
     posterPath: "/d.jpg",
     rating: 8.2,
+    originalLanguage: "en",
   });
 });
 
@@ -50,6 +52,7 @@ test("normalizeSearchItem maps a tv show using name/first_air_date", () => {
     year: "2022",
     posterPath: null,
     rating: null,
+    originalLanguage: null,
   });
 });
 
@@ -88,6 +91,7 @@ test("normalizeDetail includes overview and genre names", () => {
     year: "2023",
     posterPath: "/o.jpg",
     rating: 8.1,
+    originalLanguage: null,
     overview: "A physicist...",
     genres: ["Drama", "History"],
   });
@@ -104,7 +108,7 @@ test("normalizeDiscoverResults injects mediaType (discover omits media_type)", (
     "tv"
   );
   expect(out).toEqual([
-    { tmdbId: 1, mediaType: "tv", title: "Severance", year: "2022", posterPath: "/s.jpg", rating: 8.4 },
+    { tmdbId: 1, mediaType: "tv", title: "Severance", year: "2022", posterPath: "/s.jpg", rating: 8.4, originalLanguage: null },
   ]);
 });
 
@@ -157,7 +161,7 @@ test("normalizeSuggestions keeps genre ids and injects mediaType", () => {
     "tv"
   );
   expect(out).toEqual([
-    { tmdbId: 1, mediaType: "tv", title: "Severance", year: "2022", posterPath: "/s.jpg", rating: 8.4, genreIds: [18, 9648] },
+    { tmdbId: 1, mediaType: "tv", title: "Severance", year: "2022", posterPath: "/s.jpg", rating: 8.4, originalLanguage: null, genreIds: [18, 9648] },
   ]);
 });
 

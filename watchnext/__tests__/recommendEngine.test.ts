@@ -4,6 +4,9 @@ import {
   collaborativeScore,
   collaborativeWeight,
   rankHybrid,
+  learnLanguages,
+  dominantLanguage,
+  filterByLanguage,
   type GenreTitle,
   type Neighbor,
 } from "../src/lib/recommendEngine";
@@ -106,6 +109,37 @@ describe("collaborativeWeight (cold-start ramp)", () => {
     expect(few).toBeGreaterThan(0);
     expect(more).toBeGreaterThan(few);
     expect(more).toBeLessThan(1);
+  });
+});
+
+describe("language matching", () => {
+  it("learnLanguages collects the distinct languages, ignoring blanks", () => {
+    expect(learnLanguages(["en", "en", "ko", null, undefined])).toEqual(new Set(["en", "ko"]));
+  });
+
+  it("dominantLanguage picks the most frequent", () => {
+    expect(dominantLanguage(["en", "en", "ko"])).toBe("en");
+    expect(dominantLanguage([])).toBeNull();
+  });
+
+  it("filterByLanguage drops candidates outside my languages", () => {
+    const items = [
+      gt({ tmdbId: 1, originalLanguage: "en" }),
+      gt({ tmdbId: 2, originalLanguage: "hi" }), // an Indian show
+      gt({ tmdbId: 3, originalLanguage: "ko" }),
+    ];
+    const out = filterByLanguage(items, new Set(["en", "ko"]));
+    expect(out.map((x) => x.tmdbId)).toEqual([1, 3]);
+  });
+
+  it("filterByLanguage keeps everything when no languages are known (cold start)", () => {
+    const items = [gt({ tmdbId: 1, originalLanguage: "hi" })];
+    expect(filterByLanguage(items, new Set())).toHaveLength(1);
+  });
+
+  it("filterByLanguage keeps candidates with unknown language", () => {
+    const items = [gt({ tmdbId: 1, originalLanguage: null })];
+    expect(filterByLanguage(items, new Set(["en"]))).toHaveLength(1);
   });
 });
 

@@ -9,6 +9,9 @@ import {
   buildGenreProfile,
   rankHybrid,
   collaborativeWeight,
+  learnLanguages,
+  dominantLanguage,
+  filterByLanguage,
   type GenreTitle,
   type Neighbor,
 } from "../lib/recommendEngine";
@@ -16,29 +19,29 @@ import {
 const PROFILE_SEEDS = 12; // how many top-weighted library titles shape the genre profile
 const TOP_GENRES = 3; // discover candidates from this many of your strongest genres
 const MAX = 15;
-const TRENDING_WEIGHT = 0.4;
+const TRENDING_WEIGHT = 0.2; // trending influence (lowered so your own taste leads)
 const COLLAB_WEIGHT_MAX = 1.2;
+const MIN_VOTES = 150; // popularity floor — drop obscure random titles
 
-// Session memo: a title's genres never change, so we never re-fetch them. Keeps
-// rebuilding the profile cheap when the library changes.
-const genreMemo = new Map<string, number[]>();
+type SeedMeta = { genreIds: number[]; language: string | null };
 
-async function genreIdsFor(
-  entry: WatchlistEntry,
-  nameToId: Map<string, number>,
-): Promise<number[]> {
+// Session memo: a title's genres + language never change, so we fetch once.
+const metaMemo = new Map<string, SeedMeta>();
+
+async function seedMeta(entry: WatchlistEntry, nameToId: Map<string, number>): Promise<SeedMeta> {
   const key = titleKey({ mediaType: entry.media_type, tmdbId: entry.tmdb_id });
-  const cached = genreMemo.get(key);
+  const cached = metaMemo.get(key);
   if (cached) return cached;
   try {
     const detail = await getTitleDetails(entry.media_type, entry.tmdb_id);
-    const ids = detail.genres
+    const genreIds = detail.genres
       .map((name) => nameToId.get(name))
       .filter((id): id is number => typeof id === "number");
-    genreMemo.set(key, ids);
-    return ids;
+    const meta: SeedMeta = { genreIds, language: detail.originalLanguage ?? null };
+    metaMemo.set(key, meta);
+    return meta;
   } catch {
-    return [];
+    return { genreIds: [], language: null };
   }
 }
 
@@ -57,13 +60,19 @@ export async function getForYou(mediaType: MediaType, library: WatchlistEntry[])
   const nameToId = new Map(genreList.map((g) => [g.name, g.id]));
   const seeds = selectWeightedSeeds(mine, mediaType, PROFILE_SEEDS);
   const genresByKey = new Map<string, number[]>();
+  const seedLangs: (string | null)[] = [];
   await Promise.all(
     seeds.map(async (s) => {
-      const ids = await genreIdsFor(s.entry, nameToId);
-      genresByKey.set(titleKey({ mediaType: s.entry.media_type, tmdbId: s.entry.tmdb_id }), ids);
+      const meta = await seedMeta(s.entry, nameToId);
+      genresByKey.set(titleKey({ mediaType: s.entry.media_type, tmdbId: s.entry.tmdb_id }), meta.genreIds);
+      seedLangs.push(meta.language);
     })
   );
   const profile = buildGenreProfile(mine, genresByKey);
+
+  // Languages this user actually watches — used to drop foreign-language randoms.
+  const allowedLangs = learnLanguages(seedLangs);
+  const dominant = dominantLanguage(seedLangs);
 
   // 2) Candidate pool: discover by your strongest genres (+ trending fallback).
   const topGenres = [...profile.entries()]
@@ -76,7 +85,12 @@ export async function getForYou(mediaType: MediaType, library: WatchlistEntry[])
       (topGenres.length ? topGenres : [null]).map((g) =>
         g == null
           ? Promise.resolve([] as GenreTitle[])
-          : discoverSuggestions({ mediaType, genreId: g }).catch(() => [] as GenreTitle[])
+          : discoverSuggestions({
+              mediaType,
+              genreId: g,
+              originalLanguage: dominant, // richer pool in your main language
+              minVotes: MIN_VOTES, // popularity floor
+            }).catch(() => [] as GenreTitle[])
       )
     ),
     getTrending().catch(() => [] as Title[]),
@@ -84,11 +98,15 @@ export async function getForYou(mediaType: MediaType, library: WatchlistEntry[])
   const trendingForType = trendingAll.filter((t) => t.mediaType === mediaType);
   const trendingKeys = new Set(trendingForType.map((t) => titleKey(t)));
 
-  const candidates: GenreTitle[] = [
-    ...discoverLists.flat(),
-    // trending titles carry no genre ids here — they ride the trending nudge only
-    ...trendingForType.map((t) => ({ ...t, genreIds: [] as number[] })),
-  ];
+  // Keep only candidates in a language you watch (no-op until you have a library).
+  const candidates: GenreTitle[] = filterByLanguage(
+    [
+      ...discoverLists.flat(),
+      // trending titles carry no genre ids here — they ride the trending nudge only
+      ...trendingForType.map((t) => ({ ...t, genreIds: [] as number[] })),
+    ],
+    allowedLangs,
+  );
 
   // 3) Collaborative signal from friends, weighted by taste-match.
   const neighbors: Neighbor[] = [];
