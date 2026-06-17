@@ -40,6 +40,23 @@ describe("dedupeProviders", () => {
     expect(out.map((x) => x.name)).toEqual(["fuboTV", "YouTube TV", "Philo", "Spectrum On Demand"]);
   });
 
+  it("collapses Peacock Premium and Premium Plus tiers", () => {
+    const out = dedupeProviders([p("Peacock Premium", 1), p("Peacock Premium Plus", 2)]);
+    expect(out).toHaveLength(1);
+    expect(out[0].name).toBe("Peacock Premium");
+  });
+
+  it("still folds brand-+ platforms together (Paramount+ / Paramount Plus)", () => {
+    const out = dedupeProviders([p("Paramount Plus", 1), p("Paramount+", 2)]);
+    expect(out).toHaveLength(1);
+    expect(out[0].name).toBe("Paramount+");
+  });
+
+  it("does not over-merge distinct platforms", () => {
+    const out = dedupeProviders([p("Peacock Premium", 1), p("Netflix", 2), p("Hulu", 3)]);
+    expect(out.map((x) => x.name)).toEqual(["Peacock Premium", "Netflix", "Hulu"]);
+  });
+
   it("keeps the variant if no clean base exists", () => {
     const out = dedupeProviders([p("MGM+ Amazon Channel", 1)]);
     expect(out).toHaveLength(1);

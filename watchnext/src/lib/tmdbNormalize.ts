@@ -84,6 +84,7 @@ const PROVIDER_VARIANT_SUFFIXES: RegExp[] = [
   /\s+(standard|basic)\s+with ads$/,
   /\s+with ads$/,
   /\s+premium$/,
+  /\s+plus$/, // tier word ("Peacock Premium Plus"); brand "+" platforms use the symbol, handled in the key
 ];
 
 function providerKey(name: string): string {
