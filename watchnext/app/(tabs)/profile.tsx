@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { View, Text, Pressable, FlatList, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
+import { useRef, useState } from "react";
+import { View, Text, TextInput, Pressable, FlatList, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -21,6 +21,11 @@ export default function ProfileScreen() {
   const qc = useQueryClient();
   const uid = session?.user.id;
   const [refreshing, setRefreshing] = useState(false);
+  const [friendQuery, setFriendQuery] = useState("");
+  // Auto-scroll the friends search up to the top when focused so the keyboard
+  // doesn't cover the box or its results.
+  const listRef = useRef<FlatList>(null);
+  const friendsY = useRef(0);
 
   const friends = useQuery({ queryKey: ["friends"], queryFn: getFriends });
   const stats = useQuery({
@@ -68,12 +73,21 @@ export default function ProfileScreen() {
     setRefreshing(false);
   }
 
+  const fq = friendQuery.trim().toLowerCase();
+  const visibleFriends = fq
+    ? allFriends.filter((f) => `${f.username} ${fullName(f)}`.toLowerCase().includes(fq))
+    : allFriends;
+
   return (
     <FlatList
+      ref={listRef}
       style={styles.container}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      data={allFriends}
+      automaticallyAdjustKeyboardInsets
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      data={visibleFriends}
       keyExtractor={(p) => p.id}
       numColumns={2}
       columnWrapperStyle={styles.friendCol}
@@ -118,12 +132,27 @@ export default function ProfileScreen() {
             <Text style={styles.primaryBtnText}>{t("profile.addFriend")}</Text>
           </Pressable>
 
-          <View style={styles.friendHead}>
-            <Text style={[styles.section, { marginBottom: 6 }]}>{t("profile.friends")}</Text>
+          <View onLayout={(e) => (friendsY.current = e.nativeEvent.layout.y)}>
+            <Text style={styles.section}>{t("profile.friends")}</Text>
             {allFriends.length > 0 ? (
-              <Pressable onPress={() => router.push("/friends/list")} hitSlop={8} style={styles.searchLink}>
-                <Text style={styles.searchLinkText}>🔍 {t("common.search")}</Text>
-              </Pressable>
+              <View style={styles.searchWrap}>
+                <Text style={styles.searchIcon}>🔍</Text>
+                <TextInput
+                  style={styles.searchInput}
+                  value={friendQuery}
+                  onChangeText={setFriendQuery}
+                  onFocus={() =>
+                    // friendsY is relative to the header view, which sits below the
+                    // list's 16px top padding; bring the box ~near the top.
+                    listRef.current?.scrollToOffset({ offset: Math.max(0, friendsY.current + 8), animated: true })
+                  }
+                  placeholder={t("wt.searchFriends")}
+                  placeholderTextColor="#aaa"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  clearButtonMode="while-editing"
+                />
+              </View>
             ) : null}
           </View>
           {friends.isLoading ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
@@ -155,7 +184,9 @@ export default function ProfileScreen() {
         );
       }}
       ListEmptyComponent={
-        friends.isLoading ? null : (
+        friends.isLoading ? null : fq ? (
+          <Text style={styles.noMatch}>{t("wt.noFriendsFound")}</Text>
+        ) : (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>{t("profile.noFriends")}</Text>
             <Text style={styles.emptySub}>{t("profile.noFriendsSub")}</Text>
@@ -216,9 +247,10 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
 
   section: { fontSize: 13, fontWeight: "700", marginTop: 26, marginBottom: 6 },
-  friendHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  searchLink: { backgroundColor: "#f0f0f3", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
-  searchLinkText: { fontSize: 13, fontWeight: "700", color: "#5b6cff" },
+  searchWrap: { flexDirection: "row", alignItems: "center", backgroundColor: "#f0f0f3", borderRadius: 12, paddingHorizontal: 12, height: 40, marginTop: 4, marginBottom: 12 },
+  searchIcon: { fontSize: 14, marginRight: 8, opacity: 0.5 },
+  searchInput: { flex: 1, fontSize: 15, color: "#111", padding: 0 },
+  noMatch: { textAlign: "center", color: "#888", fontSize: 13, marginTop: 8 },
 
   friendCol: { justifyContent: "space-between" },
   friendCard: { width: "48.5%", backgroundColor: "#f6f6f8", borderRadius: 16, paddingVertical: 16, paddingHorizontal: 10, alignItems: "center", marginBottom: 10 },
