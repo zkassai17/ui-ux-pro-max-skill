@@ -1,11 +1,18 @@
 export type Profile = {
   id: string;
   username: string;
+  first_name: string | null;
+  last_name: string | null;
   friend_code: string;
   avatar_url: string | null;
   is_private: boolean;
   created_at: string;
 };
+
+// Convenience: full name from a profile, or "" if no name set.
+export function fullName(p: { first_name?: string | null; last_name?: string | null }): string {
+  return [p.first_name, p.last_name].filter(Boolean).join(" ").trim();
+}
 
 export type WatchStatus = "want" | "watching" | "watched";
 

@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../src/auth/AuthProvider";
 import { useI18n } from "../../src/i18n/I18nProvider";
 import { getFriends, getFriendStats, type StatBucket } from "../../src/services/friends";
+import { fullName } from "../../src/types/db";
 import { getLibrary } from "../../src/services/watchlist";
 import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
 import { selectFavorites, topDecade } from "../../src/lib/profileInsights";
@@ -78,7 +79,9 @@ export default function ProfileScreen() {
   });
 
   const fq = friendQuery.trim().toLowerCase();
-  const visibleFriends = fq ? allFriends.filter((f) => f.username.toLowerCase().includes(fq)) : allFriends;
+  const visibleFriends = fq
+    ? allFriends.filter((f) => `${f.username} ${fullName(f)}`.toLowerCase().includes(fq))
+    : allFriends;
 
   async function onRefresh() {
     setRefreshing(true);
@@ -143,7 +146,7 @@ export default function ProfileScreen() {
           </Pressable>
 
           <Text style={styles.section}>{t("profile.friends")}</Text>
-          {allFriends.length >= 5 ? (
+          {allFriends.length > 0 ? (
             <View style={styles.searchWrap}>
               <Text style={styles.searchIcon}>🔍</Text>
               <TextInput
@@ -168,7 +171,14 @@ export default function ProfileScreen() {
             <View style={[styles.friendCardAvatar, { backgroundColor: avatarColor(item.username) }]}>
               <Text style={styles.friendCardAvatarText}>{initials(item.username)}</Text>
             </View>
-            <Text style={styles.friendCardName} numberOfLines={1}>@{item.username}</Text>
+            {fullName(item) ? (
+              <>
+                <Text style={styles.friendCardName} numberOfLines={1}>{fullName(item)}</Text>
+                <Text style={styles.friendCardUser} numberOfLines={1}>@{item.username}</Text>
+              </>
+            ) : (
+              <Text style={styles.friendCardName} numberOfLines={1}>@{item.username}</Text>
+            )}
             {score != null ? (
               <Text style={[styles.friendCardMatch, { color: matchColor(score) }]}>{score}% {t("wt.match")}</Text>
             ) : compat.data ? (
@@ -250,6 +260,7 @@ const styles = StyleSheet.create({
   friendCardAvatar: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },
   friendCardAvatarText: { color: "#fff", fontSize: 18, fontWeight: "800" },
   friendCardName: { fontSize: 14, fontWeight: "700", marginTop: 8, maxWidth: "100%" },
+  friendCardUser: { fontSize: 11, color: "#999", fontWeight: "600", marginTop: 1 },
   friendCardMatch: { fontSize: 11, fontWeight: "800", marginTop: 3 },
   friendCardMatchNone: { fontSize: 11, color: "#bbb", fontWeight: "600", marginTop: 3 },
 

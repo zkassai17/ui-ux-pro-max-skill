@@ -26,7 +26,7 @@ import {
 } from "../src/lib/recPrefs";
 import { useI18n } from "../src/i18n/I18nProvider";
 import { LANGUAGES, translate, type Lang } from "../src/i18n/translations";
-import type { WatchStatus } from "../src/types/db";
+import { fullName, type WatchStatus } from "../src/types/db";
 
 const REC_DIMS: { key: RecDimension; note?: boolean }[] = [
   { key: "content" },
@@ -46,6 +46,24 @@ export default function SettingsScreen() {
   const [value, setValue] = useState(profile?.username ?? "");
   const [copied, setCopied] = useState(false);
   const [showCustom, setShowCustom] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [first, setFirst] = useState(profile?.first_name ?? "");
+  const [last, setLast] = useState(profile?.last_name ?? "");
+
+  const saveName = useMutation({
+    mutationFn: async () => {
+      const first_name = first.trim() || null;
+      const last_name = last.trim() || null;
+      const { error } = await supabase.from("profiles").update({ first_name, last_name }).eq("id", session!.user.id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: async () => {
+      await refreshProfile();
+      qc.invalidateQueries({ queryKey: ["friends"] });
+      setEditingName(false);
+    },
+    onError: (e) => Alert.alert(t("alert.cantSave"), (e as Error).message),
+  });
 
   async function copyCode() {
     if (!profile?.friend_code) return;
@@ -159,6 +177,28 @@ export default function SettingsScreen() {
             </Pressable>
           </View>
         )}
+        <View style={styles.divider} />
+        <Text style={styles.label}>{t("settings.name")}</Text>
+        {editingName ? (
+          <View style={styles.editRow}>
+            <TextInput style={styles.input} value={first} onChangeText={setFirst} placeholder={t("settings.firstName")} autoCapitalize="words" autoFocus />
+            <TextInput style={styles.input} value={last} onChangeText={setLast} placeholder={t("settings.lastName")} autoCapitalize="words" />
+            <Pressable onPress={() => saveName.mutate()} disabled={saveName.isPending} hitSlop={6}>
+              {saveName.isPending ? <ActivityIndicator size="small" /> : <Text style={styles.save}>{t("common.save")}</Text>}
+            </Pressable>
+            <Pressable onPress={() => { setFirst(profile?.first_name ?? ""); setLast(profile?.last_name ?? ""); setEditingName(false); }} hitSlop={6}>
+              <Text style={styles.cancel}>{t("common.cancel")}</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.valueRow}>
+            <Text style={styles.value}>{fullName(profile ?? {}) || "—"}</Text>
+            <Pressable onPress={() => setEditingName(true)} hitSlop={6}>
+              <Text style={styles.edit}>{t("common.edit")}</Text>
+            </Pressable>
+          </View>
+        )}
+
         <View style={styles.divider} />
         <Text style={styles.label}>{t("settings.email")}</Text>
         <Text style={styles.valueMuted}>{session?.user.email ?? "—"}</Text>

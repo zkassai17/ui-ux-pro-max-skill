@@ -14,13 +14,15 @@ async function getMyFriendshipRows(): Promise<Friendship[]> {
 }
 
 export async function searchUsers(q: string): Promise<Profile[]> {
-  const query = q.trim();
+  // Commas/parens would break PostgREST's .or() filter syntax — strip them.
+  const query = q.trim().replace(/[,()]/g, " ").trim();
   if (!query) return [];
   const uid = await currentUserId();
+  const like = `%${query}%`;
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
-    .ilike("username", `%${query}%`)
+    .or(`username.ilike.${like},first_name.ilike.${like},last_name.ilike.${like}`)
     .limit(20);
   if (error) throw error;
   return ((data as Profile[]) ?? []).filter((p) => p.id !== uid);
