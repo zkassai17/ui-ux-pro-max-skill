@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import * as Clipboard from "expo-clipboard";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -115,6 +114,20 @@ export default function SettingsScreen() {
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
       <Stack.Screen options={{ headerShown: true, title: t("settings.title") }} />
 
+      {/* Language — pills up top */}
+      <Text style={styles.section}>{t("settings.language")}</Text>
+      <View style={styles.langPills}>
+        {LANGUAGES.map((l) => {
+          const on = lang === l.code;
+          return (
+            <Pressable key={l.code} style={[styles.langPill, on && styles.langPillOn]} onPress={() => chooseLang(l.code)}>
+              <Text style={styles.langFlag}>{l.flag}</Text>
+              <Text style={[styles.langAbbr, on && styles.langAbbrOn]}>{l.abbr}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       {/* Account */}
       <Text style={styles.section}>{t("settings.account")}</Text>
       <View style={styles.card}>
@@ -157,17 +170,6 @@ export default function SettingsScreen() {
           <Text style={styles.copyHint}>{copied ? t("common.copied") : `${t("common.copy")} ⧉`}</Text>
         </Pressable>
         <Text style={styles.hint}>{t("settings.shareCode")}</Text>
-      </View>
-
-      {/* Language */}
-      <Text style={styles.section}>{t("settings.language")}</Text>
-      <View style={styles.card}>
-        {LANGUAGES.map((l, i) => (
-          <Pressable key={l.code} style={[styles.langRow, i > 0 && styles.langRowBorder]} onPress={() => chooseLang(l.code)}>
-            <Text style={styles.langLabel}>{l.label}</Text>
-            {lang === l.code ? <Ionicons name="checkmark" size={20} color="#5b6cff" /> : null}
-          </Pressable>
-        ))}
       </View>
 
       {/* Data */}
@@ -289,9 +291,20 @@ const styles = StyleSheet.create({
   codeValue: { fontSize: 16, fontWeight: "700", letterSpacing: 1 },
   copyHint: { fontSize: 13, color: "#5b6cff", fontWeight: "700" },
   hint: { fontSize: 11, color: "#aaa", marginTop: 6 },
-  langRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12 },
-  langRowBorder: { borderTopWidth: 1, borderTopColor: "#e8e8ee" },
-  langLabel: { fontSize: 16, fontWeight: "600" },
+  langPills: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  langPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#f0f0f3",
+    borderRadius: 999,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+  },
+  langPillOn: { backgroundColor: "#5b6cff" },
+  langFlag: { fontSize: 16 },
+  langAbbr: { fontSize: 13, fontWeight: "800", color: "#555" },
+  langAbbrOn: { color: "#fff" },
   rowBtn: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#f6f6f8", borderRadius: 14, padding: 16 },
   rowBtnText: { fontSize: 15, fontWeight: "600", color: "#5b6cff" },
   chevron: { fontSize: 20, color: "#bbb" },

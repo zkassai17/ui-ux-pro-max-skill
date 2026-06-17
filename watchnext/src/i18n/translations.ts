@@ -4,12 +4,12 @@
 
 export type Lang = "en" | "es" | "fr" | "he" | "ar";
 
-export const LANGUAGES: { code: Lang; label: string }[] = [
-  { code: "en", label: "English" },
-  { code: "es", label: "Español" },
-  { code: "fr", label: "Français" },
-  { code: "he", label: "עברית" },
-  { code: "ar", label: "العربية" },
+export const LANGUAGES: { code: Lang; label: string; abbr: string; flag: string }[] = [
+  { code: "en", label: "English", abbr: "EN", flag: "🇺🇸" },
+  { code: "es", label: "Español", abbr: "ES", flag: "🇪🇸" },
+  { code: "fr", label: "Français", abbr: "FR", flag: "🇫🇷" },
+  { code: "he", label: "עברית", abbr: "HE", flag: "🇮🇱" },
+  { code: "ar", label: "العربية", abbr: "AR", flag: "🇸🇦" },
 ];
 
 const RTL_LANGS: Lang[] = ["he", "ar"];
