@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { View, Text, Pressable, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
+import { View, Text, Pressable, FlatList, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../src/auth/AuthProvider";
 import { useI18n } from "../../src/i18n/I18nProvider";
 import { getFriends, getFriendStats, type StatBucket } from "../../src/services/friends";
+import { getLibrary } from "../../src/services/watchlist";
+import { selectFavorites, computeProfileInsights } from "../../src/lib/profileInsights";
+import { PosterImage } from "../../src/components/PosterImage";
 
 function initials(username?: string): string {
   if (!username) return "?";
@@ -27,12 +30,18 @@ export default function ProfileScreen() {
     queryFn: () => getFriendStats(uid as string),
     enabled: !!uid,
   });
+  const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
+
+  const lib = library.data ?? [];
+  const favorites = selectFavorites(lib, 12);
+  const insights = computeProfileInsights(lib, new Date().getFullYear());
 
   async function onRefresh() {
     setRefreshing(true);
     await Promise.all([
       qc.invalidateQueries({ queryKey: ["friends"] }),
       qc.invalidateQueries({ queryKey: ["my-stats", uid] }),
+      qc.invalidateQueries({ queryKey: ["library"] }),
       qc.invalidateQueries({ queryKey: ["incoming-requests"] }),
       qc.invalidateQueries({ queryKey: ["received-recs"] }),
     ]);
@@ -70,6 +79,25 @@ export default function ProfileScreen() {
             <BreakdownCard emoji="🎬" label={t("profile.movies")} bucket={stats.data?.movie} />
             <BreakdownCard emoji="📺" label={t("profile.tvShows")} bucket={stats.data?.tv} />
           </View>
+
+          <View style={styles.insightRow}>
+            <InsightTile big={String(insights.thisYear)} label={t("profile.thisYear")} />
+            <InsightTile big={insights.avgRating != null ? `${insights.avgRating}★` : "—"} label={t("profile.avgRating")} />
+            <InsightTile big={insights.topDecade ?? "—"} label={t("profile.topDecade")} />
+          </View>
+
+          {favorites.length > 0 ? (
+            <View style={styles.favSection}>
+              <Text style={styles.section}>{t("profile.favorites")}</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.favRow}>
+                {favorites.map((e) => (
+                  <Pressable key={e.id} onPress={() => router.push(`/title/${e.media_type}/${e.tmdb_id}`)}>
+                    <PosterImage path={e.poster_path} width={80} height={120} radius={10} />
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
 
           <Pressable style={styles.primaryBtn} onPress={() => router.push("/friends/add")}>
             <Text style={styles.primaryBtnText}>{t("profile.addFriend")}</Text>
@@ -109,6 +137,15 @@ function StatTile({ n, label }: { n: number; label: string }) {
   );
 }
 
+function InsightTile({ big, label }: { big: string; label: string }) {
+  return (
+    <View style={styles.insightTile}>
+      <Text style={styles.insightBig} numberOfLines={1} adjustsFontSizeToFit>{big}</Text>
+      <Text style={styles.insightLabel}>{label}</Text>
+    </View>
+  );
+}
+
 function BreakdownCard({ emoji, label, bucket }: { emoji: string; label: string; bucket?: StatBucket }) {
   const { t } = useI18n();
   const b = bucket ?? { want: 0, watching: 0, watched: 0 };
@@ -143,6 +180,13 @@ const styles = StyleSheet.create({
   breakdownBig: { fontSize: 26, fontWeight: "800", marginTop: 8 },
   breakdownSub: { fontSize: 11, color: "#888", marginTop: -2 },
   breakdownMeta: { fontSize: 11, color: "#aaa", marginTop: 6 },
+
+  insightRow: { flexDirection: "row", gap: 10, marginTop: 10 },
+  insightTile: { flex: 1, backgroundColor: "#eef0ff", borderRadius: 14, paddingVertical: 14, paddingHorizontal: 6, alignItems: "center" },
+  insightBig: { fontSize: 18, fontWeight: "800", color: "#3a45c4" },
+  insightLabel: { fontSize: 10, color: "#7a82c0", marginTop: 3, textAlign: "center" },
+  favSection: { marginTop: 20 },
+  favRow: { gap: 10, paddingRight: 8 },
 
   primaryBtn: { backgroundColor: "#5b6cff", borderRadius: 12, paddingVertical: 13, alignItems: "center", marginTop: 20 },
   primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },

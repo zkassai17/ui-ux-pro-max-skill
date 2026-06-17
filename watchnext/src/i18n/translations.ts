@@ -220,6 +220,11 @@ const en: Dict = {
   "import.matchPasted": "Match pasted titles",
   "import.noTitles": "No titles found in that file or list.",
   "import.startOver": "Start over",
+  "profile.favorites": "Favorites",
+  "profile.insights": "Your taste",
+  "profile.thisYear": "This year",
+  "profile.avgRating": "Avg rating",
+  "profile.topDecade": "Top decade",
 };
 
 const es: Dict = {
@@ -411,6 +416,11 @@ const es: Dict = {
   "import.matchPasted": "Buscar títulos pegados",
   "import.noTitles": "No se encontraron títulos en ese archivo o lista.",
   "import.startOver": "Empezar de nuevo",
+  "profile.favorites": "Favoritos",
+  "profile.insights": "Tu gusto",
+  "profile.thisYear": "Este año",
+  "profile.avgRating": "Valoración media",
+  "profile.topDecade": "Década favorita",
 };
 
 const fr: Dict = {
@@ -602,6 +612,11 @@ const fr: Dict = {
   "import.matchPasted": "Trouver les titres collés",
   "import.noTitles": "Aucun titre trouvé dans ce fichier ou cette liste.",
   "import.startOver": "Recommencer",
+  "profile.favorites": "Favoris",
+  "profile.insights": "Vos goûts",
+  "profile.thisYear": "Cette année",
+  "profile.avgRating": "Note moyenne",
+  "profile.topDecade": "Décennie préférée",
 };
 
 const he: Dict = {
@@ -793,6 +808,11 @@ const he: Dict = {
   "import.matchPasted": "התאמת כותרים שהודבקו",
   "import.noTitles": "לא נמצאו כותרים בקובץ או ברשימה.",
   "import.startOver": "להתחיל מחדש",
+  "profile.favorites": "מועדפים",
+  "profile.insights": "הטעם שלך",
+  "profile.thisYear": "השנה",
+  "profile.avgRating": "דירוג ממוצע",
+  "profile.topDecade": "העשור המוביל",
 };
 
 const ar: Dict = {
@@ -984,6 +1004,11 @@ const ar: Dict = {
   "import.matchPasted": "مطابقة العناوين الملصقة",
   "import.noTitles": "لم يُعثر على عناوين في ذلك الملف أو القائمة.",
   "import.startOver": "البدء من جديد",
+  "profile.favorites": "المفضّلة",
+  "profile.insights": "ذوقك",
+  "profile.thisYear": "هذا العام",
+  "profile.avgRating": "متوسط التقييم",
+  "profile.topDecade": "العقد الأبرز",
 };
 
 const DICTS: Record<Lang, Dict> = { en, es, fr, he, ar };
