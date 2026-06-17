@@ -69,13 +69,61 @@ export function normalizeGenres(raw: any): Genre[] {
     .map((g: any) => ({ id: g.id, name: g.name }));
 }
 
+// TMDB lists every distribution variant of a service separately — "MGM+",
+// "MGM+ Amazon Channel", "MGM+ Roku Premium Channel", "Netflix", "Netflix with
+// Ads" … We only want one chip per actual platform. These suffixes mark a
+// variant; stripping them yields a base key we can dedupe on.
+const PROVIDER_VARIANT_SUFFIXES: RegExp[] = [
+  /\s*\|\s*channels?$/,
+  /\s+amazon channel$/,
+  /\s+apple tv\+? channel$/,
+  /\s+roku( premium)? channel$/,
+  /\s+the roku channel$/,
+  /\s+premium channels?$/,
+  /\s+channels?$/,
+  /\s+(standard|basic)\s+with ads$/,
+  /\s+with ads$/,
+  /\s+premium$/,
+];
+
+function providerKey(name: string): string {
+  let n = name.toLowerCase().trim();
+  let prev = "";
+  while (n !== prev) {
+    prev = n;
+    for (const re of PROVIDER_VARIANT_SUFFIXES) n = n.replace(re, "").trim();
+  }
+  // Fold "MGM Plus" / "MGM+" and ignore spacing/punctuation so variants collapse.
+  return n.replace(/plus/g, "+").replace(/[^a-z0-9]/g, "");
+}
+
+// Collapse a provider list to one entry per platform, preferring the cleanest
+// (shortest) name — e.g. "MGM+" over "MGM+ Roku Premium Channel". First-seen order kept.
+export function dedupeProviders(list: WatchProvider[]): WatchProvider[] {
+  const best = new Map<string, WatchProvider>();
+  const order: string[] = [];
+  for (const p of list) {
+    const key = providerKey(p.name);
+    const cur = best.get(key);
+    if (!cur) {
+      best.set(key, p);
+      order.push(key);
+    } else if (p.name.length < cur.name.length) {
+      best.set(key, p);
+    }
+  }
+  return order.map((k) => best.get(k)!);
+}
+
 function normalizeProviderList(list: any): WatchProvider[] {
   if (!Array.isArray(list)) return [];
-  return list.map((p: any) => ({
-    providerId: p.provider_id,
-    name: p.provider_name,
-    logoPath: p.logo_path ?? null,
-  }));
+  return dedupeProviders(
+    list.map((p: any) => ({
+      providerId: p.provider_id,
+      name: p.provider_name,
+      logoPath: p.logo_path ?? null,
+    }))
+  );
 }
 
 export function normalizeWatchProviders(raw: any, region: string): WatchProviders {
