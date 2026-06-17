@@ -1,4 +1,4 @@
-import { translate, isRtlLang, LANGUAGES } from "../src/i18n/translations";
+import { translate, isRtlLang, LANGUAGES, pickLanguage } from "../src/i18n/translations";
 
 describe("translate", () => {
   it("returns the string for the chosen language", () => {
@@ -27,6 +27,21 @@ describe("isRtlLang", () => {
     expect(isRtlLang("en")).toBe(false);
     expect(isRtlLang("es")).toBe(false);
     expect(isRtlLang("fr")).toBe(false);
+  });
+});
+
+describe("pickLanguage (device default)", () => {
+  it("uses the first supported device language", () => {
+    expect(pickLanguage(["fr"])).toBe("fr");
+    expect(pickLanguage(["ar", "en"])).toBe("ar");
+  });
+  it("skips unsupported codes", () => {
+    expect(pickLanguage(["de", "pt", "es"])).toBe("es");
+  });
+  it("falls back to English when nothing matches or list is empty", () => {
+    expect(pickLanguage(["de", "ja"])).toBe("en");
+    expect(pickLanguage([])).toBe("en");
+    expect(pickLanguage([null, undefined])).toBe("en");
   });
 });
 

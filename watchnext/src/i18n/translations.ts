@@ -18,6 +18,17 @@ export function isRtlLang(lang: Lang): boolean {
   return RTL_LANGS.includes(lang);
 }
 
+const SUPPORTED = LANGUAGES.map((l) => l.code) as string[];
+
+// First device language we support (e.g. phone set to French -> "fr"), else English.
+// Used to pick a sensible default before the user has chosen one in Settings.
+export function pickLanguage(deviceCodes: (string | null | undefined)[]): Lang {
+  for (const c of deviceCodes) {
+    if (c && SUPPORTED.includes(c)) return c as Lang;
+  }
+  return "en";
+}
+
 type Dict = Record<string, string>;
 
 const en: Dict = {

@@ -1,7 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { WatchStatus } from "../types/db";
+import * as Localization from "expo-localization";
 import { DEFAULT_REC_WEIGHTS, type RecWeights } from "../lib/recPrefs";
-import type { Lang } from "../i18n/translations";
+import { pickLanguage, type Lang } from "../i18n/translations";
 
 // Small on-device preferences (no server needed).
 
@@ -14,11 +15,17 @@ const VALID_LANGS: Lang[] = ["en", "es", "fr", "he", "ar"];
 export async function getLanguage(): Promise<Lang> {
   try {
     const v = await AsyncStorage.getItem(LANGUAGE_KEY);
-    if (v && (VALID_LANGS as string[]).includes(v)) return v as Lang;
+    if (v && (VALID_LANGS as string[]).includes(v)) return v as Lang; // explicit choice wins
   } catch {
     // fall through
   }
-  return "en";
+  // No saved choice yet (e.g. the sign-in screen) — default to the device language.
+  try {
+    const codes = Localization.getLocales().map((l) => l.languageCode);
+    return pickLanguage(codes);
+  } catch {
+    return "en";
+  }
 }
 
 export async function setLanguage(lang: Lang): Promise<void> {
