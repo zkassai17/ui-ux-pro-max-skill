@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, FlatList, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
+import { View, Text, Pressable, FlatList, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,29 +11,8 @@ import { getLibrary } from "../../src/services/watchlist";
 import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
 import { selectFavorites, topDecade } from "../../src/lib/profileInsights";
 import { getTopGenre } from "../../src/services/topGenre";
+import { initials, avatarColor, matchColor } from "../../src/lib/avatar";
 import { PosterImage } from "../../src/components/PosterImage";
-
-function matchColor(score: number): string {
-  if (score >= 80) return "#1dd1a1";
-  if (score >= 60) return "#5b6cff";
-  if (score >= 40) return "#ffc048";
-  return "#ff9f43";
-}
-
-function initials(username?: string): string {
-  if (!username) return "?";
-  const cleaned = username.replace(/[^a-zA-Z0-9]/g, "");
-  return cleaned.slice(0, 2).toUpperCase() || "?";
-}
-
-// Deterministic avatar color per username so friends are visually distinct.
-const AVATAR_COLORS = ["#5b6cff", "#1dd1a1", "#ff9f43", "#ff6b9d", "#a55eea", "#26c6da", "#fd7272"];
-function avatarColor(username?: string): string {
-  if (!username) return AVATAR_COLORS[0];
-  let h = 0;
-  for (let i = 0; i < username.length; i++) h = (h * 31 + username.charCodeAt(i)) >>> 0;
-  return AVATAR_COLORS[h % AVATAR_COLORS.length];
-}
 
 export default function ProfileScreen() {
   const { profile, session } = useAuth();
@@ -42,7 +21,6 @@ export default function ProfileScreen() {
   const qc = useQueryClient();
   const uid = session?.user.id;
   const [refreshing, setRefreshing] = useState(false);
-  const [friendQuery, setFriendQuery] = useState("");
 
   const friends = useQuery({ queryKey: ["friends"], queryFn: getFriends });
   const stats = useQuery({
@@ -78,11 +56,6 @@ export default function ProfileScreen() {
     },
   });
 
-  const fq = friendQuery.trim().toLowerCase();
-  const visibleFriends = fq
-    ? allFriends.filter((f) => `${f.username} ${fullName(f)}`.toLowerCase().includes(fq))
-    : allFriends;
-
   async function onRefresh() {
     setRefreshing(true);
     await Promise.all([
@@ -100,10 +73,7 @@ export default function ProfileScreen() {
       style={styles.container}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      automaticallyAdjustKeyboardInsets
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
-      data={visibleFriends}
+      data={allFriends}
       keyExtractor={(p) => p.id}
       numColumns={2}
       columnWrapperStyle={styles.friendCol}
@@ -148,22 +118,14 @@ export default function ProfileScreen() {
             <Text style={styles.primaryBtnText}>{t("profile.addFriend")}</Text>
           </Pressable>
 
-          <Text style={styles.section}>{t("profile.friends")}</Text>
-          {allFriends.length > 0 ? (
-            <View style={styles.searchWrap}>
-              <Text style={styles.searchIcon}>🔍</Text>
-              <TextInput
-                style={styles.searchInput}
-                value={friendQuery}
-                onChangeText={setFriendQuery}
-                placeholder={t("wt.searchFriends")}
-                placeholderTextColor="#aaa"
-                autoCapitalize="none"
-                autoCorrect={false}
-                clearButtonMode="while-editing"
-              />
-            </View>
-          ) : null}
+          <View style={styles.friendHead}>
+            <Text style={[styles.section, { marginBottom: 6 }]}>{t("profile.friends")}</Text>
+            {allFriends.length > 0 ? (
+              <Pressable onPress={() => router.push("/friends/list")} hitSlop={8} style={styles.searchLink}>
+                <Text style={styles.searchLinkText}>🔍 {t("common.search")}</Text>
+              </Pressable>
+            ) : null}
+          </View>
           {friends.isLoading ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
         </View>
       }
@@ -254,9 +216,9 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
 
   section: { fontSize: 13, fontWeight: "700", marginTop: 26, marginBottom: 6 },
-  searchWrap: { flexDirection: "row", alignItems: "center", backgroundColor: "#f0f0f3", borderRadius: 12, paddingHorizontal: 12, height: 40, marginTop: 4, marginBottom: 12 },
-  searchIcon: { fontSize: 14, marginRight: 8, opacity: 0.5 },
-  searchInput: { flex: 1, fontSize: 15, color: "#111", padding: 0 },
+  friendHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  searchLink: { backgroundColor: "#f0f0f3", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
+  searchLinkText: { fontSize: 13, fontWeight: "700", color: "#5b6cff" },
 
   friendCol: { justifyContent: "space-between" },
   friendCard: { width: "48.5%", backgroundColor: "#f6f6f8", borderRadius: 16, paddingVertical: 16, paddingHorizontal: 10, alignItems: "center", marginBottom: 10 },
