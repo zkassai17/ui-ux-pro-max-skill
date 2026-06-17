@@ -18,36 +18,34 @@ import { PosterImage } from "../../src/components/PosterImage";
 import { InlineRating } from "../../src/components/InlineRating";
 import { ratingEmoji } from "../../src/lib/ratingScale";
 import { getDefaultLibraryTab } from "../../src/services/prefs";
+import { useI18n } from "../../src/i18n/I18nProvider";
 import type { WatchStatus, WatchlistEntry } from "../../src/types/db";
 import type { MediaType } from "../../src/types/tmdb";
 
-const FILTERS: { key: WatchStatus; label: string }[] = [
-  { key: "want", label: "Want" },
-  { key: "watching", label: "Watching" },
-  { key: "watched", label: "Watched" },
-];
+const FILTER_KEYS: WatchStatus[] = ["want", "watching", "watched"];
+const MEDIA_KEYS: ("all" | MediaType)[] = ["all", "movie", "tv"];
+const SORT_KEYS: LibrarySort[] = ["recent", "oldest", "title", "title-desc", "rating"];
 
-const MEDIA_FILTERS: { key: "all" | MediaType; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "movie", label: "Movies" },
-  { key: "tv", label: "TV" },
-];
-
-const SORTS: { key: LibrarySort; label: string }[] = [
-  { key: "recent", label: "Recently added" },
-  { key: "oldest", label: "Oldest first" },
-  { key: "title", label: "Title A–Z" },
-  { key: "title-desc", label: "Title Z–A" },
-  { key: "rating", label: "My rating" },
-];
-
-const STATUS_LABEL: Record<WatchStatus, string> = {
-  want: "Want to watch",
-  watching: "Watching",
-  watched: "Watched ✓",
+const MEDIA_I18N: Record<"all" | MediaType, string> = {
+  all: "filter.all",
+  movie: "media.movies",
+  tv: "media.shows",
+};
+const SORT_I18N: Record<LibrarySort, string> = {
+  recent: "sort.recent",
+  oldest: "sort.oldest",
+  title: "sort.titleAsc",
+  "title-desc": "sort.titleDesc",
+  rating: "sort.rating",
+};
+const STATUS_I18N: Record<WatchStatus, string> = {
+  want: "libstatus.want",
+  watching: "libstatus.watching",
+  watched: "libstatus.watched",
 };
 
 export default function LibraryScreen() {
+  const { t } = useI18n();
   const [filter, setFilter] = useState<WatchStatus>("want");
   // Honor the user's "Library opens on" preference on first mount.
   useEffect(() => {
@@ -92,12 +90,12 @@ export default function LibraryScreen() {
       (q === "" || e.title.toLowerCase().includes(q))
   );
   const rows = sortLibrary(filtered, sort);
-  const sortLabel = SORTS.find((s) => s.key === sort)?.label ?? "Sort";
+  const sortLabel = t(SORT_I18N[sort]);
 
   function pickSort() {
-    Alert.alert("Sort by", undefined, [
-      ...SORTS.map((s) => ({ text: s.label, onPress: () => setSort(s.key) })),
-      { text: "Cancel", style: "cancel" as const },
+    Alert.alert(t("sort.sortBy"), undefined, [
+      ...SORT_KEYS.map((k) => ({ text: t(SORT_I18N[k]), onPress: () => setSort(k) })),
+      { text: t("common.cancel"), style: "cancel" as const },
     ]);
   }
 
@@ -109,7 +107,7 @@ export default function LibraryScreen() {
           style={styles.searchInput}
           value={query}
           onChangeText={setQuery}
-          placeholder="Search your titles"
+          placeholder={t("lib.searchPlaceholder")}
           placeholderTextColor="#aaa"
           autoCorrect={false}
           returnKeyType="search"
@@ -123,27 +121,27 @@ export default function LibraryScreen() {
       </View>
 
       <View style={styles.filterRow}>
-        {FILTERS.map((f) => (
+        {FILTER_KEYS.map((key) => (
           <Pressable
-            key={f.key}
-            style={[styles.chip, filter === f.key && styles.chipOn]}
-            onPress={() => setFilter(f.key)}
+            key={key}
+            style={[styles.chip, filter === key && styles.chipOn]}
+            onPress={() => setFilter(key)}
           >
-            <Text style={[styles.chipText, filter === f.key && styles.chipTextOn]}>{f.label}</Text>
+            <Text style={[styles.chipText, filter === key && styles.chipTextOn]}>{t(`status.${key}`)}</Text>
           </Pressable>
         ))}
       </View>
 
       <View style={styles.toolbar}>
         <View style={styles.segment}>
-          {MEDIA_FILTERS.map((m) => (
+          {MEDIA_KEYS.map((key) => (
             <Pressable
-              key={m.key}
-              style={[styles.segmentBtn, media === m.key && styles.segmentBtnOn]}
-              onPress={() => setMedia(m.key)}
+              key={key}
+              style={[styles.segmentBtn, media === key && styles.segmentBtnOn]}
+              onPress={() => setMedia(key)}
             >
-              <Text style={[styles.segmentText, media === m.key && styles.segmentTextOn]}>
-                {m.label}
+              <Text style={[styles.segmentText, media === key && styles.segmentTextOn]}>
+                {t(MEDIA_I18N[key])}
               </Text>
             </Pressable>
           ))}
@@ -155,7 +153,7 @@ export default function LibraryScreen() {
 
       {!isLoading ? (
         <Text style={styles.count}>
-          {rows.length} {rows.length === 1 ? "title" : "titles"}
+          {rows.length} {rows.length === 1 ? t("lib.title") : t("lib.titles")}
         </Text>
       ) : null}
 
@@ -163,14 +161,14 @@ export default function LibraryScreen() {
         <ActivityIndicator style={{ marginTop: 24 }} />
       ) : rows.length === 0 ? (
         q !== "" ? (
-          <Text style={styles.msg}>No titles match "{query.trim()}".</Text>
+          <Text style={styles.msg}>{t("lib.noMatch")} "{query.trim()}".</Text>
         ) : (
           <View style={styles.empty}>
-            <Text style={styles.msg}>Nothing here yet.</Text>
+            <Text style={styles.msg}>{t("lib.emptyTitle")}</Text>
             <Pressable style={styles.quickBtn} onPress={() => router.push("/quick-seen")}>
-              <Text style={styles.quickBtnText}>⚡ Quick-add what you've seen</Text>
+              <Text style={styles.quickBtnText}>⚡ {t("lib.quickAdd")}</Text>
             </Pressable>
-            <Text style={styles.emptyHint}>Tap through popular titles — fastest way to fill your list.</Text>
+            <Text style={styles.emptyHint}>{t("lib.quickAddHint")}</Text>
           </View>
         )
       ) : (
@@ -192,8 +190,8 @@ export default function LibraryScreen() {
                       <Text style={styles.itemTitle} numberOfLines={1}>{item.title}</Text>
                       <Text style={styles.itemSub} numberOfLines={1}>
                         {[
-                          STATUS_LABEL[item.status],
-                          item.media_type === "movie" ? "Movie" : "TV",
+                          t(STATUS_I18N[item.status]),
+                          item.media_type === "movie" ? t("media.movie") : t("media.tv"),
                           item.year,
                         ]
                           .filter(Boolean)
@@ -210,7 +208,7 @@ export default function LibraryScreen() {
                       {item.rating != null ? (
                         <Text style={styles.ratingEmoji}>{ratingEmoji(item.rating)}</Text>
                       ) : (
-                        <Text style={styles.ratePrompt}>Rate</Text>
+                        <Text style={styles.ratePrompt}>{t("lib.rate")}</Text>
                       )}
                     </Pressable>
                   ) : null}

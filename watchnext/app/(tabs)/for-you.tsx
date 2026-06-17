@@ -12,20 +12,23 @@ import { PosterImage } from "../../src/components/PosterImage";
 import { QuickAddButton } from "../../src/components/QuickAddButton";
 import { FeedReactions } from "../../src/components/FeedReactions";
 import { CDrawLoader } from "../../src/components/CDrawLoader";
+import { useI18n } from "../../src/i18n/I18nProvider";
 import type { Title, MediaType } from "../../src/types/tmdb";
+import type { WatchStatus } from "../../src/types/db";
 
-const WATCH_VERB: Record<string, string> = {
-  watched: "finished watching",
-  watching: "is watching",
-  want: "wants to watch",
+const VERB_KEY: Record<WatchStatus, string> = {
+  watched: "feed.finishedWatching",
+  watching: "feed.isWatching",
+  want: "feed.wantsToWatch",
 };
 
 function WatchTogetherCard() {
   const router = useRouter();
+  const { t } = useI18n();
   return (
     <Pressable style={styles.wtCard} onPress={() => router.push("/watch-together")}>
-      <Text style={styles.wtTitle}>What should we watch?</Text>
-      <Text style={styles.wtSub}>Find something you and your friends both want to see →</Text>
+      <Text style={styles.wtTitle}>{t("home.whatToWatch")}</Text>
+      <Text style={styles.wtSub}>{t("home.whatToWatchSub")}</Text>
     </Pressable>
   );
 }
@@ -94,6 +97,7 @@ function ForYouRail({ mediaType, heading }: { mediaType: MediaType; heading: str
 
 export default function HomeScreen() {
   const qc = useQueryClient();
+  const { t } = useI18n();
   const { data, isLoading } = useQuery({ queryKey: ["feed"], queryFn: getFeed });
   const [refreshing, setRefreshing] = useState(false);
 
@@ -134,30 +138,26 @@ export default function HomeScreen() {
       ListHeaderComponent={
         <View>
           <WatchTogetherCard />
-          <ForYouRail mediaType="movie" heading="Movies for you" />
-          <ForYouRail mediaType="tv" heading="Shows for you" />
-          <Text style={styles.sectionHeading}>Activity</Text>
+          <ForYouRail mediaType="movie" heading={t("home.moviesForYou")} />
+          <ForYouRail mediaType="tv" heading={t("home.showsForYou")} />
+          <Text style={styles.sectionHeading}>{t("home.activity")}</Text>
         </View>
       }
-      ListEmptyComponent={
-        <Text style={styles.msg}>
-          No activity yet. Add friends and they’ll show up here as they watch and recommend.
-        </Text>
-      }
+      ListEmptyComponent={<Text style={styles.msg}>{t("home.noActivity")}</Text>}
       renderItem={({ item: row }) => {
-        const name = row.username ? `@${row.username}` : "A friend";
+        const name = row.username ? `@${row.username}` : t("feed.aFriend");
         if (row.item.kind === "watchlist") {
           const e = row.item.entry;
           return (
             <View style={styles.card}>
               <Text style={styles.head}>
-                <Text style={styles.name}>{name}</Text> {WATCH_VERB[e.status]}
+                <Text style={styles.name}>{name}</Text> {t(VERB_KEY[e.status])}
               </Text>
               <View style={styles.row}>
                 <PosterImage path={e.poster_path} width={42} height={62} />
                 <View style={styles.meta}>
                   <Text style={styles.title}>{e.title}</Text>
-                  <Text style={styles.pill}>{e.media_type === "movie" ? "MOVIE" : "TV"}</Text>
+                  <Text style={styles.pill}>{e.media_type === "movie" ? t("media.movie") : t("media.tv")}</Text>
                 </View>
               </View>
               <FeedReactions targetId={row.item.id} targetOwner={row.item.userId} summary={reactionMap[row.item.id]} />
@@ -168,14 +168,14 @@ export default function HomeScreen() {
         return (
           <View style={styles.card}>
             <Text style={styles.head}>
-              <Text style={styles.name}>{name}</Text> recommends
+              <Text style={styles.name}>{name}</Text> {t("feed.recommends")}
             </Text>
             <View style={styles.row}>
               <PosterImage path={rec.poster_path} width={42} height={62} />
               <View style={styles.meta}>
                 <Text style={styles.title}>{rec.title}</Text>
                 {rec.note ? <Text style={styles.note}>“{rec.note}”</Text> : null}
-                <Text style={styles.pill}>{rec.media_type === "movie" ? "MOVIE" : "TV"}</Text>
+                <Text style={styles.pill}>{rec.media_type === "movie" ? t("media.movie") : t("media.tv")}</Text>
               </View>
             </View>
             <FeedReactions targetId={row.item.id} targetOwner={row.item.userId} summary={reactionMap[row.item.id]} />

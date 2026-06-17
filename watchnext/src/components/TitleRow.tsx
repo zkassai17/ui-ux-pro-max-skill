@@ -1,6 +1,7 @@
 import { Pressable, View, Text, StyleSheet } from "react-native";
 import type { ReactNode } from "react";
 import { PosterImage } from "./PosterImage";
+import { useI18n } from "../i18n/I18nProvider";
 import type { MediaType } from "../types/tmdb";
 
 export function TitleRow({
@@ -18,6 +19,7 @@ export function TitleRow({
   onPress?: () => void;
   accessory?: ReactNode;
 }) {
+  const { t } = useI18n();
   return (
     <Pressable style={styles.row} onPress={onPress}>
       <PosterImage path={posterPath} width={46} height={68} />
@@ -25,7 +27,7 @@ export function TitleRow({
         <Text style={styles.title} numberOfLines={1}>{title}</Text>
         {subtitle ? <Text style={styles.sub} numberOfLines={1}>{subtitle}</Text> : null}
         <View style={styles.pill}>
-          <Text style={styles.pillText}>{mediaType === "movie" ? "MOVIE" : "TV"}</Text>
+          <Text style={styles.pillText}>{mediaType === "movie" ? t("media.movie") : t("media.tv")}</Text>
         </View>
       </View>
       {accessory ? <View style={styles.accessory}>{accessory}</View> : null}

@@ -1,14 +1,9 @@
 import { Pressable, Text, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getLibraryEntry, addToLibrary, updateStatus, removeFromLibrary } from "../services/watchlist";
+import { useI18n } from "../i18n/I18nProvider";
 import type { Title } from "../types/tmdb";
 import type { WatchStatus } from "../types/db";
-
-const STATUS_LABEL: Record<WatchStatus, string> = {
-  want: "Want",
-  watching: "Watching",
-  watched: "Watched",
-};
 
 export function QuickAddButton({
   title,
@@ -26,6 +21,7 @@ export function QuickAddButton({
   addStatus?: WatchStatus;
 }) {
   const qc = useQueryClient();
+  const { t } = useI18n();
   const entryKey = ["library-entry", title.mediaType, title.tmdbId];
 
   const entry = useQuery({
@@ -62,11 +58,11 @@ export function QuickAddButton({
   });
 
   function pickStatus() {
-    Alert.alert(title.title, "Add to your library as…", [
-      { text: STATUS_LABEL.want, onPress: () => set.mutate("want") },
-      { text: STATUS_LABEL.watching, onPress: () => set.mutate("watching") },
-      { text: STATUS_LABEL.watched, onPress: () => set.mutate("watched") },
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(title.title, undefined, [
+      { text: t("status.want"), onPress: () => set.mutate("want") },
+      { text: t("status.watching"), onPress: () => set.mutate("watching") },
+      { text: t("status.watched"), onPress: () => set.mutate("watched") },
+      { text: t("common.cancel"), style: "cancel" },
     ]);
   }
 
@@ -88,7 +84,7 @@ export function QuickAddButton({
         {busy ? (
           <ActivityIndicator size="small" color="#fff" />
         ) : (
-          <Text style={styles.addPillText}>{added ? `✓ ${STATUS_LABEL[status!]}` : "＋ Add"}</Text>
+          <Text style={styles.addPillText}>{added ? `✓ ${t(`status.${status!}`)}` : `＋ ${t("common.add")}`}</Text>
         )}
       </Pressable>
     );
@@ -106,7 +102,7 @@ export function QuickAddButton({
         <ActivityIndicator size="small" color={added ? "#fff" : "#5b6cff"} />
       ) : (
         <Text style={[styles.label, added && styles.labelAdded]}>
-          {added ? `✓ ${STATUS_LABEL[status!]}` : "+ Add"}
+          {added ? `✓ ${t(`status.${status!}`)}` : `+ ${t("common.add")}`}
         </Text>
       )}
     </Pressable>
