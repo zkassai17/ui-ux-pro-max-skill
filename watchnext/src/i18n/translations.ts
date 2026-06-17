@@ -225,6 +225,7 @@ const en: Dict = {
   "profile.thisYear": "This year",
   "profile.avgRating": "Avg rating",
   "profile.topDecade": "Top decade",
+  "profile.topGenre": "Top genre",
 };
 
 const es: Dict = {
@@ -421,6 +422,7 @@ const es: Dict = {
   "profile.thisYear": "Este año",
   "profile.avgRating": "Valoración media",
   "profile.topDecade": "Década favorita",
+  "profile.topGenre": "Género favorito",
 };
 
 const fr: Dict = {
@@ -617,6 +619,7 @@ const fr: Dict = {
   "profile.thisYear": "Cette année",
   "profile.avgRating": "Note moyenne",
   "profile.topDecade": "Décennie préférée",
+  "profile.topGenre": "Genre préféré",
 };
 
 const he: Dict = {
@@ -813,6 +816,7 @@ const he: Dict = {
   "profile.thisYear": "השנה",
   "profile.avgRating": "דירוג ממוצע",
   "profile.topDecade": "העשור המוביל",
+  "profile.topGenre": "ז'אנר מוביל",
 };
 
 const ar: Dict = {
@@ -1009,6 +1013,7 @@ const ar: Dict = {
   "profile.thisYear": "هذا العام",
   "profile.avgRating": "متوسط التقييم",
   "profile.topDecade": "العقد الأبرز",
+  "profile.topGenre": "النوع الأبرز",
 };
 
 const DICTS: Record<Lang, Dict> = { en, es, fr, he, ar };

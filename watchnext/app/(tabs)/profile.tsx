@@ -8,7 +8,8 @@ import { useI18n } from "../../src/i18n/I18nProvider";
 import { getFriends, getFriendStats, type StatBucket } from "../../src/services/friends";
 import { getLibrary } from "../../src/services/watchlist";
 import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
-import { selectFavorites, computeProfileInsights } from "../../src/lib/profileInsights";
+import { selectFavorites, topDecade } from "../../src/lib/profileInsights";
+import { getTopGenre } from "../../src/services/topGenre";
 import { PosterImage } from "../../src/components/PosterImage";
 
 function matchColor(score: number): string {
@@ -52,7 +53,14 @@ export default function ProfileScreen() {
 
   const lib = library.data ?? [];
   const favorites = selectFavorites(lib, 12);
-  const insights = computeProfileInsights(lib, new Date().getFullYear());
+  const decade = topDecade(lib);
+  const libHash = lib.map((e) => `${e.media_type}:${e.tmdb_id}`).join(",");
+  const topGenreQuery = useQuery({
+    queryKey: ["profile-top-genre", libHash],
+    enabled: !library.isLoading && lib.length > 0,
+    staleTime: 30 * 60 * 1000,
+    queryFn: () => getTopGenre(lib),
+  });
 
   // Taste-match % per friend (load each friend's library, score against mine).
   const allFriends = friends.data ?? [];
@@ -113,9 +121,8 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.insightRow}>
-            <InsightTile big={String(insights.thisYear)} label={t("profile.thisYear")} />
-            <InsightTile big={insights.avgRating != null ? `${insights.avgRating}★` : "—"} label={t("profile.avgRating")} />
-            <InsightTile big={insights.topDecade ?? "—"} label={t("profile.topDecade")} />
+            <InsightTile big={topGenreQuery.data ?? (topGenreQuery.isLoading ? "…" : "—")} label={t("profile.topGenre")} />
+            <InsightTile big={decade ?? "—"} label={t("profile.topDecade")} />
           </View>
 
           {favorites.length > 0 ? (

@@ -1,4 +1,4 @@
-import { selectFavorites, computeProfileInsights } from "../src/lib/profileInsights";
+import { selectFavorites, topDecade, topGenre } from "../src/lib/profileInsights";
 import type { WatchlistEntry } from "../src/types/db";
 
 function e(over: Partial<WatchlistEntry>): WatchlistEntry {
@@ -43,35 +43,33 @@ describe("selectFavorites", () => {
   });
 });
 
-describe("computeProfileInsights", () => {
-  it("counts titles logged this year", () => {
-    const lib = [
-      e({ added_at: "2026-03-01T00:00:00Z" }),
-      e({ added_at: "2026-09-01T00:00:00Z" }),
-      e({ added_at: "2025-01-01T00:00:00Z" }),
-    ];
-    expect(computeProfileInsights(lib, 2026).thisYear).toBe(2);
-  });
-
-  it("averages personal ratings to one decimal", () => {
-    const lib = [e({ rating: 5 }), e({ rating: 4 }), e({ rating: 4 })];
-    expect(computeProfileInsights(lib, 2026).avgRating).toBeCloseTo(4.3, 5);
-  });
-
-  it("avgRating is null when nothing is rated", () => {
-    expect(computeProfileInsights([e({ rating: null })], 2026).avgRating).toBeNull();
-  });
-
+describe("topDecade", () => {
   it("picks the most-watched decade from years", () => {
-    const lib = [
-      e({ year: "2011" }),
-      e({ year: "2014" }),
-      e({ year: "1999" }),
-    ];
-    expect(computeProfileInsights(lib, 2026).topDecade).toBe("2010s");
+    const lib = [e({ year: "2011" }), e({ year: "2014" }), e({ year: "1999" })];
+    expect(topDecade(lib)).toBe("2010s");
   });
 
-  it("topDecade is null with no usable years", () => {
-    expect(computeProfileInsights([e({ year: null })], 2026).topDecade).toBeNull();
+  it("only counts watched titles", () => {
+    const lib = [e({ year: "1995", status: "want" }), e({ year: "2012", status: "watched" })];
+    expect(topDecade(lib)).toBe("2010s");
+  });
+
+  it("is null with no usable years", () => {
+    expect(topDecade([e({ year: null })])).toBeNull();
+  });
+});
+
+describe("topGenre", () => {
+  it("returns the most common genre across titles", () => {
+    expect(topGenre([["Drama", "Crime"], ["Drama"], ["Comedy"]])).toBe("Drama");
+  });
+
+  it("breaks ties by first seen", () => {
+    expect(topGenre([["Action"], ["Comedy"]])).toBe("Action");
+  });
+
+  it("is null for no genres", () => {
+    expect(topGenre([])).toBeNull();
+    expect(topGenre([[], []])).toBeNull();
   });
 });

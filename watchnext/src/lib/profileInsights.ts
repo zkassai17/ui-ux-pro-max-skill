@@ -9,37 +9,39 @@ export function selectFavorites(library: WatchlistEntry[], max: number): Watchli
     .slice(0, max);
 }
 
-export interface ProfileInsights {
-  thisYear: number; // titles logged this calendar year
-  avgRating: number | null; // average personal rating (1 decimal), or null if none rated
-  topDecade: string | null; // most-watched decade, e.g. "2010s"
+// Generic "most common, ties → first seen" tally.
+function mostCommon<T>(items: T[]): T | null {
+  const counts = new Map<T, number>();
+  const order: T[] = [];
+  for (const it of items) {
+    if (!counts.has(it)) order.push(it);
+    counts.set(it, (counts.get(it) ?? 0) + 1);
+  }
+  let best: T | null = null;
+  let top = 0;
+  for (const it of order) {
+    const n = counts.get(it)!;
+    if (n > top) {
+      top = n;
+      best = it;
+    }
+  }
+  return best;
 }
 
-// Lightweight, fetch-free insights computed straight from the library.
-export function computeProfileInsights(library: WatchlistEntry[], currentYear: number): ProfileInsights {
-  const thisYear = library.filter((e) => e.added_at.slice(0, 4) === String(currentYear)).length;
-
-  const rated = library.filter((e) => e.rating != null);
-  const avgRating = rated.length
-    ? Math.round((rated.reduce((s, e) => s + (e.rating as number), 0) / rated.length) * 10) / 10
-    : null;
-
-  const decades = new Map<string, number>();
+// The decade the user watches most (e.g. "2010s"), from watched titles' years.
+export function topDecade(library: WatchlistEntry[]): string | null {
+  const decades: string[] = [];
   for (const e of library) {
     if (e.status !== "watched" || !e.year) continue;
     const y = parseInt(e.year, 10);
     if (Number.isNaN(y)) continue;
-    const dec = `${Math.floor(y / 10) * 10}s`;
-    decades.set(dec, (decades.get(dec) ?? 0) + 1);
+    decades.push(`${Math.floor(y / 10) * 10}s`);
   }
-  let topDecade: string | null = null;
-  let top = 0;
-  for (const [d, n] of decades) {
-    if (n > top) {
-      top = n;
-      topDecade = d;
-    }
-  }
+  return mostCommon(decades);
+}
 
-  return { thisYear, avgRating, topDecade };
+// The most common genre across a set of titles' genre lists (genre names).
+export function topGenre(genreLists: string[][]): string | null {
+  return mostCommon(genreLists.flat());
 }
