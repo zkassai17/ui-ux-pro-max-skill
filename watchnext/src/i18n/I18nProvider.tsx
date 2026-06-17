@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { I18nManager } from "react-native";
+import { useQueryClient } from "@tanstack/react-query";
 import { getLanguage, setLanguage } from "../services/prefs";
+import { setApiLanguage } from "../services/tmdb";
 import { translate, isRtlLang, type Lang } from "./translations";
 
 type I18nContextValue = {
@@ -18,10 +20,13 @@ const I18nContext = createContext<I18nContextValue>({
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("en");
+  const qc = useQueryClient();
 
   useEffect(() => {
     getLanguage().then((l) => {
       setLangState(l);
+      setApiLanguage(l); // localize TMDB titles/overviews/genres
+      qc.invalidateQueries(); // refetch content in the resolved language
       // Align the native layout direction with the saved language on launch.
       I18nManager.allowRTL(true);
       const rtl = isRtlLang(l);
@@ -31,7 +36,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   async function setLang(l: Lang): Promise<boolean> {
     await setLanguage(l);
-    setLangState(l); // text updates live
+    setLangState(l); // UI text updates live
+    setApiLanguage(l);
+    qc.invalidateQueries(); // re-pull TMDB content (titles/overviews) in the new language
     const rtl = isRtlLang(l);
     if (I18nManager.isRTL !== rtl) {
       I18nManager.allowRTL(true);

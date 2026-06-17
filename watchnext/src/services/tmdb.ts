@@ -9,8 +9,24 @@ import {
 } from "../lib/tmdbNormalize";
 import { WATCH_REGION } from "../lib/providers";
 import { relaxQueries, rankByFuzzy } from "../lib/searchLogic";
+import type { Lang } from "../i18n/translations";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
+
+// TMDB locale for content (titles, overviews, genre names). Updated by the i18n
+// provider when the app language changes; defaults to English.
+const TMDB_LOCALE: Record<Lang, string> = {
+  en: "en-US",
+  es: "es-ES",
+  fr: "fr-FR",
+  he: "he-IL",
+  ar: "ar-SA",
+};
+let apiLanguage = "en-US";
+
+export function setApiLanguage(lang: Lang): void {
+  apiLanguage = TMDB_LOCALE[lang] ?? "en-US";
+}
 
 function authHeaders(): Record<string, string> {
   const token = process.env.EXPO_PUBLIC_TMDB_TOKEN;
@@ -20,7 +36,8 @@ function authHeaders(): Record<string, string> {
 
 async function tmdbGet(path: string): Promise<any> {
   const headers = authHeaders(); // throws before fetch if unconfigured
-  const res = await fetch(`${TMDB_BASE}${path}`, { headers });
+  const sep = path.includes("?") ? "&" : "?";
+  const res = await fetch(`${TMDB_BASE}${path}${sep}language=${apiLanguage}`, { headers });
   if (!res.ok) throw new Error(`TMDB request failed (${res.status})`);
   return res.json();
 }
