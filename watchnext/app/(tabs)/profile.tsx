@@ -3,7 +3,6 @@ import { View, Text, Pressable, FlatList, StyleSheet, ActivityIndicator, Refresh
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import * as Clipboard from "expo-clipboard";
 import { useAuth } from "../../src/auth/AuthProvider";
 import { getFriends, getFriendStats, type StatBucket } from "../../src/services/friends";
 
@@ -18,7 +17,6 @@ export default function ProfileScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const uid = session?.user.id;
-  const [copied, setCopied] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const friends = useQuery({ queryKey: ["friends"], queryFn: getFriends });
@@ -39,13 +37,6 @@ export default function ProfileScreen() {
     setRefreshing(false);
   }
 
-  async function copyCode() {
-    if (!profile?.friend_code) return;
-    await Clipboard.setStringAsync(profile.friend_code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
-
   return (
     <FlatList
       style={styles.container}
@@ -61,13 +52,6 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.headerMeta}>
               <Text style={styles.username} numberOfLines={1}>@{profile?.username ?? "you"}</Text>
-              {profile?.friend_code ? (
-                <Pressable style={styles.codePill} onPress={copyCode} hitSlop={6}>
-                  <Text style={styles.codeText}>
-                    {copied ? "Copied!" : `${profile.friend_code}  ⧉`}
-                  </Text>
-                </Pressable>
-              ) : null}
             </View>
             <Pressable onPress={() => router.push("/settings")} hitSlop={10} style={styles.gear}>
               <Ionicons name="settings-outline" size={24} color="#666" />
@@ -89,10 +73,6 @@ export default function ProfileScreen() {
             <Text style={styles.primaryBtnText}>Add a friend</Text>
           </Pressable>
 
-          <Pressable style={styles.secondaryBtn} onPress={() => router.push("/import")}>
-            <Text style={styles.secondaryBtnText}>↓ Import watch history</Text>
-          </Pressable>
-
           <Text style={styles.section}>Friends</Text>
           {friends.isLoading ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
         </View>
@@ -110,7 +90,7 @@ export default function ProfileScreen() {
         friends.isLoading ? null : (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>No friends yet</Text>
-            <Text style={styles.emptySub}>Add someone with their friend code above.</Text>
+            <Text style={styles.emptySub}>Tap "Add a friend", or share your friend code from Settings.</Text>
           </View>
         )
       }
@@ -148,8 +128,6 @@ const styles = StyleSheet.create({
   avatarText: { color: "#fff", fontSize: 22, fontWeight: "800" },
   headerMeta: { flex: 1, minWidth: 0 },
   username: { fontSize: 22, fontWeight: "700" },
-  codePill: { alignSelf: "flex-start", marginTop: 6, backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  codeText: { fontSize: 12, color: "#666", fontWeight: "600", letterSpacing: 0.5 },
 
   statRow: { flexDirection: "row", gap: 10, marginTop: 20 },
   statTile: { flex: 1, backgroundColor: "#f0f0f3", borderRadius: 14, paddingVertical: 14, alignItems: "center" },
@@ -165,8 +143,6 @@ const styles = StyleSheet.create({
 
   primaryBtn: { backgroundColor: "#5b6cff", borderRadius: 12, paddingVertical: 13, alignItems: "center", marginTop: 20 },
   primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  secondaryBtn: { borderWidth: 1.5, borderColor: "#dfe1ec", borderRadius: 12, paddingVertical: 11, alignItems: "center", marginTop: 10 },
-  secondaryBtnText: { color: "#5b6cff", fontWeight: "600", fontSize: 14 },
 
   section: { fontSize: 13, fontWeight: "700", marginTop: 26, marginBottom: 6 },
   friendRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#eee" },

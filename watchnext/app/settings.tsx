@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator } from "react-native";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import Constants from "expo-constants";
+import * as Clipboard from "expo-clipboard";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useAuth } from "../src/auth/AuthProvider";
 import { supabase } from "../src/services/supabase";
@@ -18,9 +19,18 @@ const TABS: { key: WatchStatus; label: string }[] = [
 export default function SettingsScreen() {
   const { profile, session, refreshProfile, signOut } = useAuth();
   const qc = useQueryClient();
+  const router = useRouter();
 
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(profile?.username ?? "");
+  const [copied, setCopied] = useState(false);
+
+  async function copyCode() {
+    if (!profile?.friend_code) return;
+    await Clipboard.setStringAsync(profile.friend_code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
 
   const defaultTab = useQuery({ queryKey: ["pref-default-tab"], queryFn: getDefaultLibraryTab });
 
@@ -99,7 +109,22 @@ export default function SettingsScreen() {
         <View style={styles.divider} />
         <Text style={styles.label}>Email</Text>
         <Text style={styles.valueMuted}>{session?.user.email ?? "—"}</Text>
+
+        <View style={styles.divider} />
+        <Text style={styles.label}>Friend code</Text>
+        <Pressable style={styles.codeRow} onPress={copyCode} hitSlop={6}>
+          <Text style={styles.codeValue}>{profile?.friend_code ?? "—"}</Text>
+          <Text style={styles.copyHint}>{copied ? "Copied!" : "Copy ⧉"}</Text>
+        </Pressable>
+        <Text style={styles.hint}>Share this so friends can add you.</Text>
       </View>
+
+      {/* Data */}
+      <Text style={styles.section}>Data</Text>
+      <Pressable style={styles.rowBtn} onPress={() => router.push("/import")}>
+        <Text style={styles.rowBtnText}>↓ Import watch history</Text>
+        <Text style={styles.chevron}>›</Text>
+      </Pressable>
 
       {/* Preferences */}
       <Text style={styles.section}>Preferences</Text>
@@ -152,6 +177,13 @@ const styles = StyleSheet.create({
   save: { color: "#5b6cff", fontWeight: "800", fontSize: 14 },
   cancel: { color: "#999", fontWeight: "600", fontSize: 14 },
   divider: { height: 1, backgroundColor: "#e8e8ee", marginVertical: 14 },
+  codeRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 },
+  codeValue: { fontSize: 16, fontWeight: "700", letterSpacing: 1 },
+  copyHint: { fontSize: 13, color: "#5b6cff", fontWeight: "700" },
+  hint: { fontSize: 11, color: "#aaa", marginTop: 6 },
+  rowBtn: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#f6f6f8", borderRadius: 14, padding: 16 },
+  rowBtnText: { fontSize: 15, fontWeight: "600", color: "#5b6cff" },
+  chevron: { fontSize: 20, color: "#bbb" },
   segment: { flexDirection: "row", backgroundColor: "#e9e9ef", borderRadius: 999, padding: 3, marginTop: 8 },
   seg: { flex: 1, paddingVertical: 8, borderRadius: 999, alignItems: "center" },
   segOn: { backgroundColor: "#5b6cff" },
