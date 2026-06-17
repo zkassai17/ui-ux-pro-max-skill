@@ -15,12 +15,15 @@ export function QuickAddButton({
   onAdded,
   onRemoved,
   compact,
+  addStatus = "watched",
 }: {
   title: Title;
   onAdded?: () => void;
   onRemoved?: () => void;
-  // compact = a small circular +/✓ meant to sit on top of a poster
+  // compact = a labelled "Add" pill meant to sit on a poster
   compact?: boolean;
+  // which status a plain tap sets (long-press always offers all three)
+  addStatus?: WatchStatus;
 }) {
   const qc = useQueryClient();
   const entryKey = ["library-entry", title.mediaType, title.tmdbId];
@@ -72,20 +75,20 @@ export function QuickAddButton({
   const added = status !== null;
 
   if (compact) {
-    // Small circular button designed to overlay a poster corner. Tap to add as
-    // Watched (or remove); long-press for the Want/Watching/Watched chooser.
+    // Labelled "Add" pill designed to sit at the bottom of a poster. Tap to add
+    // (as `addStatus`, or remove); long-press for the Want/Watching/Watched chooser.
     return (
       <Pressable
-        style={[styles.fab, added && styles.fabAdded]}
-        onPress={() => (added ? remove.mutate() : set.mutate("watched"))}
+        style={[styles.addPill, added && styles.addPillAdded]}
+        onPress={() => (added ? remove.mutate() : set.mutate(addStatus))}
         onLongPress={pickStatus}
         disabled={busy}
-        hitSlop={8}
+        hitSlop={6}
       >
         {busy ? (
           <ActivityIndicator size="small" color="#fff" />
         ) : (
-          <Text style={styles.fabText}>{added ? "✓" : "+"}</Text>
+          <Text style={styles.addPillText}>{added ? `✓ ${STATUS_LABEL[status!]}` : "＋ Add"}</Text>
         )}
       </Pressable>
     );
@@ -123,16 +126,16 @@ const styles = StyleSheet.create({
   btnAdded: { backgroundColor: "#5b6cff" },
   label: { fontSize: 12, fontWeight: "700", color: "#5b6cff" },
   labelAdded: { color: "#fff" },
-  fab: {
-    width: 30,
-    height: 30,
-    borderRadius: 999,
-    backgroundColor: "rgba(91,108,255,0.95)",
+  addPill: {
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.9)",
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: "rgba(91,108,255,0.96)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.55)",
   },
-  fabAdded: { backgroundColor: "rgba(29,209,161,0.95)" },
-  fabText: { color: "#fff", fontSize: 16, fontWeight: "800", lineHeight: 18 },
+  addPillAdded: { backgroundColor: "rgba(29,209,161,0.96)" },
+  addPillText: { color: "#fff", fontSize: 12, fontWeight: "800" },
 });
