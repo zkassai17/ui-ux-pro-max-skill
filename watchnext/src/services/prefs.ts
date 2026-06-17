@@ -1,11 +1,33 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { WatchStatus } from "../types/db";
 import { DEFAULT_REC_WEIGHTS, type RecWeights } from "../lib/recPrefs";
+import type { Lang } from "../i18n/translations";
 
 // Small on-device preferences (no server needed).
 
 const DEFAULT_TAB_KEY = "pref:defaultLibraryTab";
 const REC_WEIGHTS_KEY = "pref:recWeights";
+const LANGUAGE_KEY = "pref:language";
+
+const VALID_LANGS: Lang[] = ["en", "es", "fr", "he", "ar"];
+
+export async function getLanguage(): Promise<Lang> {
+  try {
+    const v = await AsyncStorage.getItem(LANGUAGE_KEY);
+    if (v && (VALID_LANGS as string[]).includes(v)) return v as Lang;
+  } catch {
+    // fall through
+  }
+  return "en";
+}
+
+export async function setLanguage(lang: Lang): Promise<void> {
+  try {
+    await AsyncStorage.setItem(LANGUAGE_KEY, lang);
+  } catch {
+    // best-effort
+  }
+}
 
 export async function getRecWeights(): Promise<RecWeights> {
   try {

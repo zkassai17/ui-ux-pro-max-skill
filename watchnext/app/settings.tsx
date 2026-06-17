@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator } from "react-native";
 import { Stack, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import * as Clipboard from "expo-clipboard";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -24,28 +25,28 @@ import {
   type RecDimension,
   type RecWeights,
 } from "../src/lib/recPrefs";
+import { useI18n } from "../src/i18n/I18nProvider";
+import { LANGUAGES, translate, type Lang } from "../src/i18n/translations";
 import type { WatchStatus } from "../src/types/db";
 
-const REC_DIMS: { key: RecDimension; label: string; note?: string }[] = [
-  { key: "content", label: "Your taste" },
-  { key: "collaborative", label: "Friends", note: "better with more friends" },
-  { key: "trending", label: "Trending" },
+const REC_DIMS: { key: RecDimension; note?: boolean }[] = [
+  { key: "content" },
+  { key: "collaborative", note: true },
+  { key: "trending" },
 ];
 
-const TABS: { key: WatchStatus; label: string }[] = [
-  { key: "want", label: "Want" },
-  { key: "watching", label: "Watching" },
-  { key: "watched", label: "Watched" },
-];
+const TABS: WatchStatus[] = ["want", "watching", "watched"];
 
 export default function SettingsScreen() {
   const { profile, session, refreshProfile, signOut } = useAuth();
+  const { t, lang, setLang } = useI18n();
   const qc = useQueryClient();
   const router = useRouter();
 
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(profile?.username ?? "");
   const [copied, setCopied] = useState(false);
+  const [showCustom, setShowCustom] = useState(false);
 
   async function copyCode() {
     if (!profile?.friend_code) return;
@@ -54,7 +55,6 @@ export default function SettingsScreen() {
     setTimeout(() => setCopied(false), 1500);
   }
 
-  const [showCustom, setShowCustom] = useState(false);
   const defaultTab = useQuery({ queryKey: ["pref-default-tab"], queryFn: getDefaultLibraryTab });
   const recWeights = useQuery({ queryKey: ["rec-weights"], queryFn: getRecWeights });
 
@@ -69,19 +69,17 @@ export default function SettingsScreen() {
   const saveUsername = useMutation({
     mutationFn: async () => {
       const username = normalizeUsername(value);
-      if (!isValidUsername(username)) {
-        throw new Error("3–20 chars, start with a letter, letters/numbers/underscore only.");
-      }
-      if (username === profile?.username) return; // no change
+      if (!isValidUsername(username)) throw new Error(t("alert.usernameRule"));
+      if (username === profile?.username) return;
       const { error } = await supabase.from("profiles").update({ username }).eq("id", session!.user.id);
-      if (error) throw new Error(error.code === "23505" ? "That username is taken." : error.message);
+      if (error) throw new Error(error.code === "23505" ? t("alert.usernameTaken") : error.message);
     },
     onSuccess: async () => {
       await refreshProfile();
       qc.invalidateQueries({ queryKey: ["friends"] });
       setEditing(false);
     },
-    onError: (e) => Alert.alert("Couldn't save username", (e as Error).message),
+    onError: (e) => Alert.alert(t("alert.cantSaveUsername"), (e as Error).message),
   });
 
   const setTab = useMutation({
@@ -91,13 +89,21 @@ export default function SettingsScreen() {
 
   const exportCsv = useMutation({
     mutationFn: exportLibraryCsv,
-    onError: (e) => Alert.alert("Couldn't export", (e as Error).message),
+    onError: (e) => Alert.alert(t("alert.cantExport"), (e as Error).message),
   });
 
+  async function chooseLang(code: Lang) {
+    const flippedDirection = await setLang(code);
+    if (flippedDirection) {
+      // Alert in the newly-chosen language since the layout flip needs a restart.
+      Alert.alert(translate(code, "settings.language"), translate(code, "settings.restartRtl"));
+    }
+  }
+
   function confirmSignOut() {
-    Alert.alert("Sign out?", "You'll need to sign back in to use watchnext.", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Sign out", style: "destructive", onPress: () => signOut() },
+    Alert.alert(t("settings.signOutTitle"), t("settings.signOutBody"), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("settings.signOut"), style: "destructive", onPress: () => signOut() },
     ]);
   }
 
@@ -107,12 +113,12 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-      <Stack.Screen options={{ headerShown: true, title: "Settings" }} />
+      <Stack.Screen options={{ headerShown: true, title: t("settings.title") }} />
 
       {/* Account */}
-      <Text style={styles.section}>Account</Text>
+      <Text style={styles.section}>{t("settings.account")}</Text>
       <View style={styles.card}>
-        <Text style={styles.label}>Username</Text>
+        <Text style={styles.label}>{t("settings.username")}</Text>
         {editing ? (
           <View style={styles.editRow}>
             <Text style={styles.at}>@</Text>
@@ -126,41 +132,48 @@ export default function SettingsScreen() {
               maxLength={20}
             />
             <Pressable onPress={() => saveUsername.mutate()} disabled={saveUsername.isPending} hitSlop={6}>
-              {saveUsername.isPending ? (
-                <ActivityIndicator size="small" />
-              ) : (
-                <Text style={styles.save}>Save</Text>
-              )}
+              {saveUsername.isPending ? <ActivityIndicator size="small" /> : <Text style={styles.save}>{t("common.save")}</Text>}
             </Pressable>
             <Pressable onPress={() => { setValue(profile?.username ?? ""); setEditing(false); }} hitSlop={6}>
-              <Text style={styles.cancel}>Cancel</Text>
+              <Text style={styles.cancel}>{t("common.cancel")}</Text>
             </Pressable>
           </View>
         ) : (
           <View style={styles.valueRow}>
             <Text style={styles.value}>@{profile?.username ?? "you"}</Text>
             <Pressable onPress={() => setEditing(true)} hitSlop={6}>
-              <Text style={styles.edit}>Edit</Text>
+              <Text style={styles.edit}>{t("common.edit")}</Text>
             </Pressable>
           </View>
         )}
         <View style={styles.divider} />
-        <Text style={styles.label}>Email</Text>
+        <Text style={styles.label}>{t("settings.email")}</Text>
         <Text style={styles.valueMuted}>{session?.user.email ?? "—"}</Text>
 
         <View style={styles.divider} />
-        <Text style={styles.label}>Friend code</Text>
+        <Text style={styles.label}>{t("settings.friendCode")}</Text>
         <Pressable style={styles.codeRow} onPress={copyCode} hitSlop={6}>
           <Text style={styles.codeValue}>{profile?.friend_code ?? "—"}</Text>
-          <Text style={styles.copyHint}>{copied ? "Copied!" : "Copy ⧉"}</Text>
+          <Text style={styles.copyHint}>{copied ? t("common.copied") : `${t("common.copy")} ⧉`}</Text>
         </Pressable>
-        <Text style={styles.hint}>Share this so friends can add you.</Text>
+        <Text style={styles.hint}>{t("settings.shareCode")}</Text>
+      </View>
+
+      {/* Language */}
+      <Text style={styles.section}>{t("settings.language")}</Text>
+      <View style={styles.card}>
+        {LANGUAGES.map((l, i) => (
+          <Pressable key={l.code} style={[styles.langRow, i > 0 && styles.langRowBorder]} onPress={() => chooseLang(l.code)}>
+            <Text style={styles.langLabel}>{l.label}</Text>
+            {lang === l.code ? <Ionicons name="checkmark" size={20} color="#5b6cff" /> : null}
+          </Pressable>
+        ))}
       </View>
 
       {/* Data */}
-      <Text style={styles.section}>Data</Text>
+      <Text style={styles.section}>{t("settings.data")}</Text>
       <Pressable style={styles.rowBtn} onPress={() => router.push("/import")}>
-        <Text style={styles.rowBtnText}>↓ Import watch history</Text>
+        <Text style={styles.rowBtnText}>↓ {t("settings.import")}</Text>
         <Text style={styles.chevron}>›</Text>
       </Pressable>
       <Pressable
@@ -168,24 +181,20 @@ export default function SettingsScreen() {
         onPress={() => exportCsv.mutate()}
         disabled={exportCsv.isPending}
       >
-        <Text style={styles.rowBtnText}>↑ Export my data (CSV)</Text>
+        <Text style={styles.rowBtnText}>↑ {t("settings.export")}</Text>
         {exportCsv.isPending ? <ActivityIndicator size="small" /> : <Text style={styles.chevron}>›</Text>}
       </Pressable>
 
       {/* Preferences */}
-      <Text style={styles.section}>Preferences</Text>
+      <Text style={styles.section}>{t("settings.preferences")}</Text>
       <View style={styles.card}>
-        <Text style={styles.label}>Library opens on</Text>
+        <Text style={styles.label}>{t("settings.libraryOpensOn")}</Text>
         <View style={styles.segment}>
-          {TABS.map((t) => {
-            const on = current === t.key;
+          {TABS.map((tab) => {
+            const on = current === tab;
             return (
-              <Pressable
-                key={t.key}
-                style={[styles.seg, on && styles.segOn]}
-                onPress={() => setTab.mutate(t.key)}
-              >
-                <Text style={[styles.segText, on && styles.segTextOn]}>{t.label}</Text>
+              <Pressable key={tab} style={[styles.seg, on && styles.segOn]} onPress={() => setTab.mutate(tab)}>
+                <Text style={[styles.segText, on && styles.segTextOn]}>{t(`status.${tab}`)}</Text>
               </Pressable>
             );
           })}
@@ -193,19 +202,15 @@ export default function SettingsScreen() {
       </View>
 
       {/* Recommendations */}
-      <Text style={styles.section}>Recommendations</Text>
+      <Text style={styles.section}>{t("settings.recommendations")}</Text>
       <View style={styles.card}>
-        <Text style={styles.label}>How "for you" is picked</Text>
+        <Text style={styles.label}>{t("settings.howForYou")}</Text>
         <View style={styles.presetWrap}>
           {REC_PRESETS.map((p) => {
             const on = matchPreset(weights) === p.key;
             return (
-              <Pressable
-                key={p.key}
-                style={[styles.preset, on && styles.presetOn]}
-                onPress={() => saveWeights.mutate(p.weights)}
-              >
-                <Text style={[styles.presetText, on && styles.presetTextOn]}>{p.label}</Text>
+              <Pressable key={p.key} style={[styles.preset, on && styles.presetOn]} onPress={() => saveWeights.mutate(p.weights)}>
+                <Text style={[styles.presetText, on && styles.presetTextOn]}>{t(`preset.${p.key}`)}</Text>
               </Pressable>
             );
           })}
@@ -213,8 +218,8 @@ export default function SettingsScreen() {
 
         <Pressable style={styles.customToggle} onPress={() => setShowCustom((s) => !s)} hitSlop={6}>
           <Text style={styles.customToggleText}>
-            {showCustom ? "Hide fine-tuning ▴" : "Customize ▾"}
-            {matchPreset(weights) === null ? "  · Custom" : ""}
+            {showCustom ? `${t("settings.hideTuning")} ▴` : `${t("settings.customize")} ▾`}
+            {matchPreset(weights) === null ? `  · ${t("settings.custom")}` : ""}
           </Text>
         </Pressable>
 
@@ -225,21 +230,19 @@ export default function SettingsScreen() {
               return (
                 <View key={dim.key} style={styles.dimRow}>
                   <View style={styles.dimLabelWrap}>
-                    <Text style={styles.dimLabel}>{dim.label}</Text>
-                    {dim.note ? <Text style={styles.dimNote}>{dim.note}</Text> : null}
+                    <Text style={styles.dimLabel}>{t(`recdim.${dim.key}`)}</Text>
+                    {dim.note ? <Text style={styles.dimNote}>{t("recdim.friendsNote")}</Text> : null}
                   </View>
                   <View style={styles.levelSeg}>
-                    {LEVEL_LABELS.map((lab, i) => {
+                    {LEVEL_LABELS.map((_, i) => {
                       const on = idx === i;
                       return (
                         <Pressable
-                          key={lab}
+                          key={i}
                           style={[styles.level, on && styles.levelOn]}
-                          onPress={() =>
-                            saveWeights.mutate({ ...weights, [dim.key]: REC_LEVELS[dim.key][i] })
-                          }
+                          onPress={() => saveWeights.mutate({ ...weights, [dim.key]: REC_LEVELS[dim.key][i] })}
                         >
-                          <Text style={[styles.levelText, on && styles.levelTextOn]}>{lab}</Text>
+                          <Text style={[styles.levelText, on && styles.levelTextOn]}>{t(`level.${i}`)}</Text>
                         </Pressable>
                       );
                     })}
@@ -252,16 +255,16 @@ export default function SettingsScreen() {
       </View>
 
       {/* About */}
-      <Text style={styles.section}>About</Text>
+      <Text style={styles.section}>{t("settings.about")}</Text>
       <View style={styles.card}>
         <View style={styles.valueRow}>
-          <Text style={styles.label}>Version</Text>
+          <Text style={styles.label}>{t("settings.version")}</Text>
           <Text style={styles.valueMuted}>{version}</Text>
         </View>
       </View>
 
       <Pressable style={styles.signOut} onPress={confirmSignOut}>
-        <Text style={styles.signOutText}>Sign out</Text>
+        <Text style={styles.signOutText}>{t("settings.signOut")}</Text>
       </Pressable>
     </ScrollView>
   );
@@ -286,6 +289,9 @@ const styles = StyleSheet.create({
   codeValue: { fontSize: 16, fontWeight: "700", letterSpacing: 1 },
   copyHint: { fontSize: 13, color: "#5b6cff", fontWeight: "700" },
   hint: { fontSize: 11, color: "#aaa", marginTop: 6 },
+  langRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12 },
+  langRowBorder: { borderTopWidth: 1, borderTopColor: "#e8e8ee" },
+  langLabel: { fontSize: 16, fontWeight: "600" },
   rowBtn: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#f6f6f8", borderRadius: 14, padding: 16 },
   rowBtnText: { fontSize: 15, fontWeight: "600", color: "#5b6cff" },
   chevron: { fontSize: 20, color: "#bbb" },
