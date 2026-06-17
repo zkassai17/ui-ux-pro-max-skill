@@ -20,8 +20,7 @@ import { ratingEmoji } from "../../src/lib/ratingScale";
 import type { WatchStatus, WatchlistEntry } from "../../src/types/db";
 import type { MediaType } from "../../src/types/tmdb";
 
-const FILTERS: { key: "all" | WatchStatus; label: string }[] = [
-  { key: "all", label: "All" },
+const FILTERS: { key: WatchStatus; label: string }[] = [
   { key: "want", label: "Want" },
   { key: "watching", label: "Watching" },
   { key: "watched", label: "Watched" },
@@ -48,7 +47,7 @@ const STATUS_LABEL: Record<WatchStatus, string> = {
 };
 
 export default function LibraryScreen() {
-  const [filter, setFilter] = useState<"all" | WatchStatus>("all");
+  const [filter, setFilter] = useState<WatchStatus>("want");
   const [media, setMedia] = useState<"all" | MediaType>("all");
   const [sort, setSort] = useState<LibrarySort>("recent");
   const [openRatingId, setOpenRatingId] = useState<string | null>(null);
@@ -83,7 +82,7 @@ export default function LibraryScreen() {
   const q = query.trim().toLowerCase();
   const filtered = (data ?? []).filter(
     (e) =>
-      (filter === "all" || e.status === filter) &&
+      e.status === filter &&
       (media === "all" || e.media_type === media) &&
       (q === "" || e.title.toLowerCase().includes(q))
   );
