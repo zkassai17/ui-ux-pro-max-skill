@@ -172,21 +172,6 @@ export default function SettingsScreen() {
         <Text style={styles.hint}>{t("settings.shareCode")}</Text>
       </View>
 
-      {/* Data */}
-      <Text style={styles.section}>{t("settings.data")}</Text>
-      <Pressable style={styles.rowBtn} onPress={() => router.push("/import")}>
-        <Text style={styles.rowBtnText}>↓ {t("settings.import")}</Text>
-        <Text style={styles.chevron}>›</Text>
-      </Pressable>
-      <Pressable
-        style={[styles.rowBtn, { marginTop: 10 }]}
-        onPress={() => exportCsv.mutate()}
-        disabled={exportCsv.isPending}
-      >
-        <Text style={styles.rowBtnText}>↑ {t("settings.export")}</Text>
-        {exportCsv.isPending ? <ActivityIndicator size="small" /> : <Text style={styles.chevron}>›</Text>}
-      </Pressable>
-
       {/* Preferences */}
       <Text style={styles.section}>{t("settings.preferences")}</Text>
       <View style={styles.card}>
@@ -256,6 +241,21 @@ export default function SettingsScreen() {
         ) : null}
       </View>
 
+      {/* Data */}
+      <Text style={styles.section}>{t("settings.data")}</Text>
+      <Pressable style={styles.rowBtn} onPress={() => router.push("/import")}>
+        <Text style={styles.rowBtnText}>↓ {t("settings.import")}</Text>
+        <Text style={styles.chevron}>›</Text>
+      </Pressable>
+      <Pressable
+        style={[styles.rowBtn, { marginTop: 10 }]}
+        onPress={() => exportCsv.mutate()}
+        disabled={exportCsv.isPending}
+      >
+        <Text style={styles.rowBtnText}>↑ {t("settings.export")}</Text>
+        {exportCsv.isPending ? <ActivityIndicator size="small" /> : <Text style={styles.chevron}>›</Text>}
+      </Pressable>
+
       {/* About */}
       <Text style={styles.section}>{t("settings.about")}</Text>
       <View style={styles.card}>
@@ -291,18 +291,20 @@ const styles = StyleSheet.create({
   codeValue: { fontSize: 16, fontWeight: "700", letterSpacing: 1 },
   copyHint: { fontSize: 13, color: "#5b6cff", fontWeight: "700" },
   hint: { fontSize: 11, color: "#aaa", marginTop: 6 },
-  langPills: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  langPills: { flexDirection: "row", gap: 6 },
   langPill: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    justifyContent: "center",
+    gap: 4,
     backgroundColor: "#f0f0f3",
     borderRadius: 999,
-    paddingHorizontal: 13,
-    paddingVertical: 8,
+    paddingVertical: 9,
+    paddingHorizontal: 4,
   },
   langPillOn: { backgroundColor: "#5b6cff" },
-  langFlag: { fontSize: 16 },
+  langFlag: { fontSize: 15 },
   langAbbr: { fontSize: 13, fontWeight: "800", color: "#555" },
   langAbbrOn: { color: "#fff" },
   rowBtn: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#f6f6f8", borderRadius: 14, padding: 16 },
