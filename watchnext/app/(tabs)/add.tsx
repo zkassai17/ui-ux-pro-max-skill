@@ -15,6 +15,7 @@ import { searchTitles, discoverTitles, getGenres } from "../../src/services/tmdb
 import { getLibrary } from "../../src/services/watchlist";
 import { TitleRow } from "../../src/components/TitleRow";
 import { StatusButtons } from "../../src/components/StatusButtons";
+import { useI18n } from "../../src/i18n/I18nProvider";
 import { TOP_PROVIDERS } from "../../src/lib/providers";
 import type { MediaType, Title } from "../../src/types/tmdb";
 
@@ -37,6 +38,7 @@ export default function AddScreen() {
   const [genreIds, setGenreIds] = useState<number[]>([]);
   const [providerIds, setProviderIds] = useState<number[]>([]);
   const router = useRouter();
+  const { t } = useI18n();
 
   function toggle(list: number[], id: number): number[] {
     return list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
@@ -137,7 +139,7 @@ export default function AddScreen() {
     <View style={styles.container}>
       <TextInput
         style={styles.search}
-        placeholder="Search movies & shows…"
+        placeholder={t("add.searchPlaceholder")}
         value={q}
         onChangeText={setQ}
         autoCapitalize="none"
@@ -154,7 +156,7 @@ export default function AddScreen() {
                 onPress={() => switchMedia(m)}
               >
                 <Text style={[styles.toggleText, mediaType === m && styles.toggleTextOn]}>
-                  {m === "movie" ? "Movies" : "TV"}
+                  {m === "movie" ? t("media.movies") : t("media.shows")}
                 </Text>
               </Pressable>
             ))}
@@ -194,18 +196,16 @@ export default function AddScreen() {
 
       {isError ? (
         <View style={styles.errorBox}>
-          <Text style={styles.errorTitle}>Couldn't reach the catalog</Text>
-          <Text style={styles.errorHint}>
-            Your connection dropped for a moment. Check your internet and try again.
-          </Text>
+          <Text style={styles.errorTitle}>{t("add.errorTitle")}</Text>
+          <Text style={styles.errorHint}>{t("add.errorHint")}</Text>
           <Pressable style={styles.retryBtn} onPress={retry} disabled={isFetching}>
-            <Text style={styles.retryBtnText}>{isFetching ? "Retrying…" : "Try again"}</Text>
+            <Text style={styles.retryBtnText}>{isFetching ? t("add.retrying") : t("add.tryAgain")}</Text>
           </Pressable>
         </View>
       ) : isLoading ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
       ) : results.length === 0 ? (
-        <Text style={styles.msg}>{searching ? "No results." : "Nothing matches those filters."}</Text>
+        <Text style={styles.msg}>{searching ? t("add.noResults") : t("add.noFilterMatch")}</Text>
       ) : (
         <FlatList
           data={results}

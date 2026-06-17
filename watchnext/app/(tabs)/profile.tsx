@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../src/auth/AuthProvider";
+import { useI18n } from "../../src/i18n/I18nProvider";
 import { getFriends, getFriendStats, type StatBucket } from "../../src/services/friends";
 
 function initials(username?: string): string {
@@ -14,6 +15,7 @@ function initials(username?: string): string {
 
 export default function ProfileScreen() {
   const { profile, session } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
   const qc = useQueryClient();
   const uid = session?.user.id;
@@ -59,21 +61,21 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.statRow}>
-            <StatTile n={stats.data?.watched ?? 0} label="watched" />
-            <StatTile n={stats.data?.watching ?? 0} label="watching" />
-            <StatTile n={stats.data?.want ?? 0} label="want" />
+            <StatTile n={stats.data?.watched ?? 0} label={t("stat.watched")} />
+            <StatTile n={stats.data?.watching ?? 0} label={t("stat.watching")} />
+            <StatTile n={stats.data?.want ?? 0} label={t("stat.want")} />
           </View>
 
           <View style={styles.breakdownRow}>
-            <BreakdownCard emoji="🎬" label="Movies" bucket={stats.data?.movie} />
-            <BreakdownCard emoji="📺" label="TV Shows" bucket={stats.data?.tv} />
+            <BreakdownCard emoji="🎬" label={t("profile.movies")} bucket={stats.data?.movie} />
+            <BreakdownCard emoji="📺" label={t("profile.tvShows")} bucket={stats.data?.tv} />
           </View>
 
           <Pressable style={styles.primaryBtn} onPress={() => router.push("/friends/add")}>
-            <Text style={styles.primaryBtnText}>Add a friend</Text>
+            <Text style={styles.primaryBtnText}>{t("profile.addFriend")}</Text>
           </Pressable>
 
-          <Text style={styles.section}>Friends</Text>
+          <Text style={styles.section}>{t("profile.friends")}</Text>
           {friends.isLoading ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
         </View>
       }
@@ -89,8 +91,8 @@ export default function ProfileScreen() {
       ListEmptyComponent={
         friends.isLoading ? null : (
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>No friends yet</Text>
-            <Text style={styles.emptySub}>Tap "Add a friend", or share your friend code from Settings.</Text>
+            <Text style={styles.emptyText}>{t("profile.noFriends")}</Text>
+            <Text style={styles.emptySub}>{t("profile.noFriendsSub")}</Text>
           </View>
         )
       }
@@ -108,13 +110,14 @@ function StatTile({ n, label }: { n: number; label: string }) {
 }
 
 function BreakdownCard({ emoji, label, bucket }: { emoji: string; label: string; bucket?: StatBucket }) {
+  const { t } = useI18n();
   const b = bucket ?? { want: 0, watching: 0, watched: 0 };
   return (
     <View style={styles.breakdownCard}>
       <Text style={styles.breakdownTitle}>{emoji} {label}</Text>
       <Text style={styles.breakdownBig}>{b.watched}</Text>
-      <Text style={styles.breakdownSub}>watched</Text>
-      <Text style={styles.breakdownMeta}>{b.watching} watching · {b.want} want</Text>
+      <Text style={styles.breakdownSub}>{t("stat.watched")}</Text>
+      <Text style={styles.breakdownMeta}>{b.watching} {t("stat.watching")} · {b.want} {t("stat.want")}</Text>
     </View>
   );
 }

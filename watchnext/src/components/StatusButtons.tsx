@@ -3,15 +3,16 @@ import { Pressable, Text, View, StyleSheet, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getLibraryEntry, addToLibrary, updateStatus, removeFromLibrary } from "../services/watchlist";
+import { useI18n } from "../i18n/I18nProvider";
 import type { Title } from "../types/tmdb";
 import type { WatchStatus } from "../types/db";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
 
-const OPTIONS: { key: WatchStatus; label: string; on: IconName; off: IconName }[] = [
-  { key: "want", label: "Want", on: "bookmark", off: "bookmark-outline" },
-  { key: "watching", label: "Watching", on: "eye", off: "eye-outline" },
-  { key: "watched", label: "Watched", on: "checkmark-circle", off: "checkmark-circle-outline" },
+const OPTIONS: { key: WatchStatus; on: IconName; off: IconName }[] = [
+  { key: "want", on: "bookmark", off: "bookmark-outline" },
+  { key: "watching", on: "eye", off: "eye-outline" },
+  { key: "watched", on: "checkmark-circle", off: "checkmark-circle-outline" },
 ];
 
 const ACTIVE = "#5b6cff";
@@ -29,6 +30,7 @@ export function StatusButtons({
   onRemoved?: () => void;
 }) {
   const qc = useQueryClient();
+  const { t } = useI18n();
   const entryKey = ["library-entry", title.mediaType, title.tmdbId];
   const entry = useQuery({
     queryKey: entryKey,
@@ -76,7 +78,7 @@ export function StatusButtons({
           >
             <Ionicons name={active ? o.on : o.off} size={22} color={active ? ACTIVE : IDLE} />
             <Text style={[styles.label, active && styles.labelActive]} numberOfLines={1}>
-              {o.label}
+              {t(`status.${o.key}`)}
             </Text>
           </Pressable>
         );
