@@ -7,16 +7,14 @@ import { addToLibrary, getLibraryEntry, updateStatus, rateTitle, removeFromLibra
 import { PosterImage } from "../../../src/components/PosterImage";
 import { EmojiRating } from "../../../src/components/EmojiRating";
 import { posterUrl } from "../../../src/lib/tmdbNormalize";
+import { useI18n } from "../../../src/i18n/I18nProvider";
 import type { MediaType, TitleDetail, WatchProvider } from "../../../src/types/tmdb";
 import type { WatchStatus } from "../../../src/types/db";
 
-const STATUSES: { key: WatchStatus; label: string }[] = [
-  { key: "want", label: "Want" },
-  { key: "watching", label: "Watching" },
-  { key: "watched", label: "Watched" },
-];
+const STATUS_KEYS: WatchStatus[] = ["want", "watching", "watched"];
 
 export default function TitleDetailScreen() {
+  const { t } = useI18n();
   const { mediaType, id } = useLocalSearchParams<{ mediaType: MediaType; id: string }>();
   const tmdbId = Number(id);
   const qc = useQueryClient();
@@ -46,7 +44,7 @@ export default function TitleDetailScreen() {
       await qc.invalidateQueries({ queryKey: ["library-entry", mediaType, tmdbId] });
       await qc.invalidateQueries({ queryKey: ["library"] });
     } catch (e) {
-      Alert.alert("Couldn't save", (e as Error).message);
+      Alert.alert(t("alert.cantSave"), (e as Error).message);
     } finally {
       setSaving(false);
     }
@@ -59,7 +57,7 @@ export default function TitleDetailScreen() {
       await qc.invalidateQueries({ queryKey: ["library-entry", mediaType, tmdbId] });
       await qc.invalidateQueries({ queryKey: ["library"] });
     } catch (e) {
-      Alert.alert("Couldn't save rating", (e as Error).message);
+      Alert.alert(t("alert.cantSave"), (e as Error).message);
     } finally {
       setRating(false);
     }
@@ -72,22 +70,22 @@ export default function TitleDetailScreen() {
       await qc.invalidateQueries({ queryKey: ["library-entry", mediaType, tmdbId] });
       await qc.invalidateQueries({ queryKey: ["library"] });
     } catch (e) {
-      Alert.alert("Couldn't remove", (e as Error).message);
+      Alert.alert(t("alert.cantRemove"), (e as Error).message);
     } finally {
       setRemoving(false);
     }
   }
 
-  function confirmRemove(entryId: string, title: string) {
-    Alert.alert("Remove from library?", `“${title}” will be removed from your library.`, [
-      { text: "Cancel", style: "cancel" },
-      { text: "Remove", style: "destructive", onPress: () => doRemove(entryId) },
+  function confirmRemove(entryId: string) {
+    Alert.alert(t("title.removeConfirmTitle"), t("title.removeConfirmBody"), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("common.remove"), style: "destructive", onPress: () => doRemove(entryId) },
     ]);
   }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Stack.Screen options={{ headerShown: true, title: detail.data?.title ?? "Title" }} />
+      <Stack.Screen options={{ headerShown: true, title: detail.data?.title ?? t("title.screenTitle") }} />
       {detail.isLoading ? (
         <ActivityIndicator style={{ marginTop: 40 }} />
       ) : detail.isError ? (
@@ -101,16 +99,16 @@ export default function TitleDetailScreen() {
               <View style={styles.headerRow}>
                 <PosterImage path={d.posterPath} width={130} height={195} radius={12} />
                 <View style={styles.statusCol}>
-                  <Text style={styles.statusHeading}>{current ? "In your library" : "Add to library"}</Text>
-                  {STATUSES.map((s) => (
+                  <Text style={styles.statusHeading}>{current ? t("title.inLibrary") : t("title.addToLibrary")}</Text>
+                  {STATUS_KEYS.map((key) => (
                     <Pressable
-                      key={s.key}
+                      key={key}
                       disabled={saving || removing}
-                      style={[styles.statusBtn, current === s.key && styles.statusBtnOn]}
-                      onPress={() => setStatus(s.key, d)}
+                      style={[styles.statusBtn, current === key && styles.statusBtnOn]}
+                      onPress={() => setStatus(key, d)}
                     >
-                      <Text style={[styles.statusBtnText, current === s.key && styles.statusBtnTextOn]}>
-                        {s.label}
+                      <Text style={[styles.statusBtnText, current === key && styles.statusBtnTextOn]}>
+                        {t(`status.${key}`)}
                       </Text>
                     </Pressable>
                   ))}
@@ -118,16 +116,16 @@ export default function TitleDetailScreen() {
                     <Pressable
                       disabled={saving || removing}
                       style={styles.removeBtn}
-                      onPress={() => confirmRemove(entry.data!.id, d.title)}
+                      onPress={() => confirmRemove(entry.data!.id)}
                     >
-                      <Text style={styles.removeBtnText}>{removing ? "Removing…" : "Remove from library"}</Text>
+                      <Text style={styles.removeBtnText}>{removing ? t("title.removing") : t("title.remove")}</Text>
                     </Pressable>
                   ) : null}
                 </View>
               </View>
               <Text style={styles.title}>{d.title}</Text>
               <Text style={styles.sub}>
-                {[d.year, d.mediaType === "movie" ? "Movie" : "TV", d.rating ? `⭐ ${d.rating} community` : null]
+                {[d.year, d.mediaType === "movie" ? t("media.movie") : t("media.tv"), d.rating ? `⭐ ${d.rating} ${t("title.community")}` : null]
                   .filter(Boolean)
                   .join(" · ")}
               </Text>
@@ -136,33 +134,33 @@ export default function TitleDetailScreen() {
 
               <View style={styles.ratingBox}>
                 <View style={styles.ratingHeader}>
-                  <Text style={styles.section}>Your rating</Text>
+                  <Text style={styles.section}>{t("title.yourRating")}</Text>
                   {rating ? <ActivityIndicator size="small" style={{ marginLeft: 10 }} /> : null}
                 </View>
                 <EmojiRating
                   value={entry.data?.rating ?? null}
                   disabled={rating}
                   onRate={(next) => setRating_(next, d)}
-                  emptyLabel="Tap to rate — adds it to Watched"
+                  emptyLabel={t("title.tapToRate")}
                 />
               </View>
 
-              <Text style={styles.section}>Where to watch</Text>
+              <Text style={styles.section}>{t("title.whereToWatch")}</Text>
               {providers.isLoading ? (
                 <ActivityIndicator />
               ) : (
                 (() => {
                   const p = providers.data;
-                  const groups: { label: string; list: WatchProvider[] }[] = [
-                    { label: "Stream", list: p?.flatrate ?? [] },
-                    { label: "Rent", list: p?.rent ?? [] },
-                    { label: "Buy", list: p?.buy ?? [] },
+                  const groups: { key: string; label: string; list: WatchProvider[] }[] = [
+                    { key: "stream", label: t("watch.stream"), list: p?.flatrate ?? [] },
+                    { key: "rent", label: t("watch.rent"), list: p?.rent ?? [] },
+                    { key: "buy", label: t("watch.buy"), list: p?.buy ?? [] },
                   ].filter((g) => g.list.length > 0);
                   if (groups.length === 0) {
-                    return <Text style={styles.notAvailable}>Not available on US streaming right now.</Text>;
+                    return <Text style={styles.notAvailable}>{t("title.notAvailable")}</Text>;
                   }
                   return groups.map((g) => (
-                    <View key={g.label} style={styles.providerGroup}>
+                    <View key={g.key} style={styles.providerGroup}>
                       <Text style={styles.providerLabel}>{g.label}</Text>
                       <View style={styles.providerRow}>
                         {g.list.map((prov) => {
@@ -182,7 +180,7 @@ export default function TitleDetailScreen() {
               )}
 
               <Pressable style={styles.btn} onPress={() => router.push(`/recommend/${d.mediaType}/${d.tmdbId}`)}>
-                <Text style={styles.btnText}>Recommend to a friend</Text>
+                <Text style={styles.btnText}>{t("title.recommend")}</Text>
               </Pressable>
             </>
           );
