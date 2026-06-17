@@ -152,6 +152,19 @@ const en: Dict = {
   "title.notAvailable": "Not available on US streaming right now.",
   "title.recommend": "Recommend to a friend",
   "title.community": "community",
+  "user.profileFallback": "Profile",
+  "user.recommendTitle": "Recommend a title",
+  "user.unfriend": "Unfriend",
+  "user.nothingIn": "Nothing in",
+  "alert.cantUnfriend": "Couldn't unfriend",
+  "taste.match": "Taste match",
+  "taste.unlockHint": "Watch some of the same titles to unlock your taste match.",
+  "taste.bothLove": "You both love",
+  "taste.bothSeen": "You've both seen",
+  "taste.across": "across",
+  "taste.rated": "rated",
+  "taste.inCommon": "in common",
+  "taste.sharpen": "Rate titles you've both seen to sharpen this.",
 };
 
 const es: Dict = {
@@ -275,6 +288,19 @@ const es: Dict = {
   "title.notAvailable": "No disponible en streaming en EE. UU. ahora mismo.",
   "title.recommend": "Recomendar a un amigo",
   "title.community": "comunidad",
+  "user.profileFallback": "Perfil",
+  "user.recommendTitle": "Recomendar un título",
+  "user.unfriend": "Eliminar amigo",
+  "user.nothingIn": "Nada en",
+  "alert.cantUnfriend": "No se pudo eliminar al amigo",
+  "taste.match": "Afinidad de gustos",
+  "taste.unlockHint": "Ved los mismos títulos para desbloquear vuestra afinidad.",
+  "taste.bothLove": "A los dos os encanta",
+  "taste.bothSeen": "Los dos habéis visto",
+  "taste.across": "de",
+  "taste.rated": "valorados",
+  "taste.inCommon": "en común",
+  "taste.sharpen": "Valora títulos que ambos habéis visto para afinar esto.",
 };
 
 const fr: Dict = {
@@ -398,6 +424,19 @@ const fr: Dict = {
   "title.notAvailable": "Pas disponible en streaming aux États-Unis pour le moment.",
   "title.recommend": "Recommander à un ami",
   "title.community": "communauté",
+  "user.profileFallback": "Profil",
+  "user.recommendTitle": "Recommander un titre",
+  "user.unfriend": "Retirer l'ami",
+  "user.nothingIn": "Rien dans",
+  "alert.cantUnfriend": "Impossible de retirer l'ami",
+  "taste.match": "Affinité de goûts",
+  "taste.unlockHint": "Regardez les mêmes titres pour débloquer votre affinité.",
+  "taste.bothLove": "Vous adorez tous les deux",
+  "taste.bothSeen": "Vous avez tous les deux vu",
+  "taste.across": "sur",
+  "taste.rated": "notés",
+  "taste.inCommon": "en commun",
+  "taste.sharpen": "Notez des titres vus en commun pour affiner ceci.",
 };
 
 const he: Dict = {
@@ -521,6 +560,19 @@ const he: Dict = {
   "title.notAvailable": "לא זמין בשידור בארה\"ב כרגע.",
   "title.recommend": "להמליץ לחבר",
   "title.community": "קהילה",
+  "user.profileFallback": "פרופיל",
+  "user.recommendTitle": "להמליץ על כותר",
+  "user.unfriend": "הסרת חבר",
+  "user.nothingIn": "אין כלום ב",
+  "alert.cantUnfriend": "לא ניתן להסיר חבר",
+  "taste.match": "התאמת טעם",
+  "taste.unlockHint": "צפו באותם כותרים כדי לפתוח את התאמת הטעם.",
+  "taste.bothLove": "שניכם אוהבים",
+  "taste.bothSeen": "שניכם ראיתם",
+  "taste.across": "מתוך",
+  "taste.rated": "דורגו",
+  "taste.inCommon": "במשותף",
+  "taste.sharpen": "דרגו כותרים ששניכם ראיתם כדי לחדד את זה.",
 };
 
 const ar: Dict = {
@@ -644,6 +696,19 @@ const ar: Dict = {
   "title.notAvailable": "غير متاح للبث في الولايات المتحدة حاليًا.",
   "title.recommend": "أوصِ به لصديق",
   "title.community": "المجتمع",
+  "user.profileFallback": "الملف الشخصي",
+  "user.recommendTitle": "أوصِ بعنوان",
+  "user.unfriend": "إزالة الصديق",
+  "user.nothingIn": "لا شيء في",
+  "alert.cantUnfriend": "تعذّرت إزالة الصديق",
+  "taste.match": "توافق الذوق",
+  "taste.unlockHint": "شاهدا العناوين نفسها لفتح توافق الذوق.",
+  "taste.bothLove": "كلاكما يحب",
+  "taste.bothSeen": "كلاكما شاهد",
+  "taste.across": "من",
+  "taste.rated": "مُقيّمة",
+  "taste.inCommon": "مشتركة",
+  "taste.sharpen": "قيّما عناوين شاهدتماها معًا لتحسين هذا.",
 };
 
 const DICTS: Record<Lang, Dict> = { en, es, fr, he, ar };

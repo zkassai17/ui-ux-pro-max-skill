@@ -9,6 +9,7 @@ import { friendshipWith } from "../../src/lib/friendsLogic";
 import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
 import { TitleRow } from "../../src/components/TitleRow";
 import { TasteMatchCard } from "../../src/components/TasteMatchCard";
+import { useI18n } from "../../src/i18n/I18nProvider";
 import type { Friendship, Profile, WatchStatus } from "../../src/types/db";
 
 async function getProfile(id: string): Promise<Profile | null> {
@@ -23,14 +24,11 @@ async function getMyFriendships(): Promise<Friendship[]> {
   return (data as Friendship[]) ?? [];
 }
 
-const TABS: { key: WatchStatus; label: string }[] = [
-  { key: "watched", label: "Watched" },
-  { key: "watching", label: "Watching" },
-  { key: "want", label: "Want" },
-];
+const TAB_KEYS: WatchStatus[] = ["watched", "watching", "want"];
 
 export default function FriendProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t } = useI18n();
   const router = useRouter();
   const qc = useQueryClient();
   const [tab, setTab] = useState<WatchStatus>("watched");
@@ -80,21 +78,21 @@ export default function FriendProfileScreen() {
       await qc.invalidateQueries({ queryKey: ["friends"] });
       router.back();
     } catch (e) {
-      Alert.alert("Couldn't unfriend", (e as Error).message);
+      Alert.alert(t("alert.cantUnfriend"), (e as Error).message);
     }
   }
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ headerShown: true, title: profile.data ? `@${profile.data.username}` : "Profile" }} />
+      <Stack.Screen options={{ headerShown: true, title: profile.data ? `@${profile.data.username}` : t("user.profileFallback") }} />
       {profile.isLoading ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
       ) : (
         <>
           <View style={styles.statRow}>
-            <Stat n={stats.data?.watched ?? 0} label="watched" />
-            <Stat n={stats.data?.watching ?? 0} label="watching" />
-            <Stat n={stats.data?.want ?? 0} label="want" />
+            <Stat n={stats.data?.watched ?? 0} label={t("stat.watched")} />
+            <Stat n={stats.data?.watching ?? 0} label={t("stat.watching")} />
+            <Stat n={stats.data?.want ?? 0} label={t("stat.want")} />
           </View>
 
           <View style={styles.btnRow}>
@@ -102,10 +100,10 @@ export default function FriendProfileScreen() {
               style={styles.btn}
               onPress={() => router.push(`/recommend/picker?to=${id}`)}
             >
-              <Text style={styles.btnText}>Recommend a title</Text>
+              <Text style={styles.btnText}>{t("user.recommendTitle")}</Text>
             </Pressable>
             <Pressable style={styles.ghost} onPress={doUnfriend}>
-              <Text style={styles.ghostText}>Unfriend</Text>
+              <Text style={styles.ghostText}>{t("user.unfriend")}</Text>
             </Pressable>
           </View>
 
@@ -114,9 +112,9 @@ export default function FriendProfileScreen() {
           ) : null}
 
           <View style={styles.tabs}>
-            {TABS.map((t) => (
-              <Pressable key={t.key} style={[styles.chip, tab === t.key && styles.chipOn]} onPress={() => setTab(t.key)}>
-                <Text style={[styles.chipText, tab === t.key && styles.chipTextOn]}>{t.label}</Text>
+            {TAB_KEYS.map((key) => (
+              <Pressable key={key} style={[styles.chip, tab === key && styles.chipOn]} onPress={() => setTab(key)}>
+                <Text style={[styles.chipText, tab === key && styles.chipTextOn]}>{t(`status.${key}`)}</Text>
               </Pressable>
             ))}
           </View>
@@ -128,7 +126,7 @@ export default function FriendProfileScreen() {
               data={rows}
               keyExtractor={(e) => e.id}
               refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-              ListEmptyComponent={<Text style={styles.msg}>Nothing in “{TABS.find((t) => t.key === tab)?.label}”.</Text>}
+              ListEmptyComponent={<Text style={styles.msg}>{t("user.nothingIn")} “{t(`status.${tab}`)}”.</Text>}
               renderItem={({ item }) => (
                 <TitleRow
                   title={item.title}

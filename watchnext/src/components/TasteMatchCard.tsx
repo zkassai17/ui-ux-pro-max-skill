@@ -1,6 +1,7 @@
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { PosterImage } from "./PosterImage";
+import { useI18n } from "../i18n/I18nProvider";
 import type { TasteMatch } from "../lib/tasteMatchLogic";
 import type { WatchlistEntry } from "../types/db";
 
@@ -14,19 +15,13 @@ function scoreColor(score: number): string {
 
 export function TasteMatchCard({ match, username }: { match: TasteMatch; username?: string }) {
   const router = useRouter();
-  const name = username ? `@${username}` : "them";
+  const { t } = useI18n();
 
   if (match.score == null) {
     return (
       <View style={styles.card}>
-        <Text style={styles.heading}>Taste match</Text>
-        <Text style={styles.hint}>
-          {match.coWatched > 0
-            ? `You've both watched ${match.coWatched} of the same ${
-                match.coWatched === 1 ? "title" : "titles"
-              }. Watch a few more in common to unlock your match.`
-            : `Watch some of the same titles as ${name} to unlock your taste match.`}
-        </Text>
+        <Text style={styles.heading}>{t("taste.match")}</Text>
+        <Text style={styles.hint}>{t("taste.unlockHint")}</Text>
       </View>
     );
   }
@@ -36,19 +31,19 @@ export function TasteMatchCard({ match, username }: { match: TasteMatch; usernam
   // Prefer the "you both love" list; fall back to "you've both seen".
   const loveFavs = match.sharedFavorites.slice(0, 4);
   const seenFavs = match.alsoBothWatched.slice(0, 4);
-  const favHead = loveFavs.length > 0 ? "You both love" : "You've both seen";
+  const favHead = loveFavs.length > 0 ? t("taste.bothLove") : t("taste.bothSeen");
   const favs: WatchlistEntry[] = loveFavs.length > 0 ? loveFavs : seenFavs;
 
   const sub =
     match.basis === "blend"
-      ? `across ${match.coWatched} watched · ${match.coRated} rated`
-      : `across ${match.coWatched} watched in common`;
+      ? `${t("taste.across")} ${match.coWatched} ${t("stat.watched")} · ${match.coRated} ${t("taste.rated")}`
+      : `${t("taste.across")} ${match.coWatched} ${t("stat.watched")} ${t("taste.inCommon")}`;
 
   return (
     <View style={styles.card}>
       <View style={styles.topRow}>
         <View style={styles.topLeft}>
-          <Text style={styles.heading}>Taste match</Text>
+          <Text style={styles.heading}>{t("taste.match")}</Text>
           <Text style={styles.sub}>{sub}</Text>
         </View>
         <Text style={[styles.score, { color }]}>{match.score}%</Text>
@@ -59,7 +54,7 @@ export function TasteMatchCard({ match, username }: { match: TasteMatch; usernam
       </View>
 
       {match.basis === "history" ? (
-        <Text style={styles.note}>Rate titles you've both seen to sharpen this.</Text>
+        <Text style={styles.note}>{t("taste.sharpen")}</Text>
       ) : null}
 
       {favs.length > 0 ? (
