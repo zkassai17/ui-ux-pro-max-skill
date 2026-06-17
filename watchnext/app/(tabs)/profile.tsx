@@ -16,6 +16,15 @@ function initials(username?: string): string {
   return cleaned.slice(0, 2).toUpperCase() || "?";
 }
 
+// Deterministic avatar color per username so friends are visually distinct.
+const AVATAR_COLORS = ["#5b6cff", "#1dd1a1", "#ff9f43", "#ff6b9d", "#a55eea", "#26c6da", "#fd7272"];
+function avatarColor(username?: string): string {
+  if (!username) return AVATAR_COLORS[0];
+  let h = 0;
+  for (let i = 0; i < username.length; i++) h = (h * 31 + username.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+
 export default function ProfileScreen() {
   const { profile, session } = useAuth();
   const { t } = useI18n();
@@ -69,12 +78,6 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
 
-          <View style={styles.statRow}>
-            <StatTile n={stats.data?.watched ?? 0} label={t("stat.watched")} />
-            <StatTile n={stats.data?.watching ?? 0} label={t("stat.watching")} />
-            <StatTile n={stats.data?.want ?? 0} label={t("stat.want")} />
-          </View>
-
           <View style={styles.breakdownRow}>
             <BreakdownCard emoji="🎬" label={t("profile.movies")} bucket={stats.data?.movie} />
             <BreakdownCard emoji="📺" label={t("profile.tvShows")} bucket={stats.data?.tv} />
@@ -109,10 +112,10 @@ export default function ProfileScreen() {
       }
       renderItem={({ item }) => (
         <Pressable style={styles.friendRow} onPress={() => router.push(`/user/${item.id}`)}>
-          <View style={styles.friendAvatar}>
+          <View style={[styles.friendAvatar, { backgroundColor: avatarColor(item.username) }]}>
             <Text style={styles.friendAvatarText}>{initials(item.username)}</Text>
           </View>
-          <Text style={styles.friendName}>@{item.username}</Text>
+          <Text style={styles.friendName} numberOfLines={1}>@{item.username}</Text>
           <Text style={styles.chevron}>›</Text>
         </Pressable>
       )}
@@ -125,15 +128,6 @@ export default function ProfileScreen() {
         )
       }
     />
-  );
-}
-
-function StatTile({ n, label }: { n: number; label: string }) {
-  return (
-    <View style={styles.statTile}>
-      <Text style={styles.statN}>{n}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
   );
 }
 
@@ -169,12 +163,7 @@ const styles = StyleSheet.create({
   headerMeta: { flex: 1, minWidth: 0 },
   username: { fontSize: 22, fontWeight: "700" },
 
-  statRow: { flexDirection: "row", gap: 10, marginTop: 20 },
-  statTile: { flex: 1, backgroundColor: "#f0f0f3", borderRadius: 14, paddingVertical: 14, alignItems: "center" },
-  statN: { fontSize: 22, fontWeight: "800" },
-  statLabel: { fontSize: 11, color: "#888", marginTop: 2 },
-
-  breakdownRow: { flexDirection: "row", gap: 10, marginTop: 10 },
+  breakdownRow: { flexDirection: "row", gap: 10, marginTop: 20 },
   breakdownCard: { flex: 1, backgroundColor: "#f0f0f3", borderRadius: 14, padding: 14 },
   breakdownTitle: { fontSize: 13, fontWeight: "700" },
   breakdownBig: { fontSize: 26, fontWeight: "800", marginTop: 8 },
@@ -192,11 +181,11 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
 
   section: { fontSize: 13, fontWeight: "700", marginTop: 26, marginBottom: 6 },
-  friendRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#eee" },
-  friendAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#eef0ff", alignItems: "center", justifyContent: "center" },
-  friendAvatarText: { color: "#5b6cff", fontSize: 13, fontWeight: "700" },
-  friendName: { flex: 1, fontSize: 15, fontWeight: "600" },
-  chevron: { fontSize: 20, color: "#bbb" },
+  friendRow: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#f6f6f8", borderRadius: 14, paddingVertical: 11, paddingHorizontal: 12, marginBottom: 10 },
+  friendAvatar: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  friendAvatarText: { color: "#fff", fontSize: 15, fontWeight: "800" },
+  friendName: { flex: 1, fontSize: 16, fontWeight: "700" },
+  chevron: { fontSize: 22, color: "#c4c4cc", fontWeight: "600" },
 
   empty: { paddingVertical: 20, alignItems: "center" },
   emptyText: { fontSize: 14, fontWeight: "600", color: "#666" },
