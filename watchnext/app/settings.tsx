@@ -114,9 +114,9 @@ export default function SettingsScreen() {
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
       <Stack.Screen options={{ headerShown: true, title: t("settings.title") }} />
 
-      {/* Language — pills up top */}
+      {/* Language — horizontal scrolling pills (room to add more later) */}
       <Text style={styles.section}>{t("settings.language")}</Text>
-      <View style={styles.langPills}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.langPills}>
         {LANGUAGES.map((l) => {
           const on = lang === l.code;
           return (
@@ -126,7 +126,7 @@ export default function SettingsScreen() {
             </Pressable>
           );
         })}
-      </View>
+      </ScrollView>
 
       {/* Account */}
       <Text style={styles.section}>{t("settings.account")}</Text>
@@ -291,17 +291,16 @@ const styles = StyleSheet.create({
   codeValue: { fontSize: 16, fontWeight: "700", letterSpacing: 1 },
   copyHint: { fontSize: 13, color: "#5b6cff", fontWeight: "700" },
   hint: { fontSize: 11, color: "#aaa", marginTop: 6 },
-  langPills: { flexDirection: "row", gap: 6 },
+  langPills: { flexDirection: "row", gap: 8, paddingRight: 16 },
   langPill: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
+    gap: 6,
     backgroundColor: "#f0f0f3",
     borderRadius: 999,
     paddingVertical: 9,
-    paddingHorizontal: 4,
+    paddingHorizontal: 14,
   },
   langPillOn: { backgroundColor: "#5b6cff" },
   langFlag: { fontSize: 15 },
