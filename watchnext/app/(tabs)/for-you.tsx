@@ -67,13 +67,16 @@ function ForYouRail({ mediaType, heading }: { mediaType: MediaType; heading: str
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.railRow}>
         {titles.map((t: Title) => (
           <View key={`${t.mediaType}:${t.tmdbId}`} style={styles.suggestion}>
-            <Pressable onPress={() => router.push(`/title/${t.mediaType}/${t.tmdbId}`)}>
-              <View>
+            {/* Poster + the add button are siblings, so tapping + never triggers navigation. */}
+            <View>
+              <Pressable onPress={() => router.push(`/title/${t.mediaType}/${t.tmdbId}`)}>
                 <PosterImage path={t.posterPath} width={104} height={156} radius={10} />
-                <View style={styles.posterAdd}>
-                  <QuickAddButton title={t} compact />
-                </View>
+              </Pressable>
+              <View style={styles.posterAdd}>
+                <QuickAddButton title={t} compact />
               </View>
+            </View>
+            <Pressable onPress={() => router.push(`/title/${t.mediaType}/${t.tmdbId}`)}>
               <Text style={styles.suggestionTitle} numberOfLines={2}>
                 {t.title}
               </Text>
