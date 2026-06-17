@@ -5,6 +5,7 @@ import { useRouter, Stack } from "expo-router";
 import { getFriends } from "../../src/services/friends";
 import { getLibrary } from "../../src/services/watchlist";
 import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
+import { useI18n } from "../../src/i18n/I18nProvider";
 import type { Profile } from "../../src/types/db";
 
 const MAX_FRIENDS = 3;
@@ -20,6 +21,7 @@ function matchColor(score: number): string {
 
 export default function GroupChooserScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const { data, isLoading } = useQuery({ queryKey: ["friends"], queryFn: getFriends });
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState("");
@@ -56,22 +58,20 @@ export default function GroupChooserScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ headerShown: true, title: "Watch together" }} />
+      <Stack.Screen options={{ headerShown: true, title: t("wt.title") }} />
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: 40 }} />
       ) : friends.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>
-            Add a friend first — then you can find something to watch together.
-          </Text>
+          <Text style={styles.emptyText}>{t("wt.addFriendFirst")}</Text>
           <Pressable style={styles.primaryBtn} onPress={() => router.push("/friends/add")}>
-            <Text style={styles.primaryBtnText}>Add a friend</Text>
+            <Text style={styles.primaryBtnText}>{t("profile.addFriend")}</Text>
           </Pressable>
         </View>
       ) : (
         <>
           <Text style={styles.help}>
-            Pick up to {MAX_FRIENDS} friends · {selected.length} selected
+            {t("wt.pickUpTo")} {MAX_FRIENDS} {t("wt.friendsWord")} · {selected.length} {t("wt.selectedWord")}
           </Text>
           {friends.length >= SEARCH_AFTER ? (
             <View style={styles.searchWrap}>
@@ -80,7 +80,7 @@ export default function GroupChooserScreen() {
                 style={styles.searchInput}
                 value={query}
                 onChangeText={setQuery}
-                placeholder="Search friends"
+                placeholder={t("wt.searchFriends")}
                 placeholderTextColor="#aaa"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -99,7 +99,7 @@ export default function GroupChooserScreen() {
             contentContainerStyle={{ paddingBottom: 12 }}
             keyboardShouldPersistTaps="handled"
             ListEmptyComponent={
-              q ? <Text style={styles.noMatch}>No friends match “{query.trim()}”.</Text> : null
+              q ? <Text style={styles.noMatch}>{t("wt.noFriendMatch")} “{query.trim()}”.</Text> : null
             }
             renderItem={({ item }: { item: Profile }) => {
               const on = selected.includes(item.id);
@@ -109,9 +109,9 @@ export default function GroupChooserScreen() {
                   <View style={styles.rowLeft}>
                     <Text style={styles.username}>@{item.username}</Text>
                     {score != null ? (
-                      <Text style={[styles.compat, { color: matchColor(score) }]}>{score}% match</Text>
+                      <Text style={[styles.compat, { color: matchColor(score) }]}>{score}% {t("wt.match")}</Text>
                     ) : scores ? (
-                      <Text style={styles.compatNone}>New match</Text>
+                      <Text style={styles.compatNone}>{t("wt.newMatch")}</Text>
                     ) : null}
                   </View>
                   <Text style={[styles.check, on && styles.checkOn]}>{on ? "✓" : "+"}</Text>
@@ -124,7 +124,7 @@ export default function GroupChooserScreen() {
             disabled={selected.length === 0}
             onPress={() => router.push(`/watch-together/${selected.join(",")}`)}
           >
-            <Text style={styles.primaryBtnText}>See picks</Text>
+            <Text style={styles.primaryBtnText}>{t("wt.seePicks")}</Text>
           </Pressable>
         </>
       )}

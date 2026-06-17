@@ -7,6 +7,7 @@ import { filterByGenre, pickHero } from "../../src/lib/watchTogetherLogic";
 import { GENRES } from "../../src/lib/genres";
 import { PosterImage } from "../../src/components/PosterImage";
 import { TitleRow } from "../../src/components/TitleRow";
+import { useI18n } from "../../src/i18n/I18nProvider";
 import type { MediaType } from "../../src/types/tmdb";
 
 type HeroItem = { tmdbId: number; mediaType: MediaType; title: string; posterPath: string | null };
@@ -16,6 +17,7 @@ export default function WatchTogetherResultsScreen() {
   const friendIds = (group ?? "").split(",").filter(Boolean);
   const groupSize = friendIds.length + 1; // +1 for me
   const router = useRouter();
+  const { t } = useI18n();
   const [genreIds, setGenreIds] = useState<number[]>([]);
   const [shuffle, setShuffle] = useState(0);
 
@@ -33,12 +35,12 @@ export default function WatchTogetherResultsScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
-      <Stack.Screen options={{ headerShown: true, title: "What to watch" }} />
+      <Stack.Screen options={{ headerShown: true, title: t("wt.resultsTitle") }} />
 
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: 40 }} />
       ) : isError || !data ? (
-        <Text style={styles.msg}>Couldn't load picks. Go back and try again.</Text>
+        <Text style={styles.msg}>{t("wt.cantLoad")}</Text>
       ) : (
         (() => {
           const picks = data.picks;
@@ -87,17 +89,17 @@ export default function WatchTogetherResultsScreen() {
               {/* Hero */}
               {hero ? (
                 <View style={styles.heroCard}>
-                  <Text style={styles.heroLabel}>TONIGHT'S PICK</Text>
+                  <Text style={styles.heroLabel}>{t("wt.tonightsPick")}</Text>
                   <Pressable style={styles.heroBody} onPress={() => open(hero.mediaType, hero.tmdbId)}>
                     <PosterImage path={hero.posterPath} width={92} height={138} radius={10} />
                     <View style={styles.heroMeta}>
                       <Text style={styles.heroTitle}>{hero.title}</Text>
-                      <Text style={styles.heroType}>{hero.mediaType === "movie" ? "Movie" : "TV"}</Text>
+                      <Text style={styles.heroType}>{hero.mediaType === "movie" ? t("media.movie") : t("media.tv")}</Text>
                     </View>
                   </Pressable>
                   {heroPool.length > 1 ? (
                     <Pressable style={styles.shuffleBtn} onPress={() => setShuffle((n) => n + 1)}>
-                      <Text style={styles.shuffleText}>⇄ Shuffle</Text>
+                      <Text style={styles.shuffleText}>⇄ {t("wt.shuffle")}</Text>
                     </Pressable>
                   ) : null}
                 </View>
@@ -106,15 +108,15 @@ export default function WatchTogetherResultsScreen() {
               {/* Group wishlist picks */}
               {picks.length > 0 ? (
                 <>
-                  <Text style={styles.section}>Up next for the group</Text>
+                  <Text style={styles.section}>{t("wt.upNext")}</Text>
                   {picks.map((p) => {
                     const e = p.entry;
                     const everyone = p.wantedBy >= groupSize && groupSize > 1;
                     const tag = everyone
-                      ? "Everyone wants this"
+                      ? t("wt.everyoneWants")
                       : p.wantedBy >= 2
-                      ? `🔥 ${p.wantedBy} want this`
-                      : "On a wishlist";
+                      ? `🔥 ${p.wantedBy} ${t("wt.wantThis")}`
+                      : t("wt.onWishlist");
                     return (
                       <TitleRow
                         key={`${e.media_type}:${e.tmdb_id}`}
@@ -130,12 +132,10 @@ export default function WatchTogetherResultsScreen() {
               ) : null}
 
               {/* Suggestions from history */}
-              <Text style={styles.section}>Because you've all been watching</Text>
+              <Text style={styles.section}>{t("wt.becauseWatching")}</Text>
               {suggestions.length === 0 ? (
                 <Text style={styles.msg}>
-                  {picks.length === 0
-                    ? "Nothing on your wishlists yet that the group hasn't seen. Add titles to your Want list to get picks."
-                    : "No suggestions match that genre. Try clearing a filter."}
+                  {picks.length === 0 ? t("wt.noWishlistPicks") : t("wt.noGenreMatch")}
                 </Text>
               ) : (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggRow}>
