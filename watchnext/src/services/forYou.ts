@@ -15,12 +15,11 @@ import {
   type GenreTitle,
   type Neighbor,
 } from "../lib/recommendEngine";
+import { DEFAULT_REC_WEIGHTS, type RecWeights } from "../lib/recPrefs";
 
 const PROFILE_SEEDS = 12; // how many top-weighted library titles shape the genre profile
 const TOP_GENRES = 3; // discover candidates from this many of your strongest genres
 const MAX = 15;
-const TRENDING_WEIGHT = 0.2; // trending influence (lowered so your own taste leads)
-const COLLAB_WEIGHT_MAX = 1.2;
 const MIN_VOTES = 150; // popularity floor — drop obscure random titles
 
 type SeedMeta = { genreIds: number[]; language: string | null };
@@ -49,7 +48,11 @@ async function seedMeta(entry: WatchlistEntry, nameToId: Map<string, number>): P
 // taste) + collaborative (friends like you) + a trending nudge — no TMDB
 // "more like this" call. `library` is the viewer's full library (passed in so
 // the rail can key its cache on it).
-export async function getForYou(mediaType: MediaType, library: WatchlistEntry[]): Promise<Title[]> {
+export async function getForYou(
+  mediaType: MediaType,
+  library: WatchlistEntry[],
+  recWeights: RecWeights = DEFAULT_REC_WEIGHTS,
+): Promise<Title[]> {
   const mine = library.filter((e) => e.media_type === mediaType);
   const excludeKeys = new Set(
     library.map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id }))
@@ -129,10 +132,12 @@ export async function getForYou(mediaType: MediaType, library: WatchlistEntry[])
     // friends are a bonus signal — never block the rail on them
   }
 
+  // User-steered weights: content + trending used directly; the collaborative
+  // weight is the user's chosen amount ramped by how many usable neighbors exist.
   const weights = {
-    content: 1,
-    collaborative: collaborativeWeight(neighbors.length, COLLAB_WEIGHT_MAX),
-    trending: TRENDING_WEIGHT,
+    content: recWeights.content,
+    collaborative: collaborativeWeight(neighbors.length, recWeights.collaborative),
+    trending: recWeights.trending,
   };
 
   return rankHybrid({ candidates, profile, neighbors, trendingKeys, weights, excludeKeys }).slice(0, MAX);

@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { getFeed } from "../../src/services/feed";
 import { getLibrary } from "../../src/services/watchlist";
 import { getForYou } from "../../src/services/forYou";
+import { getRecWeights } from "../../src/services/prefs";
 import { titleKey } from "../../src/lib/forYouLogic";
 import { getReactions } from "../../src/services/reactions";
 import { PosterImage } from "../../src/components/PosterImage";
@@ -32,6 +33,7 @@ function WatchTogetherCard() {
 function ForYouRail({ mediaType, heading }: { mediaType: MediaType; heading: string }) {
   const router = useRouter();
   const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
+  const recWeights = useQuery({ queryKey: ["rec-weights"], queryFn: getRecWeights });
 
   const entries = library.data ?? [];
   const excludeKeys = new Set(entries.map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id })));
@@ -39,12 +41,14 @@ function ForYouRail({ mediaType, heading }: { mediaType: MediaType; heading: str
   const libHash = entries
     .map((e) => `${e.media_type}:${e.tmdb_id}:${e.status}:${e.rating ?? ""}`)
     .join("|");
+  const w = recWeights.data;
+  const weightKey = w ? `${w.content}-${w.collaborative}-${w.trending}` : "default";
 
   const recs = useQuery({
-    queryKey: ["for-you", mediaType, libHash],
-    enabled: !library.isLoading,
+    queryKey: ["for-you", mediaType, libHash, weightKey],
+    enabled: !library.isLoading && !recWeights.isLoading,
     staleTime: 5 * 60 * 1000,
-    queryFn: () => getForYou(mediaType, entries),
+    queryFn: () => getForYou(mediaType, entries, w),
   });
 
   // Re-filter on every render so a title you just added drops out instantly —

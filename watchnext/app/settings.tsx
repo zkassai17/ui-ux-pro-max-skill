@@ -7,8 +7,29 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useAuth } from "../src/auth/AuthProvider";
 import { supabase } from "../src/services/supabase";
 import { isValidUsername, normalizeUsername } from "../src/lib/username";
-import { getDefaultLibraryTab, setDefaultLibraryTab } from "../src/services/prefs";
+import {
+  getDefaultLibraryTab,
+  setDefaultLibraryTab,
+  getRecWeights,
+  setRecWeights,
+} from "../src/services/prefs";
+import {
+  REC_PRESETS,
+  REC_LEVELS,
+  LEVEL_LABELS,
+  DEFAULT_REC_WEIGHTS,
+  levelIndex,
+  matchPreset,
+  type RecDimension,
+  type RecWeights,
+} from "../src/lib/recPrefs";
 import type { WatchStatus } from "../src/types/db";
+
+const REC_DIMS: { key: RecDimension; label: string; note?: string }[] = [
+  { key: "content", label: "Your taste" },
+  { key: "collaborative", label: "Friends", note: "better with more friends" },
+  { key: "trending", label: "Trending" },
+];
 
 const TABS: { key: WatchStatus; label: string }[] = [
   { key: "want", label: "Want" },
@@ -32,7 +53,17 @@ export default function SettingsScreen() {
     setTimeout(() => setCopied(false), 1500);
   }
 
+  const [showCustom, setShowCustom] = useState(false);
   const defaultTab = useQuery({ queryKey: ["pref-default-tab"], queryFn: getDefaultLibraryTab });
+  const recWeights = useQuery({ queryKey: ["rec-weights"], queryFn: getRecWeights });
+
+  const saveWeights = useMutation({
+    mutationFn: (next: RecWeights) => setRecWeights(next),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["rec-weights"] });
+      qc.invalidateQueries({ queryKey: ["for-you"] });
+    },
+  });
 
   const saveUsername = useMutation({
     mutationFn: async () => {
@@ -66,6 +97,7 @@ export default function SettingsScreen() {
 
   const version = Constants.expoConfig?.version ?? "1.0.0";
   const current = defaultTab.data ?? "want";
+  const weights = recWeights.data ?? DEFAULT_REC_WEIGHTS;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
@@ -146,6 +178,65 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      {/* Recommendations */}
+      <Text style={styles.section}>Recommendations</Text>
+      <View style={styles.card}>
+        <Text style={styles.label}>How "for you" is picked</Text>
+        <View style={styles.presetWrap}>
+          {REC_PRESETS.map((p) => {
+            const on = matchPreset(weights) === p.key;
+            return (
+              <Pressable
+                key={p.key}
+                style={[styles.preset, on && styles.presetOn]}
+                onPress={() => saveWeights.mutate(p.weights)}
+              >
+                <Text style={[styles.presetText, on && styles.presetTextOn]}>{p.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <Pressable style={styles.customToggle} onPress={() => setShowCustom((s) => !s)} hitSlop={6}>
+          <Text style={styles.customToggleText}>
+            {showCustom ? "Hide fine-tuning ▴" : "Customize ▾"}
+            {matchPreset(weights) === null ? "  · Custom" : ""}
+          </Text>
+        </Pressable>
+
+        {showCustom ? (
+          <View style={styles.customWrap}>
+            {REC_DIMS.map((dim) => {
+              const idx = levelIndex(dim.key, weights[dim.key]);
+              return (
+                <View key={dim.key} style={styles.dimRow}>
+                  <View style={styles.dimLabelWrap}>
+                    <Text style={styles.dimLabel}>{dim.label}</Text>
+                    {dim.note ? <Text style={styles.dimNote}>{dim.note}</Text> : null}
+                  </View>
+                  <View style={styles.levelSeg}>
+                    {LEVEL_LABELS.map((lab, i) => {
+                      const on = idx === i;
+                      return (
+                        <Pressable
+                          key={lab}
+                          style={[styles.level, on && styles.levelOn]}
+                          onPress={() =>
+                            saveWeights.mutate({ ...weights, [dim.key]: REC_LEVELS[dim.key][i] })
+                          }
+                        >
+                          <Text style={[styles.levelText, on && styles.levelTextOn]}>{lab}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
+      </View>
+
       {/* About */}
       <Text style={styles.section}>About</Text>
       <View style={styles.card}>
@@ -189,6 +280,25 @@ const styles = StyleSheet.create({
   segOn: { backgroundColor: "#5b6cff" },
   segText: { fontSize: 13, fontWeight: "700", color: "#666" },
   segTextOn: { color: "#fff" },
+
+  presetWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
+  preset: { backgroundColor: "#e9e9ef", borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
+  presetOn: { backgroundColor: "#5b6cff" },
+  presetText: { fontSize: 13, fontWeight: "700", color: "#555" },
+  presetTextOn: { color: "#fff" },
+  customToggle: { marginTop: 14 },
+  customToggleText: { fontSize: 13, fontWeight: "700", color: "#5b6cff" },
+  customWrap: { marginTop: 12, gap: 14 },
+  dimRow: { gap: 6 },
+  dimLabelWrap: { flexDirection: "row", alignItems: "baseline", gap: 8 },
+  dimLabel: { fontSize: 13, fontWeight: "700", color: "#333" },
+  dimNote: { fontSize: 10, color: "#aaa" },
+  levelSeg: { flexDirection: "row", backgroundColor: "#e9e9ef", borderRadius: 999, padding: 3 },
+  level: { flex: 1, paddingVertical: 6, borderRadius: 999, alignItems: "center" },
+  levelOn: { backgroundColor: "#5b6cff" },
+  levelText: { fontSize: 12, fontWeight: "700", color: "#777" },
+  levelTextOn: { color: "#fff" },
+
   signOut: { marginTop: 28, alignItems: "center", paddingVertical: 12 },
   signOutText: { color: "#ff3b5b", fontWeight: "700", fontSize: 15 },
 });
