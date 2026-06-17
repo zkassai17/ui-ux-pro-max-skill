@@ -209,22 +209,20 @@ export default function AddScreen() {
             ) : null
           }
           renderItem={({ item }) => (
-            <View style={styles.resultItem}>
-              <TitleRow
-                title={item.title}
-                subtitle={[item.year, item.rating ? `⭐ ${item.rating}` : null].filter(Boolean).join(" · ")}
-                mediaType={item.mediaType}
-                posterPath={item.posterPath}
-                onPress={() => router.push(`/title/${item.mediaType}/${item.tmdbId}`)}
-              />
-              <View style={styles.statusRow}>
+            <TitleRow
+              title={item.title}
+              subtitle={[item.year, item.rating ? `⭐ ${item.rating}` : null].filter(Boolean).join(" · ")}
+              mediaType={item.mediaType}
+              posterPath={item.posterPath}
+              onPress={() => router.push(`/title/${item.mediaType}/${item.tmdbId}`)}
+              accessory={
                 <StatusButtons
                   title={item}
                   onAdded={() => onAdded(`${item.mediaType}:${item.tmdbId}`)}
                   onRemoved={() => onRemoved(`${item.mediaType}:${item.tmdbId}`)}
                 />
-              </View>
-            </View>
+              }
+            />
           )}
         />
       )}
@@ -247,8 +245,6 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 12, color: "#666", fontWeight: "600" },
   chipTextOn: { color: "#fff" },
   msg: { color: "#888", fontSize: 13, marginTop: 16, textAlign: "center" },
-  resultItem: { marginBottom: 18 },
-  statusRow: { paddingLeft: 58, marginTop: -6 },
   errorBox: { marginTop: 40, alignItems: "center", paddingHorizontal: 24, gap: 8 },
   errorTitle: { fontSize: 15, fontWeight: "700", color: "#333" },
   errorHint: { fontSize: 13, color: "#888", textAlign: "center", lineHeight: 19 },
