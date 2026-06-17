@@ -6,8 +6,10 @@ import { getFeed } from "../../src/services/feed";
 import { getLibrary } from "../../src/services/watchlist";
 import { getForYou } from "../../src/services/forYou";
 import { titleKey } from "../../src/lib/forYouLogic";
+import { getReactions } from "../../src/services/reactions";
 import { PosterImage } from "../../src/components/PosterImage";
 import { QuickAddButton } from "../../src/components/QuickAddButton";
+import { FeedReactions } from "../../src/components/FeedReactions";
 import { CDrawLoader } from "../../src/components/CDrawLoader";
 import type { Title, MediaType } from "../../src/types/tmdb";
 
@@ -88,6 +90,15 @@ export default function HomeScreen() {
   const { data, isLoading } = useQuery({ queryKey: ["feed"], queryFn: getFeed });
   const [refreshing, setRefreshing] = useState(false);
 
+  // Reactions for every visible feed item, fetched in one batch.
+  const targetIds = (data ?? []).map((r) => r.item.id);
+  const reactions = useQuery({
+    queryKey: ["reactions", targetIds.join(",")],
+    enabled: targetIds.length > 0,
+    queryFn: () => getReactions(targetIds),
+  });
+  const reactionMap = reactions.data ?? {};
+
   async function onRefresh() {
     setRefreshing(true);
     await Promise.all([
@@ -95,6 +106,7 @@ export default function HomeScreen() {
       qc.invalidateQueries({ queryKey: ["library"] }),
       qc.invalidateQueries({ queryKey: ["for-you"] }),
       qc.invalidateQueries({ queryKey: ["trending"] }),
+      qc.invalidateQueries({ queryKey: ["reactions"] }),
       qc.invalidateQueries({ queryKey: ["incoming-requests"] }),
       qc.invalidateQueries({ queryKey: ["received-recs"] }),
     ]);
@@ -141,6 +153,7 @@ export default function HomeScreen() {
                   <Text style={styles.pill}>{e.media_type === "movie" ? "MOVIE" : "TV"}</Text>
                 </View>
               </View>
+              <FeedReactions targetId={row.item.id} targetOwner={row.item.userId} summary={reactionMap[row.item.id]} />
             </View>
           );
         }
@@ -158,6 +171,7 @@ export default function HomeScreen() {
                 <Text style={styles.pill}>{rec.media_type === "movie" ? "MOVIE" : "TV"}</Text>
               </View>
             </View>
+            <FeedReactions targetId={row.item.id} targetOwner={row.item.userId} summary={reactionMap[row.item.id]} />
           </View>
         );
       }}
