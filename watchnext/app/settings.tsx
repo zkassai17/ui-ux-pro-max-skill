@@ -13,6 +13,7 @@ import {
   getRecWeights,
   setRecWeights,
 } from "../src/services/prefs";
+import { exportLibraryCsv } from "../src/services/exportData";
 import {
   REC_PRESETS,
   REC_LEVELS,
@@ -88,6 +89,11 @@ export default function SettingsScreen() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["pref-default-tab"] }),
   });
 
+  const exportCsv = useMutation({
+    mutationFn: exportLibraryCsv,
+    onError: (e) => Alert.alert("Couldn't export", (e as Error).message),
+  });
+
   function confirmSignOut() {
     Alert.alert("Sign out?", "You'll need to sign back in to use watchnext.", [
       { text: "Cancel", style: "cancel" },
@@ -156,6 +162,14 @@ export default function SettingsScreen() {
       <Pressable style={styles.rowBtn} onPress={() => router.push("/import")}>
         <Text style={styles.rowBtnText}>↓ Import watch history</Text>
         <Text style={styles.chevron}>›</Text>
+      </Pressable>
+      <Pressable
+        style={[styles.rowBtn, { marginTop: 10 }]}
+        onPress={() => exportCsv.mutate()}
+        disabled={exportCsv.isPending}
+      >
+        <Text style={styles.rowBtnText}>↑ Export my data (CSV)</Text>
+        {exportCsv.isPending ? <ActivityIndicator size="small" /> : <Text style={styles.chevron}>›</Text>}
       </Pressable>
 
       {/* Preferences */}
