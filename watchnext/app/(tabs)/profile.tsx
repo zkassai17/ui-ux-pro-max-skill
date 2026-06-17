@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, Pressable, FlatList, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
+import { View, Text, TextInput, Pressable, FlatList, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -7,8 +7,16 @@ import { useAuth } from "../../src/auth/AuthProvider";
 import { useI18n } from "../../src/i18n/I18nProvider";
 import { getFriends, getFriendStats, type StatBucket } from "../../src/services/friends";
 import { getLibrary } from "../../src/services/watchlist";
+import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
 import { selectFavorites, computeProfileInsights } from "../../src/lib/profileInsights";
 import { PosterImage } from "../../src/components/PosterImage";
+
+function matchColor(score: number): string {
+  if (score >= 80) return "#1dd1a1";
+  if (score >= 60) return "#5b6cff";
+  if (score >= 40) return "#ffc048";
+  return "#ff9f43";
+}
 
 function initials(username?: string): string {
   if (!username) return "?";
@@ -32,6 +40,7 @@ export default function ProfileScreen() {
   const qc = useQueryClient();
   const uid = session?.user.id;
   const [refreshing, setRefreshing] = useState(false);
+  const [friendQuery, setFriendQuery] = useState("");
 
   const friends = useQuery({ queryKey: ["friends"], queryFn: getFriends });
   const stats = useQuery({
@@ -44,6 +53,24 @@ export default function ProfileScreen() {
   const lib = library.data ?? [];
   const favorites = selectFavorites(lib, 12);
   const insights = computeProfileInsights(lib, new Date().getFullYear());
+
+  // Taste-match % per friend (load each friend's library, score against mine).
+  const allFriends = friends.data ?? [];
+  const friendIds = allFriends.map((f) => f.id);
+  const compat = useQuery({
+    queryKey: ["profile-friend-compat", friendIds.join(",")],
+    enabled: friendIds.length > 0 && !library.isLoading,
+    queryFn: async () => {
+      const mine = library.data ?? (await getLibrary());
+      const libs = await Promise.all(friendIds.map((id) => getLibrary(id).catch(() => [])));
+      const map: Record<string, number | null> = {};
+      friendIds.forEach((id, i) => (map[id] = computeTasteMatch(mine, libs[i]).score));
+      return map;
+    },
+  });
+
+  const fq = friendQuery.trim().toLowerCase();
+  const visibleFriends = fq ? allFriends.filter((f) => f.username.toLowerCase().includes(fq)) : allFriends;
 
   async function onRefresh() {
     setRefreshing(true);
@@ -62,8 +89,10 @@ export default function ProfileScreen() {
       style={styles.container}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      data={friends.data ?? []}
+      data={visibleFriends}
       keyExtractor={(p) => p.id}
+      numColumns={2}
+      columnWrapperStyle={styles.friendCol}
       ListHeaderComponent={
         <View>
           <View style={styles.header}>
@@ -107,18 +136,42 @@ export default function ProfileScreen() {
           </Pressable>
 
           <Text style={styles.section}>{t("profile.friends")}</Text>
+          {allFriends.length >= 5 ? (
+            <View style={styles.searchWrap}>
+              <Text style={styles.searchIcon}>🔍</Text>
+              <TextInput
+                style={styles.searchInput}
+                value={friendQuery}
+                onChangeText={setFriendQuery}
+                placeholder={t("wt.searchFriends")}
+                placeholderTextColor="#aaa"
+                autoCapitalize="none"
+                autoCorrect={false}
+                clearButtonMode="while-editing"
+              />
+            </View>
+          ) : null}
           {friends.isLoading ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
         </View>
       }
-      renderItem={({ item }) => (
-        <Pressable style={styles.friendRow} onPress={() => router.push(`/user/${item.id}`)}>
-          <View style={[styles.friendAvatar, { backgroundColor: avatarColor(item.username) }]}>
-            <Text style={styles.friendAvatarText}>{initials(item.username)}</Text>
-          </View>
-          <Text style={styles.friendName} numberOfLines={1}>@{item.username}</Text>
-          <Text style={styles.chevron}>›</Text>
-        </Pressable>
-      )}
+      renderItem={({ item }) => {
+        const score = compat.data?.[item.id];
+        return (
+          <Pressable style={styles.friendCard} onPress={() => router.push(`/user/${item.id}`)}>
+            <View style={[styles.friendCardAvatar, { backgroundColor: avatarColor(item.username) }]}>
+              <Text style={styles.friendCardAvatarText}>{initials(item.username)}</Text>
+            </View>
+            <Text style={styles.friendCardName} numberOfLines={1}>@{item.username}</Text>
+            {score != null ? (
+              <Text style={[styles.friendCardMatch, { color: matchColor(score) }]}>{score}% {t("wt.match")}</Text>
+            ) : compat.data ? (
+              <Text style={styles.friendCardMatchNone}>{t("wt.newMatch")}</Text>
+            ) : (
+              <Text style={styles.friendCardMatchNone}> </Text>
+            )}
+          </Pressable>
+        );
+      }}
       ListEmptyComponent={
         friends.isLoading ? null : (
           <View style={styles.empty}>
@@ -181,11 +234,17 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
 
   section: { fontSize: 13, fontWeight: "700", marginTop: 26, marginBottom: 6 },
-  friendRow: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#f6f6f8", borderRadius: 14, paddingVertical: 11, paddingHorizontal: 12, marginBottom: 10 },
-  friendAvatar: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
-  friendAvatarText: { color: "#fff", fontSize: 15, fontWeight: "800" },
-  friendName: { flex: 1, fontSize: 16, fontWeight: "700" },
-  chevron: { fontSize: 22, color: "#c4c4cc", fontWeight: "600" },
+  searchWrap: { flexDirection: "row", alignItems: "center", backgroundColor: "#f0f0f3", borderRadius: 12, paddingHorizontal: 12, height: 40, marginTop: 4, marginBottom: 12 },
+  searchIcon: { fontSize: 14, marginRight: 8, opacity: 0.5 },
+  searchInput: { flex: 1, fontSize: 15, color: "#111", padding: 0 },
+
+  friendCol: { justifyContent: "space-between" },
+  friendCard: { width: "48.5%", backgroundColor: "#f6f6f8", borderRadius: 16, paddingVertical: 16, paddingHorizontal: 10, alignItems: "center", marginBottom: 10 },
+  friendCardAvatar: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },
+  friendCardAvatarText: { color: "#fff", fontSize: 18, fontWeight: "800" },
+  friendCardName: { fontSize: 14, fontWeight: "700", marginTop: 8, maxWidth: "100%" },
+  friendCardMatch: { fontSize: 11, fontWeight: "800", marginTop: 3 },
+  friendCardMatchNone: { fontSize: 11, color: "#bbb", fontWeight: "600", marginTop: 3 },
 
   empty: { paddingVertical: 20, alignItems: "center" },
   emptyText: { fontSize: 14, fontWeight: "600", color: "#666" },
