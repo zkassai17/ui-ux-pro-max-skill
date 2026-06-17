@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, FlatList, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, Stack } from "expo-router";
 import { getFriends } from "../../src/services/friends";
@@ -8,6 +8,7 @@ import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
 import type { Profile } from "../../src/types/db";
 
 const MAX_FRIENDS = 3;
+const SEARCH_AFTER = 6; // show the search box once the list is long enough to scroll
 
 // Cold→warm scale so the % reads at a glance (mirrors TasteMatchCard).
 function matchColor(score: number): string {
@@ -21,7 +22,11 @@ export default function GroupChooserScreen() {
   const router = useRouter();
   const { data, isLoading } = useQuery({ queryKey: ["friends"], queryFn: getFriends });
   const [selected, setSelected] = useState<string[]>([]);
+  const [query, setQuery] = useState("");
   const friends = data ?? [];
+
+  const q = query.trim().toLowerCase();
+  const visibleFriends = q ? friends.filter((f) => f.username.toLowerCase().includes(q)) : friends;
 
   // Taste-match % per friend: load my library once + each friend's, score each.
   const friendIds = friends.map((f) => f.id);
@@ -68,10 +73,34 @@ export default function GroupChooserScreen() {
           <Text style={styles.help}>
             Pick up to {MAX_FRIENDS} friends · {selected.length} selected
           </Text>
+          {friends.length >= SEARCH_AFTER ? (
+            <View style={styles.searchWrap}>
+              <Text style={styles.searchIcon}>🔍</Text>
+              <TextInput
+                style={styles.searchInput}
+                value={query}
+                onChangeText={setQuery}
+                placeholder="Search friends"
+                placeholderTextColor="#aaa"
+                autoCapitalize="none"
+                autoCorrect={false}
+                clearButtonMode="while-editing"
+              />
+              {query.length > 0 ? (
+                <Pressable onPress={() => setQuery("")} hitSlop={8} style={styles.searchClear}>
+                  <Text style={styles.searchClearText}>✕</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
           <FlatList
-            data={friends}
+            data={visibleFriends}
             keyExtractor={(f) => f.id}
             contentContainerStyle={{ paddingBottom: 12 }}
+            keyboardShouldPersistTaps="handled"
+            ListEmptyComponent={
+              q ? <Text style={styles.noMatch}>No friends match “{query.trim()}”.</Text> : null
+            }
             renderItem={({ item }: { item: Profile }) => {
               const on = selected.includes(item.id);
               const score = scores?.[item.id];
@@ -106,6 +135,20 @@ export default function GroupChooserScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   help: { fontSize: 12, color: "#888", fontWeight: "600", marginBottom: 12 },
+  searchWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f0f0f3",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 40,
+    marginBottom: 12,
+  },
+  searchIcon: { fontSize: 14, marginRight: 8, opacity: 0.5 },
+  searchInput: { flex: 1, fontSize: 15, color: "#111", padding: 0 },
+  searchClear: { paddingLeft: 8 },
+  searchClearText: { fontSize: 13, color: "#999", fontWeight: "700" },
+  noMatch: { color: "#888", fontSize: 13, marginTop: 16, textAlign: "center" },
   row: {
     flexDirection: "row",
     alignItems: "center",
