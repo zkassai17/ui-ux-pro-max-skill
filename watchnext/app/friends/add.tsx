@@ -4,10 +4,12 @@ import { Stack } from "expo-router";
 import { searchUsers, lookupByFriendCode, sendFriendRequest } from "../../src/services/friends";
 import { isValidFriendCode } from "../../src/lib/friendCode";
 import type { Profile } from "../../src/types/db";
+import { useI18n } from "../../src/i18n/I18nProvider";
 
 type Found = { id: string; username: string };
 
 export default function AddFriendScreen() {
+  const { t } = useI18n();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<Found[]>([]);
   const [busy, setBusy] = useState(false);
@@ -26,7 +28,7 @@ export default function AddFriendScreen() {
         setResults(profiles.map((p) => ({ id: p.id, username: p.username })));
       }
     } catch (e) {
-      Alert.alert("Search failed", (e as Error).message);
+      Alert.alert(t("alert.searchFailed"), (e as Error).message);
     } finally {
       setBusy(false);
     }
@@ -37,16 +39,16 @@ export default function AddFriendScreen() {
       await sendFriendRequest(userId);
       setSent((s) => ({ ...s, [userId]: true }));
     } catch (e) {
-      Alert.alert("Couldn't send request", (e as Error).message);
+      Alert.alert(t("alert.cantSendRequest"), (e as Error).message);
     }
   }
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ headerShown: true, title: "Add friend" }} />
+      <Stack.Screen options={{ headerShown: true, title: t("friendsAdd.title") }} />
       <TextInput
         style={styles.input}
-        placeholder="Username or friend code"
+        placeholder={t("friendsAdd.placeholder")}
         value={q}
         onChangeText={setQ}
         autoCapitalize="none"
@@ -55,7 +57,7 @@ export default function AddFriendScreen() {
         returnKeyType="search"
       />
       <Pressable style={styles.btn} onPress={runSearch}>
-        <Text style={styles.btnText}>Search</Text>
+        <Text style={styles.btnText}>{t("common.search")}</Text>
       </Pressable>
 
       {busy ? (
@@ -65,15 +67,15 @@ export default function AddFriendScreen() {
           style={{ marginTop: 16 }}
           data={results}
           keyExtractor={(u) => u.id}
-          ListEmptyComponent={<Text style={styles.msg}>Search by username, or paste a friend code.</Text>}
+          ListEmptyComponent={<Text style={styles.msg}>{t("friendsAdd.hint")}</Text>}
           renderItem={({ item }) => (
             <View style={styles.row}>
               <Text style={styles.username}>@{item.username}</Text>
               {sent[item.id] ? (
-                <Text style={styles.sentText}>Requested</Text>
+                <Text style={styles.sentText}>{t("friendsAdd.requested")}</Text>
               ) : (
                 <Pressable style={styles.smallBtn} onPress={() => send(item.id)}>
-                  <Text style={styles.smallBtnText}>Add</Text>
+                  <Text style={styles.smallBtnText}>{t("common.add")}</Text>
                 </Pressable>
               )}
             </View>

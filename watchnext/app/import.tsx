@@ -16,6 +16,7 @@ import { parseWatchHistory } from "../src/lib/importHistory";
 import { searchTitles } from "../src/services/tmdb";
 import { addToLibrary } from "../src/services/watchlist";
 import { PosterImage } from "../src/components/PosterImage";
+import { useI18n } from "../src/i18n/I18nProvider";
 import type { Title } from "../src/types/tmdb";
 
 type Matched = { query: string; match: Title | null };
@@ -45,6 +46,7 @@ function keyOf(t: Title): string {
 }
 
 export default function ImportScreen() {
+  const { t } = useI18n();
   const router = useRouter();
   const qc = useQueryClient();
   const [pasted, setPasted] = useState("");
@@ -137,14 +139,14 @@ export default function ImportScreen() {
   if (addedCount !== null) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Import" }} />
+        <Stack.Screen options={{ title: t("import.title") }} />
         <Text style={styles.bigCheck}>✓</Text>
         <Text style={styles.successText}>Added {addedCount} titles to Watched.</Text>
         <Pressable style={styles.primaryBtn} onPress={() => router.back()}>
-          <Text style={styles.primaryBtnText}>Done</Text>
+          <Text style={styles.primaryBtnText}>{t("import.done")}</Text>
         </Pressable>
         <Pressable style={styles.linkBtn} onPress={reset}>
-          <Text style={styles.linkText}>Import more</Text>
+          <Text style={styles.linkText}>{t("import.importMore")}</Text>
         </Pressable>
       </View>
     );
@@ -154,7 +156,7 @@ export default function ImportScreen() {
   if (!titles) {
     return (
       <View style={styles.container}>
-        <Stack.Screen options={{ title: "Import" }} />
+        <Stack.Screen options={{ title: t("import.title") }} />
         <Text style={styles.intro}>
           Bring in what you've already watched. Netflix: netflix.com/viewingactivity → “Download all”,
           then upload the CSV. For Hulu/Max/Prime, copy titles from your watch history and paste below —
@@ -162,10 +164,10 @@ export default function ImportScreen() {
         </Text>
 
         <Pressable style={styles.primaryBtn} onPress={pickFile}>
-          <Text style={styles.primaryBtnText}>Upload CSV file</Text>
+          <Text style={styles.primaryBtnText}>{t("import.uploadCsv")}</Text>
         </Pressable>
 
-        <Text style={styles.or}>or paste a list</Text>
+        <Text style={styles.or}>{t("import.orPaste")}</Text>
         <TextInput
           style={styles.paste}
           placeholder={"Cobra Kai\nInterstellar\nThe Bear"}
@@ -180,7 +182,7 @@ export default function ImportScreen() {
           disabled={!pasted.trim()}
           onPress={usePasted}
         >
-          <Text style={styles.primaryBtnText}>Match pasted titles</Text>
+          <Text style={styles.primaryBtnText}>{t("import.matchPasted")}</Text>
         </Pressable>
       </View>
     );
@@ -190,10 +192,10 @@ export default function ImportScreen() {
   if (titles.length === 0) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Import" }} />
-        <Text style={styles.successText}>No titles found in that file or list.</Text>
+        <Stack.Screen options={{ title: t("import.title") }} />
+        <Text style={styles.successText}>{t("import.noTitles")}</Text>
         <Pressable style={styles.primaryBtn} onPress={reset}>
-          <Text style={styles.primaryBtnText}>Try again</Text>
+          <Text style={styles.primaryBtnText}>{t("add.tryAgain")}</Text>
         </Pressable>
       </View>
     );
@@ -202,7 +204,7 @@ export default function ImportScreen() {
   // --- Matching / review state ---
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: "Import" }} />
+      <Stack.Screen options={{ title: t("import.title") }} />
       {match.isLoading ? (
         <View style={styles.center}>
           <ActivityIndicator />
@@ -230,7 +232,7 @@ export default function ImportScreen() {
                   {item.title.title.toLowerCase() !== item.query.toLowerCase() ? (
                     <Text style={styles.fromText} numberOfLines={1}>from “{item.query}”</Text>
                   ) : null}
-                  <Text style={styles.pill}>{item.title.mediaType === "movie" ? "MOVIE" : "TV"}</Text>
+                  <Text style={styles.pill}>{item.title.mediaType === "movie" ? t("media.movie") : t("media.tv")}</Text>
                 </View>
               </Pressable>
             );
@@ -246,7 +248,7 @@ export default function ImportScreen() {
                 </View>
               ) : null}
               <Pressable style={styles.linkBtn} onPress={reset}>
-                <Text style={styles.linkText}>Start over</Text>
+                <Text style={styles.linkText}>{t("import.startOver")}</Text>
               </Pressable>
             </View>
           }

@@ -6,6 +6,7 @@ import { getReceived, acceptRecommendation, dismissRecommendation } from "../src
 import { PosterImage } from "../src/components/PosterImage";
 import type { IncomingRequest } from "../src/services/friends";
 import type { ReceivedRec } from "../src/services/recommendations";
+import { useI18n } from "../src/i18n/I18nProvider";
 
 type RequestItem = { kind: "request"; data: IncomingRequest };
 type RecItem = { kind: "rec"; data: ReceivedRec };
@@ -13,6 +14,7 @@ type InboxItem = RequestItem | RecItem;
 
 export default function InboxScreen() {
   const qc = useQueryClient();
+  const { t } = useI18n();
   const requests = useQuery({ queryKey: ["incoming-requests"], queryFn: getIncomingRequests });
   const recs = useQuery({ queryKey: ["received-recs"], queryFn: getReceived });
 
@@ -21,7 +23,7 @@ export default function InboxScreen() {
       await action();
       await Promise.all(keys.map((k) => qc.invalidateQueries({ queryKey: [k] })));
     } catch (e) {
-      Alert.alert("Action failed", (e as Error).message);
+      Alert.alert(t("alert.actionFailed"), (e as Error).message);
     }
   }
 
@@ -30,17 +32,17 @@ export default function InboxScreen() {
   const requestItems: InboxItem[] = (requests.data ?? []).map((r) => ({ kind: "request", data: r }));
   const recItems: InboxItem[] = (recs.data ?? []).map((r) => ({ kind: "rec", data: r }));
   const sections: { title: string; data: InboxItem[] }[] = [
-    { title: "Friend requests", data: requestItems },
-    { title: "Recommendations", data: recItems },
+    { title: t("requests.friendRequests"), data: requestItems },
+    { title: t("settings.recommendations"), data: recItems },
   ].filter((s) => s.data.length > 0);
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ headerShown: true, title: "Inbox" }} />
+      <Stack.Screen options={{ headerShown: true, title: t("requests.inbox") }} />
       {loading ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
       ) : sections.length === 0 ? (
-        <Text style={styles.msg}>Nothing here yet. Friend requests and recommendations show up in this inbox.</Text>
+        <Text style={styles.msg}>{t("requests.empty")}</Text>
       ) : (
         <SectionList
           sections={sections}
@@ -57,13 +59,13 @@ export default function InboxScreen() {
                     style={styles.accept}
                     onPress={() => respond(() => acceptRequest(item.data.friendship.id), ["incoming-requests", "friends"])}
                   >
-                    <Text style={styles.acceptText}>Accept</Text>
+                    <Text style={styles.acceptText}>{t("common.accept")}</Text>
                   </Pressable>
                   <Pressable
                     style={styles.decline}
                     onPress={() => respond(() => declineRequest(item.data.friendship.id), ["incoming-requests"])}
                   >
-                    <Text style={styles.declineText}>Decline</Text>
+                    <Text style={styles.declineText}>{t("common.decline")}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -75,7 +77,7 @@ export default function InboxScreen() {
                     <Text style={styles.title}>{item.data.rec.title}</Text>
                     <Text style={styles.sub}>
                       from @{item.data.from?.username ?? "a friend"} ·{" "}
-                      {item.data.rec.media_type === "movie" ? "MOVIE" : "TV"}
+                      {item.data.rec.media_type === "movie" ? t("media.movie") : t("media.tv")}
                     </Text>
                   </View>
                 </View>
@@ -85,13 +87,13 @@ export default function InboxScreen() {
                     style={styles.recAccept}
                     onPress={() => respond(() => acceptRecommendation(item.data.rec), ["received-recs", "library"])}
                   >
-                    <Text style={styles.acceptText}>Add to Want</Text>
+                    <Text style={styles.acceptText}>{t("requests.addToWant")}</Text>
                   </Pressable>
                   <Pressable
                     style={styles.dismiss}
                     onPress={() => respond(() => dismissRecommendation(item.data.rec.id), ["received-recs"])}
                   >
-                    <Text style={styles.dismissText}>Dismiss</Text>
+                    <Text style={styles.dismissText}>{t("common.dismiss")}</Text>
                   </Pressable>
                 </View>
               </View>

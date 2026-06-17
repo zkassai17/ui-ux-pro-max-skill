@@ -4,8 +4,10 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { searchTitles } from "../../src/services/tmdb";
 import { TitleRow } from "../../src/components/TitleRow";
+import { useI18n } from "../../src/i18n/I18nProvider";
 
 export default function RecommendPickerScreen() {
+  const { t } = useI18n();
   const { to } = useLocalSearchParams<{ to?: string }>();
   const [q, setQ] = useState("");
   const router = useRouter();
@@ -18,10 +20,10 @@ export default function RecommendPickerScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ headerShown: true, title: "Pick a title" }} />
+      <Stack.Screen options={{ headerShown: true, title: t("recPicker.title") }} />
       <TextInput
         style={styles.search}
-        placeholder="Search movies & shows…"
+        placeholder={t("add.searchPlaceholder")}
         value={q}
         onChangeText={setQ}
         autoCapitalize="none"
@@ -32,7 +34,7 @@ export default function RecommendPickerScreen() {
       ) : isLoading && enabled ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
       ) : !enabled ? (
-        <Text style={styles.msg}>Search for a title to recommend.</Text>
+        <Text style={styles.msg}>{t("recPicker.hint")}</Text>
       ) : (
         <FlatList
           data={data}

@@ -7,11 +7,13 @@ import { getFriends } from "../../../src/services/friends";
 import { sendRecommendation } from "../../../src/services/recommendations";
 import { PosterImage } from "../../../src/components/PosterImage";
 import type { MediaType } from "../../../src/types/tmdb";
+import { useI18n } from "../../../src/i18n/I18nProvider";
 
 export default function SendRecScreen() {
   const { mediaType, id, to } = useLocalSearchParams<{ mediaType: MediaType; id: string; to?: string }>();
   const tmdbId = Number(id);
   const router = useRouter();
+  const { t } = useI18n();
   const [selected, setSelected] = useState<Record<string, boolean>>(to ? { [to]: true } : {});
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
@@ -31,7 +33,7 @@ export default function SendRecScreen() {
     if (!d) return;
     const ids = Object.keys(selected).filter((k) => selected[k]);
     if (ids.length === 0) {
-      Alert.alert("Pick at least one friend");
+      Alert.alert(t("alert.pickFriend"));
       return;
     }
     try {
@@ -39,10 +41,10 @@ export default function SendRecScreen() {
       for (const friendId of ids) {
         await sendRecommendation(friendId, d, note);
       }
-      Alert.alert("Sent!", "Your recommendation is on its way.");
+      Alert.alert(t("alert.sent"), t("alert.sentBody"));
       router.back();
     } catch (e) {
-      Alert.alert("Couldn't send", (e as Error).message);
+      Alert.alert(t("alert.cantSend"), (e as Error).message);
     } finally {
       setSending(false);
     }
@@ -50,7 +52,7 @@ export default function SendRecScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ headerShown: true, title: "Recommend" }} />
+      <Stack.Screen options={{ headerShown: true, title: t("recCompose.title") }} />
       {detail.isLoading ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
       ) : detail.isError ? (
@@ -62,17 +64,17 @@ export default function SendRecScreen() {
             <View style={styles.titleMeta}>
               <Text style={styles.title}>{detail.data!.title}</Text>
               <Text style={styles.sub}>
-                {[detail.data!.year, detail.data!.mediaType === "movie" ? "Movie" : "TV"].filter(Boolean).join(" · ")}
+                {[detail.data!.year, detail.data!.mediaType === "movie" ? t("media.movie") : t("media.tv")].filter(Boolean).join(" · ")}
               </Text>
             </View>
           </View>
 
-          <Text style={styles.section}>SEND TO</Text>
+          <Text style={styles.section}>{t("recCompose.sendTo")}</Text>
           <FlatList
             data={friends.data ?? []}
             keyExtractor={(p) => p.id}
             style={{ flexGrow: 0, maxHeight: 240 }}
-            ListEmptyComponent={<Text style={styles.msg}>Add friends first to recommend titles.</Text>}
+            ListEmptyComponent={<Text style={styles.msg}>{t("recCompose.addFriendsFirst")}</Text>}
             renderItem={({ item }) => (
               <Pressable style={styles.friendRow} onPress={() => toggle(item.id)}>
                 <Text style={styles.friendName}>@{item.username}</Text>
@@ -83,12 +85,12 @@ export default function SendRecScreen() {
 
           <TextInput
             style={styles.note}
-            placeholder="Add a note (optional)…"
+            placeholder={t("recCompose.notePlaceholder")}
             value={note}
             onChangeText={setNote}
           />
           <Pressable style={[styles.btn, sending && { opacity: 0.6 }]} disabled={sending} onPress={send}>
-            <Text style={styles.btnText}>Send recommendation</Text>
+            <Text style={styles.btnText}>{t("recCompose.send")}</Text>
           </Pressable>
         </>
       )}
