@@ -68,8 +68,8 @@ export type DiscoverPage = { results: Title[]; page: number; totalPages: number 
 
 export async function discoverTitles(opts: {
   mediaType: MediaType;
-  genreId?: number | null;
-  providerId?: number | null;
+  genreIds?: number[];
+  providerIds?: number[];
   page?: number;
 }): Promise<DiscoverPage> {
   const params = new URLSearchParams({
@@ -78,8 +78,9 @@ export async function discoverTitles(opts: {
     watch_region: WATCH_REGION,
     page: String(opts.page ?? 1),
   });
-  if (opts.genreId) params.set("with_genres", String(opts.genreId));
-  if (opts.providerId) params.set("with_watch_providers", String(opts.providerId));
+  // "|" = OR: titles in ANY selected genre, available on ANY selected provider.
+  if (opts.genreIds?.length) params.set("with_genres", opts.genreIds.join("|"));
+  if (opts.providerIds?.length) params.set("with_watch_providers", opts.providerIds.join("|"));
   const raw = await tmdbGet(`/discover/${opts.mediaType}?${params.toString()}`);
   return {
     results: normalizeDiscoverResults(raw, opts.mediaType),

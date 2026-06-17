@@ -34,9 +34,13 @@ const GRACE_MS = 10000;
 export default function AddScreen() {
   const [q, setQ] = useState("");
   const [mediaType, setMediaType] = useState<MediaType>("movie");
-  const [genreId, setGenreId] = useState<number | null>(null);
-  const [providerId, setProviderId] = useState<number | null>(null);
+  const [genreIds, setGenreIds] = useState<number[]>([]);
+  const [providerIds, setProviderIds] = useState<number[]>([]);
   const router = useRouter();
+
+  function toggle(list: number[], id: number): number[] {
+    return list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
+  }
   const searching = q.trim().length > 0;
 
   const search = useQuery({
@@ -52,9 +56,12 @@ export default function AddScreen() {
     queryKey: ["library"],
     queryFn: () => getLibrary(),
   });
+  // Stable, order-independent keys so the cache doesn't churn on selection order.
+  const genreKey = [...genreIds].sort((a, b) => a - b).join(",");
+  const providerKey = [...providerIds].sort((a, b) => a - b).join(",");
   const discover = useInfiniteQuery({
-    queryKey: ["tmdb-discover", mediaType, genreId, providerId],
-    queryFn: ({ pageParam }) => discoverTitles({ mediaType, genreId, providerId, page: pageParam }),
+    queryKey: ["tmdb-discover", mediaType, genreKey, providerKey],
+    queryFn: ({ pageParam }) => discoverTitles({ mediaType, genreIds, providerIds, page: pageParam }),
     enabled: !searching,
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page < last.totalPages ? last.page + 1 : undefined),
@@ -63,7 +70,7 @@ export default function AddScreen() {
   function switchMedia(next: MediaType) {
     if (next === mediaType) return;
     setMediaType(next);
-    setGenreId(null); // genre IDs differ between movie and tv
+    setGenreIds([]); // genre IDs differ between movie and tv
   }
 
   // Keys kept visible despite being in the library — a just-added title stays on
@@ -72,7 +79,7 @@ export default function AddScreen() {
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   // A new search or filter change clears the grace window — added titles drop out then.
-  const context = `${q.trim()}|${mediaType}|${genreId}|${providerId}`;
+  const context = `${q.trim()}|${mediaType}|${genreKey}|${providerKey}`;
   useEffect(() => {
     timers.current.forEach((t) => clearTimeout(t));
     timers.current.clear();
@@ -154,27 +161,33 @@ export default function AddScreen() {
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-            {(genres.data ?? []).map((g) => (
-              <Pressable
-                key={g.id}
-                style={[styles.chip, genreId === g.id && styles.chipOn]}
-                onPress={() => setGenreId(genreId === g.id ? null : g.id)}
-              >
-                <Text style={[styles.chipText, genreId === g.id && styles.chipTextOn]}>{g.name}</Text>
-              </Pressable>
-            ))}
+            {(genres.data ?? []).map((g) => {
+              const on = genreIds.includes(g.id);
+              return (
+                <Pressable
+                  key={g.id}
+                  style={[styles.chip, on && styles.chipOn]}
+                  onPress={() => setGenreIds((cur) => toggle(cur, g.id))}
+                >
+                  <Text style={[styles.chipText, on && styles.chipTextOn]}>{g.name}</Text>
+                </Pressable>
+              );
+            })}
           </ScrollView>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-            {TOP_PROVIDERS.map((p) => (
-              <Pressable
-                key={p.id}
-                style={[styles.chip, providerId === p.id && styles.chipOn]}
-                onPress={() => setProviderId(providerId === p.id ? null : p.id)}
-              >
-                <Text style={[styles.chipText, providerId === p.id && styles.chipTextOn]}>{p.name}</Text>
-              </Pressable>
-            ))}
+            {TOP_PROVIDERS.map((p) => {
+              const on = providerIds.includes(p.id);
+              return (
+                <Pressable
+                  key={p.id}
+                  style={[styles.chip, on && styles.chipOn]}
+                  onPress={() => setProviderIds((cur) => toggle(cur, p.id))}
+                >
+                  <Text style={[styles.chipText, on && styles.chipTextOn]}>{p.name}</Text>
+                </Pressable>
+              );
+            })}
           </ScrollView>
         </View>
       ) : null}
