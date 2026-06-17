@@ -14,7 +14,7 @@ import { useRouter } from "expo-router";
 import { searchTitles, discoverTitles, getGenres } from "../../src/services/tmdb";
 import { getLibrary } from "../../src/services/watchlist";
 import { TitleRow } from "../../src/components/TitleRow";
-import { QuickAddButton } from "../../src/components/QuickAddButton";
+import { StatusButtons } from "../../src/components/StatusButtons";
 import { TOP_PROVIDERS } from "../../src/lib/providers";
 import type { MediaType, Title } from "../../src/types/tmdb";
 
@@ -209,20 +209,22 @@ export default function AddScreen() {
             ) : null
           }
           renderItem={({ item }) => (
-            <TitleRow
-              title={item.title}
-              subtitle={[item.year, item.rating ? `⭐ ${item.rating}` : null].filter(Boolean).join(" · ")}
-              mediaType={item.mediaType}
-              posterPath={item.posterPath}
-              onPress={() => router.push(`/title/${item.mediaType}/${item.tmdbId}`)}
-              accessory={
-                <QuickAddButton
+            <View style={styles.resultItem}>
+              <TitleRow
+                title={item.title}
+                subtitle={[item.year, item.rating ? `⭐ ${item.rating}` : null].filter(Boolean).join(" · ")}
+                mediaType={item.mediaType}
+                posterPath={item.posterPath}
+                onPress={() => router.push(`/title/${item.mediaType}/${item.tmdbId}`)}
+              />
+              <View style={styles.statusRow}>
+                <StatusButtons
                   title={item}
                   onAdded={() => onAdded(`${item.mediaType}:${item.tmdbId}`)}
                   onRemoved={() => onRemoved(`${item.mediaType}:${item.tmdbId}`)}
                 />
-              }
-            />
+              </View>
+            </View>
           )}
         />
       )}
@@ -245,6 +247,8 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 12, color: "#666", fontWeight: "600" },
   chipTextOn: { color: "#fff" },
   msg: { color: "#888", fontSize: 13, marginTop: 16, textAlign: "center" },
+  resultItem: { marginBottom: 18 },
+  statusRow: { paddingLeft: 58, marginTop: -6 },
   errorBox: { marginTop: 40, alignItems: "center", paddingHorizontal: 24, gap: 8 },
   errorTitle: { fontSize: 15, fontWeight: "700", color: "#333" },
   errorHint: { fontSize: 13, color: "#888", textAlign: "center", lineHeight: 19 },
