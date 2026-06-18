@@ -171,6 +171,12 @@ export default function AddScreen() {
       />
 
       {!searching ? (
+        <Pressable style={styles.quickAddLink} onPress={() => router.push("/quick-seen")} hitSlop={6}>
+          <Text style={styles.quickAddLinkText}>{t("add.quickAddPrompt")} →</Text>
+        </Pressable>
+      ) : null}
+
+      {!searching ? (
         <View style={styles.filters}>
           {trending ? (
             <View style={styles.toggleRow}>
@@ -294,6 +300,8 @@ export default function AddScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   search: { backgroundColor: "#f0f0f3", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, marginBottom: 12 },
+  quickAddLink: { alignSelf: "flex-start", marginBottom: 12, marginTop: -2 },
+  quickAddLinkText: { color: "#5b6cff", fontWeight: "700", fontSize: 13 },
   filters: { marginBottom: 8 },
   toggleRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
   toggle: { backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 16, paddingVertical: 7 },
