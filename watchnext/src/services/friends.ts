@@ -30,10 +30,23 @@ export async function searchUsers(q: string): Promise<Profile[]> {
 
 export async function lookupByFriendCode(
   code: string
-): Promise<{ id: string; username: string; avatar_url: string | null } | null> {
+): Promise<{
+  id: string;
+  username: string;
+  avatar_url: string | null;
+  first_name: string | null;
+  last_name: string | null;
+} | null> {
   const { data, error } = await supabase.rpc("lookup_user_by_friend_code", { code: code.trim() });
   if (error) throw error;
-  const rows = (data as { id: string; username: string; avatar_url: string | null }[]) ?? [];
+  const rows =
+    (data as {
+      id: string;
+      username: string;
+      avatar_url: string | null;
+      first_name: string | null;
+      last_name: string | null;
+    }[]) ?? [];
   return rows[0] ?? null;
 }
 

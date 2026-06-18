@@ -105,6 +105,13 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
 
+          {profile && !fullName(profile) ? (
+            <Pressable style={styles.nameBanner} onPress={() => router.push("/settings")}>
+              <Text style={styles.nameBannerText}>{t("profile.addNamePrompt")}</Text>
+              <Text style={styles.nameBannerArrow}>→</Text>
+            </Pressable>
+          ) : null}
+
           <View style={styles.breakdownRow}>
             <BreakdownCard emoji="🎬" label={t("profile.movies")} bucket={stats.data?.movie} />
             <BreakdownCard emoji="📺" label={t("profile.tvShows")} bucket={stats.data?.tv} />
@@ -228,6 +235,10 @@ const styles = StyleSheet.create({
   avatarText: { color: "#fff", fontSize: 22, fontWeight: "800" },
   headerMeta: { flex: 1, minWidth: 0 },
   username: { fontSize: 22, fontWeight: "700" },
+
+  nameBanner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#eef0ff", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, marginTop: 16 },
+  nameBannerText: { flex: 1, fontSize: 13, fontWeight: "600", color: "#3a45c4" },
+  nameBannerArrow: { fontSize: 16, color: "#3a45c4", marginLeft: 8 },
 
   breakdownRow: { flexDirection: "row", gap: 10, marginTop: 20 },
   breakdownCard: { flex: 1, backgroundColor: "#f0f0f3", borderRadius: 14, padding: 14 },

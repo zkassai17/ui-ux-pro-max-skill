@@ -22,7 +22,7 @@ export default function AddFriendScreen() {
       setBusy(true);
       if (isValidFriendCode(value.toUpperCase())) {
         const u = await lookupByFriendCode(value.toUpperCase());
-        setResults(u ? [{ id: u.id, username: u.username, name: "" }] : []);
+        setResults(u ? [{ id: u.id, username: u.username, name: fullName(u) }] : []);
       } else {
         const profiles: Profile[] = await searchUsers(value);
         setResults(profiles.map((p) => ({ id: p.id, username: p.username, name: fullName(p) })));
