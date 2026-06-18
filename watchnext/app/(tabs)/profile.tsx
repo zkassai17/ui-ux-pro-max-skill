@@ -98,7 +98,14 @@ export default function ProfileScreen() {
               <Text style={styles.avatarText}>{initials(profile?.username)}</Text>
             </View>
             <View style={styles.headerMeta}>
-              <Text style={styles.username} numberOfLines={1}>@{profile?.username ?? "you"}</Text>
+              {profile && fullName(profile) ? (
+                <>
+                  <Text style={styles.name} numberOfLines={1}>{fullName(profile)}</Text>
+                  <Text style={styles.usernameSub} numberOfLines={1}>@{profile.username}</Text>
+                </>
+              ) : (
+                <Text style={styles.username} numberOfLines={1}>@{profile?.username ?? "you"}</Text>
+              )}
             </View>
             <Pressable onPress={() => router.push("/settings")} hitSlop={10} style={styles.gear}>
               <Ionicons name="settings-outline" size={24} color="#666" />
@@ -235,6 +242,8 @@ const styles = StyleSheet.create({
   avatarText: { color: "#fff", fontSize: 22, fontWeight: "800" },
   headerMeta: { flex: 1, minWidth: 0 },
   username: { fontSize: 22, fontWeight: "700" },
+  name: { fontSize: 22, fontWeight: "800" },
+  usernameSub: { fontSize: 14, color: "#888", fontWeight: "600", marginTop: 1 },
 
   nameBanner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#eef0ff", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, marginTop: 16 },
   nameBannerText: { flex: 1, fontSize: 13, fontWeight: "600", color: "#3a45c4" },

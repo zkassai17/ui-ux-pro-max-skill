@@ -10,7 +10,7 @@ import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
 import { TitleRow } from "../../src/components/TitleRow";
 import { TasteMatchCard } from "../../src/components/TasteMatchCard";
 import { useI18n } from "../../src/i18n/I18nProvider";
-import type { Friendship, Profile, WatchStatus } from "../../src/types/db";
+import { fullName, type Friendship, type Profile, type WatchStatus } from "../../src/types/db";
 
 async function getProfile(id: string): Promise<Profile | null> {
   const { data, error } = await supabase.from("profiles").select("*").eq("id", id).maybeSingle();
@@ -89,6 +89,13 @@ export default function FriendProfileScreen() {
         <ActivityIndicator style={{ marginTop: 24 }} />
       ) : (
         <>
+          {profile.data && fullName(profile.data) ? (
+            <View style={styles.nameWrap}>
+              <Text style={styles.nameText} numberOfLines={1}>{fullName(profile.data)}</Text>
+              <Text style={styles.handleText} numberOfLines={1}>@{profile.data.username}</Text>
+            </View>
+          ) : null}
+
           <View style={styles.statRow}>
             <Stat n={stats.data?.watched ?? 0} label={t("stat.watched")} />
             <Stat n={stats.data?.watching ?? 0} label={t("stat.watching")} />
@@ -154,6 +161,9 @@ function Stat({ n, label }: { n: number; label: string }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
+  nameWrap: { marginBottom: 14 },
+  nameText: { fontSize: 22, fontWeight: "800" },
+  handleText: { fontSize: 14, color: "#888", fontWeight: "600", marginTop: 1 },
   statRow: { flexDirection: "row", gap: 24 },
   stat: { alignItems: "flex-start" },
   statN: { fontSize: 18, fontWeight: "700" },
