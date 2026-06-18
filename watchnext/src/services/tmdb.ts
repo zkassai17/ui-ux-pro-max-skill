@@ -126,11 +126,12 @@ export async function discoverTitles(opts: {
   mediaType: MediaType;
   genreIds?: number[];
   providerIds?: number[];
+  sortBy?: string;
   page?: number;
 }): Promise<DiscoverPage> {
   const params = new URLSearchParams({
     include_adult: "false",
-    sort_by: "popularity.desc",
+    sort_by: opts.sortBy ?? "popularity.desc",
     watch_region: WATCH_REGION,
     page: String(opts.page ?? 1),
   });

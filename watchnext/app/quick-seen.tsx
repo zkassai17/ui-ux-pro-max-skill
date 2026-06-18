@@ -12,7 +12,7 @@ import {
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getTrending, discoverTitles, searchTitles } from "../src/services/tmdb";
+import { discoverTitles, searchTitles } from "../src/services/tmdb";
 import { getLibrary, addToLibrary } from "../src/services/watchlist";
 import { titleKey } from "../src/lib/forYouLogic";
 import { PosterImage } from "../src/components/PosterImage";
@@ -24,20 +24,22 @@ const PAGE_PAD = 16;
 const POSTER_W = Math.floor((Dimensions.get("window").width - PAGE_PAD * 2 - GAP * (COLS - 1)) / COLS);
 const POSTER_H = Math.round(POSTER_W * 1.5);
 
-// One page of the tap-through pool: popular movies + TV for that page (plus this
-// week's trending on page 1), interleaved for a varied mix. Paginated so the grid
-// keeps loading more as you scroll instead of stopping at a fixed set.
+// One page of the tap-through pool: the most-rated (i.e. most widely-seen and
+// recognizable) movies + TV, interleaved. Sorting by vote count surfaces the
+// titles everyone has actually watched first, instead of momentary "popularity"
+// buzz — so the shows you've seen are near the top, not buried pages down.
 const MAX_POOL_PAGES = 12;
 async function fetchPoolPage(page: number): Promise<{ results: Title[]; nextPage?: number }> {
-  const tasks: Promise<Title[]>[] = [
-    discoverTitles({ mediaType: "movie", page }).then((p) => p.results).catch(() => [] as Title[]),
-    discoverTitles({ mediaType: "tv", page }).then((p) => p.results).catch(() => [] as Title[]),
-  ];
-  if (page === 1) tasks.unshift(getTrending().catch(() => [] as Title[]));
-  const lists = await Promise.all(tasks);
+  const [movies, shows] = await Promise.all([
+    discoverTitles({ mediaType: "movie", page, sortBy: "vote_count.desc" }).then((p) => p.results).catch(() => [] as Title[]),
+    discoverTitles({ mediaType: "tv", page, sortBy: "vote_count.desc" }).then((p) => p.results).catch(() => [] as Title[]),
+  ]);
   const results: Title[] = [];
-  const maxLen = Math.max(0, ...lists.map((l) => l.length));
-  for (let i = 0; i < maxLen; i++) for (const l of lists) if (l[i]) results.push(l[i]);
+  const maxLen = Math.max(movies.length, shows.length);
+  for (let i = 0; i < maxLen; i++) {
+    if (movies[i]) results.push(movies[i]);
+    if (shows[i]) results.push(shows[i]);
+  }
   return { results, nextPage: page < MAX_POOL_PAGES ? page + 1 : undefined };
 }
 
