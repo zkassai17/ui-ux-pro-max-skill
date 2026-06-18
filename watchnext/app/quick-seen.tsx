@@ -10,6 +10,7 @@ import {
   Dimensions,
 } from "react-native";
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTrending, discoverTitles, searchTitles } from "../src/services/tmdb";
 import { getLibrary, addToLibrary } from "../src/services/watchlist";
@@ -42,6 +43,7 @@ async function fetchPool(): Promise<Title[]> {
 export default function QuickSeenScreen() {
   const router = useRouter();
   const qc = useQueryClient();
+  const insets = useSafeAreaInsets();
   const { from } = useLocalSearchParams<{ from?: string }>();
   const onboarding = from === "onboarding";
 
@@ -112,7 +114,7 @@ export default function QuickSeenScreen() {
   const count = selected.size;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
       <Stack.Screen
         options={{
           title: "Quick add",
