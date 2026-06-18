@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { searchTitles, discoverTitles, getGenres } from "../../src/services/tmdb";
+import { searchTitles, discoverTitles, getTrendingTitles, getGenres } from "../../src/services/tmdb";
 import { getLibrary } from "../../src/services/watchlist";
 import { TitleRow } from "../../src/components/TitleRow";
 import { StatusButtons } from "../../src/components/StatusButtons";
@@ -37,6 +37,7 @@ export default function AddScreen() {
   const [mediaType, setMediaType] = useState<MediaType>("movie");
   const [genreIds, setGenreIds] = useState<number[]>([]);
   const [providerIds, setProviderIds] = useState<number[]>([]);
+  const [trending, setTrending] = useState(false);
   const router = useRouter();
   const { t } = useI18n();
 
@@ -44,6 +45,11 @@ export default function AddScreen() {
     return list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
   }
   const searching = q.trim().length > 0;
+  // Three feed modes: live search, the mixed "Trending" feed, or the per-media
+  // discover feed. Trending and genre filters are mutually exclusive (trending is
+  // a sort across both media types; genres are per-media), but providers narrow both.
+  const showingTrending = !searching && trending;
+  const showingDiscover = !searching && !trending;
 
   const search = useQuery({
     queryKey: ["tmdb-search", q.trim()],
@@ -64,7 +70,14 @@ export default function AddScreen() {
   const discover = useInfiniteQuery({
     queryKey: ["tmdb-discover", mediaType, genreKey, providerKey],
     queryFn: ({ pageParam }) => discoverTitles({ mediaType, genreIds, providerIds, page: pageParam }),
-    enabled: !searching,
+    enabled: showingDiscover,
+    initialPageParam: 1,
+    getNextPageParam: (last) => (last.page < last.totalPages ? last.page + 1 : undefined),
+  });
+  const trend = useInfiniteQuery({
+    queryKey: ["tmdb-trending", providerKey],
+    queryFn: ({ pageParam }) => getTrendingTitles({ providerIds, page: pageParam }),
+    enabled: showingTrending,
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page < last.totalPages ? last.page + 1 : undefined),
   });
@@ -74,6 +87,14 @@ export default function AddScreen() {
     setMediaType(next);
     setGenreIds([]); // genre IDs differ between movie and tv
   }
+  function toggleTrending() {
+    setTrending((on) => !on);
+    setGenreIds([]); // trending spans both media types; per-media genres don't apply
+  }
+  function pickGenre(id: number) {
+    setTrending(false); // selecting a genre drops out of the mixed trending feed
+    setGenreIds((cur) => toggle(cur, id));
+  }
 
   // Keys kept visible despite being in the library — a just-added title stays on
   // screen for GRACE_MS (or until the next search/filter) so an accidental add can be undone.
@@ -81,7 +102,7 @@ export default function AddScreen() {
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   // A new search or filter change clears the grace window — added titles drop out then.
-  const context = `${q.trim()}|${mediaType}|${genreKey}|${providerKey}`;
+  const context = `${q.trim()}|${mediaType}|${genreKey}|${providerKey}|${trending}`;
   useEffect(() => {
     timers.current.forEach((t) => clearTimeout(t));
     timers.current.clear();
@@ -118,21 +139,23 @@ export default function AddScreen() {
     });
   }, []);
 
+  // The active infinite-scroll feed when not searching (trending or discover).
+  const feed = showingTrending ? trend : discover;
   const rawResults: Title[] = searching
     ? search.data ?? []
-    : discover.data?.pages.flatMap((p) => p.results) ?? [];
+    : feed.data?.pages.flatMap((p) => p.results) ?? [];
   const inLibrary = new Set((library.data ?? []).map((e) => `${e.media_type}:${e.tmdb_id}`));
   const results: Title[] = dedupeByKey(rawResults).filter((t) => {
     const key = `${t.mediaType}:${t.tmdbId}`;
     return !inLibrary.has(key) || grace.has(key);
   });
-  const isLoading = searching ? search.isLoading : discover.isLoading;
-  const isError = searching ? search.isError : discover.isError;
-  const isFetching = searching ? search.isFetching : discover.isFetching;
+  const active = searching ? search : feed;
+  const isLoading = active.isLoading;
+  const isError = active.isError;
+  const isFetching = active.isFetching;
 
   function retry() {
-    if (searching) search.refetch();
-    else discover.refetch();
+    active.refetch();
   }
 
   return (
@@ -148,28 +171,38 @@ export default function AddScreen() {
 
       {!searching ? (
         <View style={styles.filters}>
-          <View style={styles.toggleRow}>
-            {(["movie", "tv"] as MediaType[]).map((m) => (
-              <Pressable
-                key={m}
-                style={[styles.toggle, mediaType === m && styles.toggleOn]}
-                onPress={() => switchMedia(m)}
-              >
-                <Text style={[styles.toggleText, mediaType === m && styles.toggleTextOn]}>
-                  {m === "movie" ? t("media.movies") : t("media.shows")}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+          {!trending ? (
+            <View style={styles.toggleRow}>
+              {(["movie", "tv"] as MediaType[]).map((m) => (
+                <Pressable
+                  key={m}
+                  style={[styles.toggle, mediaType === m && styles.toggleOn]}
+                  onPress={() => switchMedia(m)}
+                >
+                  <Text style={[styles.toggleText, mediaType === m && styles.toggleTextOn]}>
+                    {m === "movie" ? t("media.movies") : t("media.shows")}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+            <Pressable
+              style={[styles.chip, styles.trendChip, trending && styles.trendChipOn]}
+              onPress={toggleTrending}
+            >
+              <Text style={[styles.chipText, styles.trendChipText, trending && styles.chipTextOn]}>
+                🔥 {t("add.trending")}
+              </Text>
+            </Pressable>
             {(genres.data ?? []).map((g) => {
               const on = genreIds.includes(g.id);
               return (
                 <Pressable
                   key={g.id}
                   style={[styles.chip, on && styles.chipOn]}
-                  onPress={() => setGenreIds((cur) => toggle(cur, g.id))}
+                  onPress={() => pickGenre(g.id)}
                 >
                   <Text style={[styles.chipText, on && styles.chipTextOn]}>{g.name}</Text>
                 </Pressable>
@@ -211,13 +244,13 @@ export default function AddScreen() {
           data={results}
           keyExtractor={(t) => `${t.mediaType}:${t.tmdbId}`}
           onEndReached={() => {
-            if (!searching && discover.hasNextPage && !discover.isFetchingNextPage) {
-              discover.fetchNextPage();
+            if (!searching && feed.hasNextPage && !feed.isFetchingNextPage) {
+              feed.fetchNextPage();
             }
           }}
           onEndReachedThreshold={0.5}
           ListFooterComponent={
-            !searching && discover.isFetchingNextPage ? (
+            !searching && feed.isFetchingNextPage ? (
               <ActivityIndicator style={{ marginVertical: 16 }} />
             ) : null
           }
@@ -257,6 +290,9 @@ const styles = StyleSheet.create({
   chipOn: { backgroundColor: "#5b6cff" },
   chipText: { fontSize: 12, color: "#666", fontWeight: "600" },
   chipTextOn: { color: "#fff" },
+  trendChip: { backgroundColor: "#fff0e6" },
+  trendChipOn: { backgroundColor: "#ff7a1a" },
+  trendChipText: { color: "#e8650e" },
   msg: { color: "#888", fontSize: 13, marginTop: 16, textAlign: "center" },
   errorBox: { marginTop: 40, alignItems: "center", paddingHorizontal: 24, gap: 8 },
   errorTitle: { fontSize: 15, fontWeight: "700", color: "#333" },
