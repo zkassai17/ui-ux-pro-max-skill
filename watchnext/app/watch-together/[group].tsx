@@ -43,10 +43,13 @@ export default function WatchTogetherResultsScreen() {
         <Text style={styles.msg}>{t("wt.cantLoad")}</Text>
       ) : (
         (() => {
-          const picks = data.picks;
+          // Only MUTUAL wants (2+ people want it) lead the result — a single
+          // person's want no longer drives "what should we watch". When the group
+          // shares no wants, we fall back to history-based suggestions.
+          const sharedPicks = data.picks.filter((p) => p.wantedBy >= 2);
           const suggestions = filterByGenre(data.suggestions, genreIds);
 
-          const sharedHero: HeroItem[] = picks.map((p) => ({
+          const sharedHero: HeroItem[] = sharedPicks.map((p) => ({
             tmdbId: p.entry.tmdb_id,
             mediaType: p.entry.media_type,
             title: p.entry.title,
@@ -105,18 +108,16 @@ export default function WatchTogetherResultsScreen() {
                 </View>
               ) : null}
 
-              {/* Group wishlist picks */}
-              {picks.length > 0 ? (
+              {/* Mutual wishlist picks (2+ people want it) */}
+              {sharedPicks.length > 0 ? (
                 <>
                   <Text style={styles.section}>{t("wt.upNext")}</Text>
-                  {picks.map((p) => {
+                  {sharedPicks.map((p) => {
                     const e = p.entry;
                     const everyone = p.wantedBy >= groupSize && groupSize > 1;
                     const tag = everyone
                       ? t("wt.everyoneWants")
-                      : p.wantedBy >= 2
-                      ? `🔥 ${p.wantedBy} ${t("wt.wantThis")}`
-                      : t("wt.onWishlist");
+                      : `🔥 ${p.wantedBy} ${t("wt.wantThis")}`;
                     return (
                       <TitleRow
                         key={`${e.media_type}:${e.tmdb_id}`}
@@ -135,7 +136,7 @@ export default function WatchTogetherResultsScreen() {
               <Text style={styles.section}>{t("wt.becauseWatching")}</Text>
               {suggestions.length === 0 ? (
                 <Text style={styles.msg}>
-                  {picks.length === 0 ? t("wt.noWishlistPicks") : t("wt.noGenreMatch")}
+                  {sharedPicks.length === 0 ? t("wt.noWishlistPicks") : t("wt.noGenreMatch")}
                 </Text>
               ) : (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggRow}>
