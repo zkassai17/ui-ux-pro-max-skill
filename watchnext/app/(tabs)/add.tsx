@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { searchTitles, discoverTitles, getTrendingTitles, getGenres } from "../../src/services/tmdb";
+import { searchTitles, discoverTitles, getTrendingTitles, getGenres, type TrendingScope } from "../../src/services/tmdb";
 import { getLibrary } from "../../src/services/watchlist";
 import { TitleRow } from "../../src/components/TitleRow";
 import { StatusButtons } from "../../src/components/StatusButtons";
@@ -38,6 +38,7 @@ export default function AddScreen() {
   const [genreIds, setGenreIds] = useState<number[]>([]);
   const [providerIds, setProviderIds] = useState<number[]>([]);
   const [trending, setTrending] = useState(false);
+  const [trendScope, setTrendScope] = useState<TrendingScope>("all");
   const router = useRouter();
   const { t } = useI18n();
 
@@ -75,8 +76,8 @@ export default function AddScreen() {
     getNextPageParam: (last) => (last.page < last.totalPages ? last.page + 1 : undefined),
   });
   const trend = useInfiniteQuery({
-    queryKey: ["tmdb-trending", providerKey],
-    queryFn: ({ pageParam }) => getTrendingTitles({ providerIds, page: pageParam }),
+    queryKey: ["tmdb-trending", trendScope, providerKey],
+    queryFn: ({ pageParam }) => getTrendingTitles({ scope: trendScope, providerIds, page: pageParam }),
     enabled: showingTrending,
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page < last.totalPages ? last.page + 1 : undefined),
@@ -102,7 +103,7 @@ export default function AddScreen() {
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   // A new search or filter change clears the grace window — added titles drop out then.
-  const context = `${q.trim()}|${mediaType}|${genreKey}|${providerKey}|${trending}`;
+  const context = `${q.trim()}|${mediaType}|${genreKey}|${providerKey}|${trending}|${trendScope}`;
   useEffect(() => {
     timers.current.forEach((t) => clearTimeout(t));
     timers.current.clear();
@@ -171,7 +172,21 @@ export default function AddScreen() {
 
       {!searching ? (
         <View style={styles.filters}>
-          {!trending ? (
+          {trending ? (
+            <View style={styles.toggleRow}>
+              {(["all", "movie", "tv"] as TrendingScope[]).map((s) => (
+                <Pressable
+                  key={s}
+                  style={[styles.toggle, trendScope === s && styles.toggleOn]}
+                  onPress={() => setTrendScope(s)}
+                >
+                  <Text style={[styles.toggleText, trendScope === s && styles.toggleTextOn]}>
+                    {s === "all" ? t("filter.all") : s === "movie" ? t("media.movies") : t("media.shows")}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : (
             <View style={styles.toggleRow}>
               {(["movie", "tv"] as MediaType[]).map((m) => (
                 <Pressable
@@ -185,7 +200,7 @@ export default function AddScreen() {
                 </Pressable>
               ))}
             </View>
-          ) : null}
+          )}
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
             <Pressable

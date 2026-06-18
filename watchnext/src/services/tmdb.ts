@@ -71,22 +71,31 @@ export async function getTrending(): Promise<Title[]> {
   return normalizeSearchResults(raw);
 }
 
-// Paginated trending feed of movies + shows mixed together, for the Add screen's
-// "Trending" chip. TMDB's /trending endpoint can't filter by streaming provider,
-// so when providers are selected we fall back to "most popular on those services"
-// (popularity-sorted discover across both media types, interleaved).
+export type TrendingScope = "all" | "movie" | "tv";
+
+// Paginated trending feed for the Add screen's "Trending" chip. Scope "all" mixes
+// movies + shows; "movie"/"tv" narrow it. TMDB's /trending endpoint can't filter by
+// streaming provider, so when providers are selected we fall back to "most popular on
+// those services" (popularity-sorted discover for the relevant media type(s)).
 export async function getTrendingTitles(opts: {
+  scope?: TrendingScope;
   providerIds?: number[];
   page?: number;
 }): Promise<DiscoverPage> {
   const page = opts.page ?? 1;
+  const scope = opts.scope ?? "all";
+
   if (!opts.providerIds?.length) {
-    const raw = await tmdbGet(`/trending/all/week?page=${page}`);
+    const raw = await tmdbGet(`/trending/${scope}/week?page=${page}`);
     return {
       results: normalizeSearchResults(raw),
       page: typeof raw?.page === "number" ? raw.page : 1,
       totalPages: typeof raw?.total_pages === "number" ? raw.total_pages : 1,
     };
+  }
+
+  if (scope !== "all") {
+    return discoverTitles({ mediaType: scope, providerIds: opts.providerIds, page });
   }
   const [movies, shows] = await Promise.all([
     discoverTitles({ mediaType: "movie", providerIds: opts.providerIds, page }),
