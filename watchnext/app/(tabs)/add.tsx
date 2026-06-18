@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   headerBoltText: { fontSize: 22 },
   filters: { marginBottom: 8 },
   toggleRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
-  toggle: { backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 16, paddingVertical: 7 },
+  toggle: { flex: 1, alignItems: "center", backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
   toggleOn: { backgroundColor: "#111" },
   toggleText: { fontSize: 13, color: "#666", fontWeight: "600" },
   toggleTextOn: { color: "#fff" },
