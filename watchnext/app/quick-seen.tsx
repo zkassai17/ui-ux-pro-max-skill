@@ -29,16 +29,23 @@ const POSTER_H = Math.round(POSTER_W * 1.5);
 // titles everyone has actually watched first, instead of momentary "popularity"
 // buzz — so the shows you've seen are near the top, not buried pages down.
 const MAX_POOL_PAGES = 12;
-async function fetchPoolPage(page: number): Promise<{ results: Title[]; nextPage?: number }> {
-  const [movies, shows] = await Promise.all([
-    discoverTitles({ mediaType: "movie", page, sortBy: "vote_count.desc" }).then((p) => p.results).catch(() => [] as Title[]),
-    discoverTitles({ mediaType: "tv", page, sortBy: "vote_count.desc" }).then((p) => p.results).catch(() => [] as Title[]),
-  ]);
-  const results: Title[] = [];
-  const maxLen = Math.max(movies.length, shows.length);
-  for (let i = 0; i < maxLen; i++) {
-    if (movies[i]) results.push(movies[i]);
-    if (shows[i]) results.push(shows[i]);
+type Scope = "all" | "movie" | "tv";
+
+async function fetchPoolPage(page: number, scope: Scope): Promise<{ results: Title[]; nextPage?: number }> {
+  const get = (mediaType: "movie" | "tv") =>
+    discoverTitles({ mediaType, page, sortBy: "vote_count.desc" }).then((p) => p.results).catch(() => [] as Title[]);
+
+  let results: Title[];
+  if (scope === "movie") results = await get("movie");
+  else if (scope === "tv") results = await get("tv");
+  else {
+    const [movies, shows] = await Promise.all([get("movie"), get("tv")]);
+    results = [];
+    const maxLen = Math.max(movies.length, shows.length);
+    for (let i = 0; i < maxLen; i++) {
+      if (movies[i]) results.push(movies[i]);
+      if (shows[i]) results.push(shows[i]);
+    }
   }
   return { results, nextPage: page < MAX_POOL_PAGES ? page + 1 : undefined };
 }
@@ -53,12 +60,13 @@ export default function QuickSeenScreen() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [progress, setProgress] = useState(0);
   const [search, setSearch] = useState("");
+  const [scope, setScope] = useState<Scope>("all");
   const sq = search.trim();
   const searching = sq.length > 1;
 
   const pool = useInfiniteQuery({
-    queryKey: ["quick-seen-pool"],
-    queryFn: ({ pageParam }) => fetchPoolPage(pageParam),
+    queryKey: ["quick-seen-pool", scope],
+    queryFn: ({ pageParam }) => fetchPoolPage(pageParam, scope),
     initialPageParam: 1,
     getNextPageParam: (last) => last.nextPage,
     staleTime: 5 * 60 * 1000,
@@ -93,7 +101,9 @@ export default function QuickSeenScreen() {
     poolTitles.push(t);
   }
   const display: Title[] = searching
-    ? (found.data ?? []).filter((t) => !excludeKeys.has(titleKey(t)))
+    ? (found.data ?? []).filter(
+        (t) => !excludeKeys.has(titleKey(t)) && (scope === "all" || t.mediaType === scope)
+      )
     : poolTitles;
 
   function toggle(key: string) {
@@ -166,6 +176,20 @@ export default function QuickSeenScreen() {
           autoCorrect={false}
           clearButtonMode="while-editing"
         />
+      </View>
+
+      <View style={styles.scopeRow}>
+        {(["all", "movie", "tv"] as Scope[]).map((s) => (
+          <Pressable
+            key={s}
+            style={[styles.scopeBtn, scope === s && styles.scopeBtnOn]}
+            onPress={() => setScope(s)}
+          >
+            <Text style={[styles.scopeText, scope === s && styles.scopeTextOn]}>
+              {s === "all" ? "All" : s === "movie" ? "Movies" : "TV"}
+            </Text>
+          </Pressable>
+        ))}
       </View>
 
       {!searching && pool.isLoading ? (
@@ -267,6 +291,12 @@ const styles = StyleSheet.create({
   searchWrap: { flexDirection: "row", alignItems: "center", backgroundColor: "#f0f0f3", borderRadius: 12, paddingHorizontal: 12, height: 42, marginBottom: 12 },
   searchIcon: { fontSize: 14, marginRight: 8, opacity: 0.5 },
   searchInput: { flex: 1, fontSize: 16, color: "#111", padding: 0 },
+
+  scopeRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
+  scopeBtn: { flex: 1, alignItems: "center", backgroundColor: "#f0f0f3", borderRadius: 999, paddingVertical: 8 },
+  scopeBtnOn: { backgroundColor: "#111" },
+  scopeText: { fontSize: 13, color: "#666", fontWeight: "700" },
+  scopeTextOn: { color: "#fff" },
 
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
   loadingText: { color: "#888", fontSize: 13 },
