@@ -10,6 +10,7 @@ import {
   Dimensions,
 } from "react-native";
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { discoverTitles, searchTitles } from "../src/services/tmdb";
@@ -156,6 +157,13 @@ export default function QuickSeenScreen() {
         }}
       />
 
+      {!onboarding ? (
+        <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={22} color="#5b6cff" />
+          <Text style={styles.backText}>Back</Text>
+        </Pressable>
+      ) : null}
+
       <View style={styles.head}>
         <Text style={styles.title}>Seen any of these?</Text>
         <Text style={styles.subtitle}>
@@ -283,6 +291,8 @@ export default function QuickSeenScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: PAGE_PAD, paddingTop: 12 },
+  backBtn: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", marginLeft: -4, marginBottom: 6 },
+  backText: { color: "#5b6cff", fontSize: 16, fontWeight: "600" },
   head: { marginBottom: 14 },
   title: { fontSize: 22, fontWeight: "800" },
   subtitle: { fontSize: 13, color: "#666", lineHeight: 19, marginTop: 6 },
