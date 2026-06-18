@@ -101,6 +101,13 @@ export default function LibraryScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.topBar}>
+        <Text style={styles.screenTitle}>{t("tab.library")}</Text>
+        <Pressable style={styles.quickAddPill} onPress={() => router.push("/quick-seen")} hitSlop={6}>
+          <Text style={styles.quickAddPillText}>⚡ {t("lib.quickAddShort")}</Text>
+        </Pressable>
+      </View>
+
       <View style={styles.searchWrap}>
         <Text style={styles.searchIcon}>🔍</Text>
         <TextInput
@@ -235,6 +242,11 @@ export default function LibraryScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
+
+  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
+  screenTitle: { fontSize: 22, fontWeight: "800" },
+  quickAddPill: { backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
+  quickAddPillText: { color: "#5b6cff", fontWeight: "800", fontSize: 13 },
 
   searchWrap: {
     flexDirection: "row",

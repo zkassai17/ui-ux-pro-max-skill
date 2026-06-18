@@ -1,7 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useRef } from "react";
 import {
   View,
   Text,
+  TextInput,
   Pressable,
   FlatList,
   StyleSheet,
@@ -10,7 +11,7 @@ import {
 } from "react-native";
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getTrending, discoverTitles } from "../src/services/tmdb";
+import { getTrending, discoverTitles, searchTitles } from "../src/services/tmdb";
 import { getLibrary, addToLibrary } from "../src/services/watchlist";
 import { buildCandidatePool } from "../src/lib/quickSeenLogic";
 import { titleKey } from "../src/lib/forYouLogic";
@@ -46,14 +47,33 @@ export default function QuickSeenScreen() {
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [progress, setProgress] = useState(0);
+  const [search, setSearch] = useState("");
+  const sq = search.trim();
+  const searching = sq.length > 1;
 
   const pool = useQuery({ queryKey: ["quick-seen-pool"], queryFn: fetchPool, staleTime: 5 * 60 * 1000 });
+  const lib = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
+  const found = useQuery({
+    queryKey: ["quick-seen-search", sq],
+    queryFn: () => searchTitles(sq),
+    enabled: searching,
+    staleTime: 60 * 1000,
+  });
 
-  const byKey = useMemo(() => {
-    const m = new Map<string, Title>();
-    for (const t of pool.data ?? []) m.set(titleKey(t), t);
-    return m;
-  }, [pool.data]);
+  // Accumulate every title we've shown (pool + each search) so a selection made
+  // during one search still resolves when we save, even after the query changes.
+  const known = useRef<Map<string, Title>>(new Map());
+  for (const t of pool.data ?? []) known.current.set(titleKey(t), t);
+  for (const t of found.data ?? []) known.current.set(titleKey(t), t);
+
+  // While searching show matches (minus titles already in the library); otherwise
+  // show the popular tap-through pool.
+  const excludeKeys = new Set(
+    (lib.data ?? []).map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id }))
+  );
+  const display: Title[] = searching
+    ? (found.data ?? []).filter((t) => !excludeKeys.has(titleKey(t)))
+    : pool.data ?? [];
 
   function toggle(key: string) {
     setSelected((prev) => {
@@ -71,7 +91,7 @@ export default function QuickSeenScreen() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const chosen = [...selected].map((k) => byKey.get(k)).filter((t): t is Title => !!t);
+      const chosen = [...selected].map((k) => known.current.get(k)).filter((t): t is Title => !!t);
       setProgress(0);
       const CONCURRENCY = 5;
       let done = 0;
@@ -113,26 +133,51 @@ export default function QuickSeenScreen() {
         </Text>
       </View>
 
-      {pool.isLoading ? (
+      <View style={styles.searchWrap}>
+        <Text style={styles.searchIcon}>🔍</Text>
+        <TextInput
+          style={styles.searchInput}
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search for a title you've seen…"
+          placeholderTextColor="#aaa"
+          autoCapitalize="none"
+          autoCorrect={false}
+          clearButtonMode="while-editing"
+        />
+      </View>
+
+      {!searching && pool.isLoading ? (
         <View style={styles.center}>
           <ActivityIndicator />
           <Text style={styles.loadingText}>Loading popular titles…</Text>
         </View>
-      ) : pool.isError || (pool.data && pool.data.length === 0) ? (
+      ) : !searching && (pool.isError || (pool.data && pool.data.length === 0)) ? (
         <View style={styles.center}>
           <Text style={styles.loadingText}>Couldn't load titles right now.</Text>
           <Pressable style={styles.linkBtn} onPress={finish}>
             <Text style={styles.linkText}>Continue</Text>
           </Pressable>
         </View>
+      ) : searching && found.isLoading ? (
+        <View style={styles.center}>
+          <ActivityIndicator />
+          <Text style={styles.loadingText}>Searching…</Text>
+        </View>
+      ) : searching && display.length === 0 ? (
+        <View style={styles.center}>
+          <Text style={styles.loadingText}>No matches for "{sq}".</Text>
+        </View>
       ) : (
         <FlatList
-          data={pool.data ?? []}
+          data={display}
           keyExtractor={(t) => titleKey(t)}
           numColumns={COLS}
           columnWrapperStyle={{ gap: GAP }}
           contentContainerStyle={{ gap: GAP, paddingBottom: 110 }}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           renderItem={({ item }) => {
             const key = titleKey(item);
             const on = selected.has(key);
@@ -188,6 +233,10 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: "800" },
   subtitle: { fontSize: 13, color: "#666", lineHeight: 19, marginTop: 6 },
   skip: { color: "#5b6cff", fontWeight: "700", fontSize: 15 },
+
+  searchWrap: { flexDirection: "row", alignItems: "center", backgroundColor: "#f0f0f3", borderRadius: 12, paddingHorizontal: 12, height: 42, marginBottom: 12 },
+  searchIcon: { fontSize: 14, marginRight: 8, opacity: 0.5 },
+  searchInput: { flex: 1, fontSize: 16, color: "#111", padding: 0 },
 
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
   loadingText: { color: "#888", fontSize: 13 },
