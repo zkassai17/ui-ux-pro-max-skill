@@ -11,10 +11,9 @@ import {
 } from "react-native";
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTrending, discoverTitles, searchTitles } from "../src/services/tmdb";
 import { getLibrary, addToLibrary } from "../src/services/watchlist";
-import { buildCandidatePool } from "../src/lib/quickSeenLogic";
 import { titleKey } from "../src/lib/forYouLogic";
 import { PosterImage } from "../src/components/PosterImage";
 import type { Title } from "../src/types/tmdb";
@@ -25,19 +24,21 @@ const PAGE_PAD = 16;
 const POSTER_W = Math.floor((Dimensions.get("window").width - PAGE_PAD * 2 - GAP * (COLS - 1)) / COLS);
 const POSTER_H = Math.round(POSTER_W * 1.5);
 
-// Pull a broad, recognizable pool: this week's trending + most-popular movies
-// and TV. More than enough familiar titles to tap through in a minute.
-async function fetchPool(): Promise<Title[]> {
-  const [trending, lib, movies1, tv1, movies2, tv2] = await Promise.all([
-    getTrending().catch(() => [] as Title[]),
-    getLibrary().catch(() => []),
-    discoverTitles({ mediaType: "movie", page: 1 }).then((p) => p.results).catch(() => [] as Title[]),
-    discoverTitles({ mediaType: "tv", page: 1 }).then((p) => p.results).catch(() => [] as Title[]),
-    discoverTitles({ mediaType: "movie", page: 2 }).then((p) => p.results).catch(() => [] as Title[]),
-    discoverTitles({ mediaType: "tv", page: 2 }).then((p) => p.results).catch(() => [] as Title[]),
-  ]);
-  const exclude = new Set(lib.map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id })));
-  return buildCandidatePool([trending, movies1, tv1, movies2, tv2], exclude);
+// One page of the tap-through pool: popular movies + TV for that page (plus this
+// week's trending on page 1), interleaved for a varied mix. Paginated so the grid
+// keeps loading more as you scroll instead of stopping at a fixed set.
+const MAX_POOL_PAGES = 12;
+async function fetchPoolPage(page: number): Promise<{ results: Title[]; nextPage?: number }> {
+  const tasks: Promise<Title[]>[] = [
+    discoverTitles({ mediaType: "movie", page }).then((p) => p.results).catch(() => [] as Title[]),
+    discoverTitles({ mediaType: "tv", page }).then((p) => p.results).catch(() => [] as Title[]),
+  ];
+  if (page === 1) tasks.unshift(getTrending().catch(() => [] as Title[]));
+  const lists = await Promise.all(tasks);
+  const results: Title[] = [];
+  const maxLen = Math.max(0, ...lists.map((l) => l.length));
+  for (let i = 0; i < maxLen; i++) for (const l of lists) if (l[i]) results.push(l[i]);
+  return { results, nextPage: page < MAX_POOL_PAGES ? page + 1 : undefined };
 }
 
 export default function QuickSeenScreen() {
@@ -53,7 +54,13 @@ export default function QuickSeenScreen() {
   const sq = search.trim();
   const searching = sq.length > 1;
 
-  const pool = useQuery({ queryKey: ["quick-seen-pool"], queryFn: fetchPool, staleTime: 5 * 60 * 1000 });
+  const pool = useInfiniteQuery({
+    queryKey: ["quick-seen-pool"],
+    queryFn: ({ pageParam }) => fetchPoolPage(pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (last) => last.nextPage,
+    staleTime: 5 * 60 * 1000,
+  });
   const lib = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
   const found = useQuery({
     queryKey: ["quick-seen-search", sq],
@@ -62,20 +69,30 @@ export default function QuickSeenScreen() {
     staleTime: 60 * 1000,
   });
 
+  const poolRaw = pool.data?.pages.flatMap((p) => p.results) ?? [];
+
   // Accumulate every title we've shown (pool + each search) so a selection made
   // during one search still resolves when we save, even after the query changes.
   const known = useRef<Map<string, Title>>(new Map());
-  for (const t of pool.data ?? []) known.current.set(titleKey(t), t);
+  for (const t of poolRaw) known.current.set(titleKey(t), t);
   for (const t of found.data ?? []) known.current.set(titleKey(t), t);
 
-  // While searching show matches (minus titles already in the library); otherwise
-  // show the popular tap-through pool.
+  // While searching show matches; otherwise show the popular tap-through pool.
+  // Either way, drop titles already in the library (deduped, stable order).
   const excludeKeys = new Set(
     (lib.data ?? []).map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id }))
   );
+  const poolTitles: Title[] = [];
+  const seenKeys = new Set<string>();
+  for (const t of poolRaw) {
+    const k = titleKey(t);
+    if (seenKeys.has(k) || excludeKeys.has(k)) continue;
+    seenKeys.add(k);
+    poolTitles.push(t);
+  }
   const display: Title[] = searching
     ? (found.data ?? []).filter((t) => !excludeKeys.has(titleKey(t)))
-    : pool.data ?? [];
+    : poolTitles;
 
   function toggle(key: string) {
     setSelected((prev) => {
@@ -154,7 +171,7 @@ export default function QuickSeenScreen() {
           <ActivityIndicator />
           <Text style={styles.loadingText}>Loading popular titles…</Text>
         </View>
-      ) : !searching && (pool.isError || (pool.data && pool.data.length === 0)) ? (
+      ) : !searching && (pool.isError || (!pool.isLoading && poolTitles.length === 0)) ? (
         <View style={styles.center}>
           <Text style={styles.loadingText}>Couldn't load titles right now.</Text>
           <Pressable style={styles.linkBtn} onPress={finish}>
@@ -180,6 +197,15 @@ export default function QuickSeenScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
+          onEndReachedThreshold={0.6}
+          onEndReached={() => {
+            if (!searching && pool.hasNextPage && !pool.isFetchingNextPage) pool.fetchNextPage();
+          }}
+          ListFooterComponent={
+            !searching && pool.isFetchingNextPage ? (
+              <ActivityIndicator style={{ marginVertical: 16 }} />
+            ) : null
+          }
           renderItem={({ item }) => {
             const key = titleKey(item);
             const on = selected.has(key);
@@ -203,7 +229,7 @@ export default function QuickSeenScreen() {
         />
       )}
 
-      {!pool.isLoading && (pool.data?.length ?? 0) > 0 ? (
+      {!pool.isLoading && poolTitles.length > 0 ? (
         <View style={styles.footer}>
           <Pressable
             style={[styles.primaryBtn, (count === 0 || save.isPending) && styles.btnDisabled]}
