@@ -12,12 +12,14 @@ export interface WeightedSeed {
 
 // How strongly one library entry shapes recommendations. Watched is the
 // strongest taste signal, then Watching, then Want (an aspiration, not a
-// confirmed like). A personal 1–5 rating nudges it further so a loved title
-// pulls harder than an unrated one.
+// confirmed like). A personal 1–5 rating then CENTERS that weight: ★3 (and
+// unrated) is neutral, ★4–5 amplify the title's pull, ★1–2 shrink it — so a
+// disliked title steers recommendations AWAY from its genres instead of still
+// boosting them. The factor stays positive (★1 → 0.6×, ★5 → 1.4×).
 export function seedWeight(entry: WatchlistEntry): number {
   const base = entry.status === "watched" ? 1.2 : entry.status === "watching" ? 0.9 : 0.6;
-  const ratingBoost = entry.rating != null ? entry.rating * 0.1 : 0;
-  return base + ratingBoost;
+  const factor = entry.rating != null ? 1 + (entry.rating - 3) * 0.2 : 1;
+  return base * factor;
 }
 
 // Pick the library titles of a media type to seed from, each tagged with its

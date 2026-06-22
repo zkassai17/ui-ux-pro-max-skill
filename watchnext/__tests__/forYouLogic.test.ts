@@ -26,12 +26,16 @@ describe("seedWeight", () => {
     expect(ing).toBeGreaterThan(want);
   });
 
-  it("adds a boost for a higher personal rating", () => {
+  it("centers on rating: loved > unrated > disliked", () => {
     const loved = seedWeight(e({ status: "watched", rating: 5 }));
-    const meh = seedWeight(e({ status: "watched", rating: 2 }));
+    const neutral = seedWeight(e({ status: "watched", rating: 3 }));
     const unrated = seedWeight(e({ status: "watched", rating: null }));
-    expect(loved).toBeGreaterThan(meh);
-    expect(meh).toBeGreaterThan(unrated);
+    const disliked = seedWeight(e({ status: "watched", rating: 1 }));
+    expect(loved).toBeGreaterThan(unrated);
+    // ★3 and unrated are both neutral (no boost, no penalty).
+    expect(neutral).toBeCloseTo(unrated, 6);
+    // A disliked title counts LESS than an unrated one (steers recs away).
+    expect(unrated).toBeGreaterThan(disliked);
   });
 });
 

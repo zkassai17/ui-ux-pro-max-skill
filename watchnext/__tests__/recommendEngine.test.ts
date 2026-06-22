@@ -39,7 +39,7 @@ const key = (tmdbId: number, mediaType: "movie" | "tv" = "movie") => titleKey({ 
 describe("buildGenreProfile", () => {
   it("weights genres by each title's seed weight", () => {
     const lib = [
-      e({ tmdb_id: 1, status: "watched", rating: 5 }), // weight 1.7
+      e({ tmdb_id: 1, status: "watched", rating: 5 }), // weight 1.2 * 1.4 = 1.68
       e({ tmdb_id: 2, status: "want", rating: null }), // weight 0.6
     ];
     const genres = new Map<string, number[]>([
@@ -47,7 +47,7 @@ describe("buildGenreProfile", () => {
       [key(2), [18, 28]], // drama + action
     ]);
     const profile = buildGenreProfile(lib, genres);
-    expect(profile.get(18)).toBeCloseTo(2.3, 6); // 1.7 + 0.6
+    expect(profile.get(18)).toBeCloseTo(2.28, 6); // 1.68 + 0.6
     expect(profile.get(28)).toBeCloseTo(0.6, 6);
   });
 
