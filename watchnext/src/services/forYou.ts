@@ -3,7 +3,7 @@ import type { WatchlistEntry } from "../types/db";
 import { getGenres, getTitleDetails, discoverSuggestions, getTrending } from "./tmdb";
 import { getFriends } from "./friends";
 import { getLibrary } from "./watchlist";
-import { getHiddenKeys } from "./hiddenRecs";
+import { getHiddenTitles } from "./hiddenRecs";
 import { computeTasteMatch } from "../lib/tasteMatchLogic";
 import { titleKey, selectWeightedSeeds } from "../lib/forYouLogic";
 import {
@@ -30,12 +30,16 @@ type SeedMeta = { genreIds: number[]; language: string | null };
 // Session memo: a title's genres + language never change, so we fetch once.
 const metaMemo = new Map<string, SeedMeta>();
 
-async function seedMeta(entry: WatchlistEntry, nameToId: Map<string, number>): Promise<SeedMeta> {
-  const key = titleKey({ mediaType: entry.media_type, tmdbId: entry.tmdb_id });
+async function metaFor(
+  mediaType: MediaType,
+  tmdbId: number,
+  nameToId: Map<string, number>,
+): Promise<SeedMeta> {
+  const key = titleKey({ mediaType, tmdbId });
   const cached = metaMemo.get(key);
   if (cached) return cached;
   try {
-    const detail = await getTitleDetails(entry.media_type, entry.tmdb_id);
+    const detail = await getTitleDetails(mediaType, tmdbId);
     const genreIds = detail.genres
       .map((name) => nameToId.get(name))
       .filter((id): id is number => typeof id === "number");
@@ -45,6 +49,10 @@ async function seedMeta(entry: WatchlistEntry, nameToId: Map<string, number>): P
   } catch {
     return { genreIds: [], language: null };
   }
+}
+
+function seedMeta(entry: WatchlistEntry, nameToId: Map<string, number>): Promise<SeedMeta> {
+  return metaFor(entry.media_type, entry.tmdb_id, nameToId);
 }
 
 // Build the "Movies/Shows for you" list with OUR hybrid engine — content (genre
@@ -59,10 +67,10 @@ export async function getForYou(
   const mine = library.filter((e) => e.media_type === mediaType);
   // Exclude everything already in the library AND anything marked "Not interested",
   // so hidden titles never come back and a replacement backfills in their place.
-  const hidden = await getHiddenKeys().catch(() => new Set<string>());
+  const hiddenTitles = await getHiddenTitles().catch(() => []);
   const excludeKeys = new Set<string>([
     ...library.map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id })),
-    ...hidden,
+    ...hiddenTitles.map((h) => titleKey(h)),
   ]);
 
   // 1) Genre taste profile from your top-weighted titles.
@@ -79,6 +87,18 @@ export async function getForYou(
     })
   );
   const profile = buildGenreProfile(mine, genresByKey);
+
+  // Dislike profile: genres of titles you've marked "Not interested" (this media
+  // type), counted so repeatedly rejecting a genre suppresses it more over time.
+  const dislike = new Map<number, number>();
+  await Promise.all(
+    hiddenTitles
+      .filter((h) => h.mediaType === mediaType)
+      .map(async (h) => {
+        const meta = await metaFor(mediaType, h.tmdbId, nameToId);
+        for (const g of meta.genreIds) dislike.set(g, (dislike.get(g) ?? 0) + 1);
+      })
+  );
 
   // Languages this user actually watches — used to drop foreign-language randoms.
   const allowedLangs = learnLanguages(seedLangs);
@@ -154,5 +174,5 @@ export async function getForYou(
     trending: recWeights.trending,
   };
 
-  return rankHybrid({ candidates, profile, neighbors, trendingKeys, weights, excludeKeys }).slice(0, MAX);
+  return rankHybrid({ candidates, profile, neighbors, trendingKeys, weights, excludeKeys, dislike }).slice(0, MAX);
 }

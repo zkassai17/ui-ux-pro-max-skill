@@ -6,19 +6,24 @@ async function currentUserId(): Promise<string | null> {
   return data.user?.id ?? null;
 }
 
-// Titles the user marked "Not interested" — excluded from For You suggestions and
-// nudged away from via the engine. Returned as a Set of titleKeys for cheap lookup.
-export async function getHiddenKeys(): Promise<Set<string>> {
+export type HiddenTitle = { tmdbId: number; mediaType: string };
+
+// Titles the user marked "Not interested".
+export async function getHiddenTitles(): Promise<HiddenTitle[]> {
   const uid = await currentUserId();
-  if (!uid) return new Set();
+  if (!uid) return [];
   const { data, error } = await supabase
     .from("hidden_recs")
     .select("tmdb_id, media_type")
     .eq("user_id", uid);
   if (error) throw error;
-  return new Set(
-    (data ?? []).map((r) => titleKey({ mediaType: r.media_type as string, tmdbId: r.tmdb_id as number }))
-  );
+  return (data ?? []).map((r) => ({ tmdbId: r.tmdb_id as number, mediaType: r.media_type as string }));
+}
+
+// Same data as a Set of titleKeys for cheap exclude lookups in the UI.
+export async function getHiddenKeys(): Promise<Set<string>> {
+  const hidden = await getHiddenTitles();
+  return new Set(hidden.map((h) => titleKey(h)));
 }
 
 export async function hideRec(title: { tmdbId: number; mediaType: string }): Promise<void> {

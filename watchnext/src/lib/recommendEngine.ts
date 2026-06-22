@@ -47,6 +47,22 @@ export function contentScore(genreIds: number[], profile: Map<number, number>): 
   return hit / total;
 }
 
+// Negative-signal penalty from titles the user marked "Not interested". `dislike`
+// maps a genre id to how many dismissed titles had it. The penalty grows each time
+// you reject the same genre (so the feed keeps learning), but a one-off rejection
+// barely dents — and it's capped so it can never fully zero out a good match.
+export function dislikePenalty(genreIds: number[], dislike: Map<number, number>): number {
+  if (dislike.size === 0) return 0;
+  let p = 0;
+  const counted = new Set<number>();
+  for (const g of genreIds) {
+    if (counted.has(g)) continue;
+    counted.add(g);
+    p += Math.min(dislike.get(g) ?? 0, 5) * 0.06; // each repeated rejection adds up, capped at 5
+  }
+  return Math.min(p, 0.5);
+}
+
 // A taste-neighbor: someone whose taste overlaps yours, with a 0..1 affinity
 // (taste-match% / 100) and the set of titleKeys they like.
 export interface Neighbor {
@@ -115,8 +131,10 @@ export function rankHybrid(params: {
   trendingKeys: Set<string>;
   weights: HybridWeights;
   excludeKeys: Set<string>;
+  // Genres the user keeps marking "Not interested" — subtracted from the score.
+  dislike?: Map<number, number>;
 }): Title[] {
-  const { candidates, profile, neighbors, trendingKeys, weights, excludeKeys } = params;
+  const { candidates, profile, neighbors, trendingKeys, weights, excludeKeys, dislike } = params;
   const seen = new Set<string>();
   const scored: { title: Title; score: number }[] = [];
 
@@ -127,7 +145,8 @@ export function rankHybrid(params: {
     const score =
       weights.content * contentScore(c.genreIds, profile) +
       weights.collaborative * collaborativeScore(key, neighbors) +
-      weights.trending * (trendingKeys.has(key) ? 1 : 0);
+      weights.trending * (trendingKeys.has(key) ? 1 : 0) -
+      (dislike ? dislikePenalty(c.genreIds, dislike) : 0);
     if (score <= 0) continue;
     scored.push({ title: c, score });
   }

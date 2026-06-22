@@ -3,6 +3,7 @@ import {
   contentScore,
   collaborativeScore,
   collaborativeWeight,
+  dislikePenalty,
   rankHybrid,
   learnLanguages,
   dominantLanguage,
@@ -79,6 +80,28 @@ describe("contentScore", () => {
 
   it("does not double-count a repeated genre", () => {
     expect(contentScore([18, 18], profile)).toBeCloseTo(3 / 4, 6);
+  });
+});
+
+describe("dislikePenalty", () => {
+  it("is zero with no dislikes", () => {
+    expect(dislikePenalty([18, 28], new Map())).toBe(0);
+  });
+
+  it("grows the more a genre is rejected (and a one-off barely dents)", () => {
+    const once = dislikePenalty([18], new Map([[18, 1]]));
+    const many = dislikePenalty([18], new Map([[18, 5]]));
+    expect(once).toBeCloseTo(0.06, 6);
+    expect(many).toBeGreaterThan(once);
+  });
+
+  it("never exceeds the 0.5 cap, even for heavy multi-genre rejection", () => {
+    const p = dislikePenalty([18, 28, 35], new Map([[18, 9], [28, 9], [35, 9]]));
+    expect(p).toBeLessThanOrEqual(0.5);
+  });
+
+  it("ignores genres the candidate doesn't have", () => {
+    expect(dislikePenalty([99], new Map([[18, 5]]))).toBe(0);
   });
 });
 
