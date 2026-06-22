@@ -136,6 +136,23 @@ const VERB_KEY: Record<WatchStatus, string> = {
   want: "feed.wantsToWatch",
 };
 
+// Avatar + "@name verb" header line shared by every activity card.
+function FeedCardHeader({ username, verb }: { username: string | null; verb: string }) {
+  const { t } = useI18n();
+  const uname = username ?? undefined;
+  const name = username ? `@${username}` : t("feed.aFriend");
+  return (
+    <View style={styles.cardHead}>
+      <View style={[styles.cardAvatar, { backgroundColor: avatarColor(uname) }]}>
+        <Text style={styles.cardAvatarText}>{initials(uname)}</Text>
+      </View>
+      <Text style={styles.cardHeadText} numberOfLines={1}>
+        <Text style={styles.name}>{name}</Text> <Text style={styles.verb}>{verb}</Text>
+      </Text>
+    </View>
+  );
+}
+
 function ForYouRail({ mediaType, heading, skipFirst }: { mediaType: MediaType; heading: string; skipFirst?: boolean }) {
   const router = useRouter();
   const qc = useQueryClient();
@@ -312,21 +329,18 @@ export default function HomeScreen() {
         )
       }
       renderItem={({ item: row }) => {
-        const name = row.username ? `@${row.username}` : t("feed.aFriend");
         if (row.item.kind === "watchlist") {
           const e = row.item.entry;
           return (
             <View style={styles.card}>
-              <Text style={styles.head}>
-                <Text style={styles.name}>{name}</Text> {t(VERB_KEY[e.status])}
-              </Text>
-              <View style={styles.row}>
-                <PosterImage path={e.poster_path} width={54} height={80} radius={8} />
+              <FeedCardHeader username={row.username} verb={t(VERB_KEY[e.status])} />
+              <Pressable style={styles.cardBody} onPress={() => router.push(`/title/${e.media_type}/${e.tmdb_id}`)}>
+                <PosterImage path={e.poster_path} width={48} height={72} radius={8} />
                 <View style={styles.meta}>
-                  <Text style={styles.title}>{e.title}</Text>
+                  <Text style={styles.title} numberOfLines={2}>{e.title}</Text>
                   <Text style={styles.pill}>{e.media_type === "movie" ? t("media.movie") : t("media.tv")}</Text>
                 </View>
-              </View>
+              </Pressable>
               <FeedReactions targetId={row.item.id} targetOwner={row.item.userId} summary={reactionMap[row.item.id]} />
             </View>
           );
@@ -334,17 +348,15 @@ export default function HomeScreen() {
         const rec = row.item.rec;
         return (
           <View style={styles.card}>
-            <Text style={styles.head}>
-              <Text style={styles.name}>{name}</Text> {t("feed.recommends")}
-            </Text>
-            <View style={styles.row}>
-              <PosterImage path={rec.poster_path} width={54} height={80} radius={8} />
+            <FeedCardHeader username={row.username} verb={t("feed.recommends")} />
+            <Pressable style={styles.cardBody} onPress={() => router.push(`/title/${rec.media_type}/${rec.tmdb_id}`)}>
+              <PosterImage path={rec.poster_path} width={48} height={72} radius={8} />
               <View style={styles.meta}>
-                <Text style={styles.title}>{rec.title}</Text>
-                {rec.note ? <Text style={styles.note}>“{rec.note}”</Text> : null}
+                <Text style={styles.title} numberOfLines={2}>{rec.title}</Text>
+                {rec.note ? <Text style={styles.note} numberOfLines={2}>“{rec.note}”</Text> : null}
                 <Text style={styles.pill}>{rec.media_type === "movie" ? t("media.movie") : t("media.tv")}</Text>
               </View>
-            </View>
+            </Pressable>
             <FeedReactions targetId={row.item.id} targetOwner={row.item.userId} summary={reactionMap[row.item.id]} />
           </View>
         );
@@ -378,13 +390,17 @@ const styles = StyleSheet.create({
   suggestionTitle: { fontSize: 11, fontWeight: "600", marginTop: 6 },
   posterAdd: { position: "absolute", bottom: 8, left: 0, right: 0, alignItems: "center" },
   hideBtn: { position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: 11, backgroundColor: "rgba(0,0,0,0.55)", alignItems: "center", justifyContent: "center", zIndex: 2 },
-  card: { borderWidth: 1, borderColor: "#eee", borderRadius: 12, padding: 10, marginBottom: 10 },
-  head: { fontSize: 12, marginBottom: 8 },
-  name: { fontWeight: "700" },
-  row: { flexDirection: "row", gap: 10, alignItems: "center" },
+  card: { backgroundColor: "#f7f7f9", borderRadius: 16, padding: 14, marginBottom: 12 },
+  cardHead: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
+  cardAvatar: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  cardAvatarText: { color: "#fff", fontSize: 12, fontWeight: "800" },
+  cardHeadText: { flex: 1, fontSize: 13 },
+  name: { fontWeight: "800" },
+  verb: { color: "#888" },
+  cardBody: { flexDirection: "row", gap: 12, alignItems: "center" },
   meta: { flex: 1, minWidth: 0 },
-  title: { fontSize: 13, fontWeight: "600" },
-  note: { fontSize: 11, color: "#888", marginTop: 2 },
+  title: { fontSize: 15, fontWeight: "700" },
+  note: { fontSize: 12, color: "#888", marginTop: 3, fontStyle: "italic" },
   pill: { alignSelf: "flex-start", marginTop: 4, fontSize: 9, color: "#5b6cff", backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2, overflow: "hidden" },
   msg: { color: "#888", fontSize: 13, marginTop: 24, textAlign: "center" },
   feedEmpty: { alignItems: "center", paddingVertical: 28, paddingHorizontal: 24 },
