@@ -11,6 +11,7 @@ import {
   rankHybrid,
   contentScore,
   collaborativeWeight,
+  blendExploration,
   learnLanguages,
   dominantLanguage,
   filterByLanguage,
@@ -24,6 +25,8 @@ const TOP_GENRES = 3; // discover candidates from this many of your strongest ge
 const MAX = 15;
 const MIN_VOTES = 200; // popularity floor — drop obscure random titles
 const MIN_CONTENT = 0.08; // minimum taste-match for a candidate to qualify (once you have a profile)
+const EXPLORE_GENRES = 2; // discover a few "stretch" picks from genres just outside your core
+const EXPLORE_SLOTS = 2; // how many exploration picks to weave into the final rail
 
 type SeedMeta = { genreIds: number[]; language: string | null };
 
@@ -105,24 +108,23 @@ export async function getForYou(
   const dominant = dominantLanguage(seedLangs);
 
   // 2) Candidate pool: discover by your strongest genres (+ trending fallback).
-  const topGenres = [...profile.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, TOP_GENRES)
-    .map(([id]) => id);
+  const sortedGenres = [...profile.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id);
+  const topGenres = sortedGenres.slice(0, TOP_GENRES);
+  // Exploration genres: the next-strongest genres just OUTSIDE your core — a
+  // "slight stretch", not random, so diversity picks are still plausibly you.
+  const exploreGenres = sortedGenres.slice(TOP_GENRES, TOP_GENRES + EXPLORE_GENRES);
 
-  const [discoverLists, trendingAll] = await Promise.all([
-    Promise.all(
-      (topGenres.length ? topGenres : [null]).map((g) =>
-        g == null
-          ? Promise.resolve([] as GenreTitle[])
-          : discoverSuggestions({
-              mediaType,
-              genreId: g,
-              originalLanguage: dominant, // richer pool in your main language
-              minVotes: MIN_VOTES, // popularity floor
-            }).catch(() => [] as GenreTitle[])
-      )
-    ),
+  const discoverFor = (g: number) =>
+    discoverSuggestions({
+      mediaType,
+      genreId: g,
+      originalLanguage: dominant, // richer pool in your main language
+      minVotes: MIN_VOTES, // popularity floor
+    }).catch(() => [] as GenreTitle[]);
+
+  const [discoverLists, exploreLists, trendingAll] = await Promise.all([
+    Promise.all((topGenres.length ? topGenres : [null]).map((g) => (g == null ? Promise.resolve([] as GenreTitle[]) : discoverFor(g)))),
+    Promise.all(exploreGenres.map(discoverFor)),
     getTrending().catch(() => [] as Title[]),
   ]);
   const trendingForType = trendingAll.filter((t) => t.mediaType === mediaType);
@@ -144,6 +146,10 @@ export async function getForYou(
   // enough strong matches remain, so the rail never starves.
   const strong = pooled.filter((c) => contentScore(c.genreIds, profile) >= MIN_CONTENT);
   const candidates: GenreTitle[] = hasProfile && strong.length >= MAX ? strong : pooled;
+
+  // Exploration candidates (from genres just outside your core) — kept separate so
+  // a couple can be woven into the final list for variety.
+  const exploreCandidates: GenreTitle[] = filterByLanguage(exploreLists.flat(), allowedLangs);
 
   // 3) Collaborative signal from friends, weighted by taste-match.
   const neighbors: Neighbor[] = [];
@@ -174,5 +180,17 @@ export async function getForYou(
     trending: recWeights.trending,
   };
 
-  return rankHybrid({ candidates, profile, neighbors, trendingKeys, weights, excludeKeys, dislike }).slice(0, MAX);
+  const core = rankHybrid({ candidates, profile, neighbors, trendingKeys, weights, excludeKeys, dislike });
+  // Rank the exploration pool the same way, then weave a couple of those "stretch"
+  // picks into the mostly-core list so the rail isn't the same genres every time.
+  const explore = rankHybrid({
+    candidates: exploreCandidates,
+    profile,
+    neighbors,
+    trendingKeys,
+    weights,
+    excludeKeys,
+    dislike,
+  });
+  return blendExploration(core, explore, { exploreSlots: EXPLORE_SLOTS, total: MAX });
 }

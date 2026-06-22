@@ -12,13 +12,15 @@ export interface WeightedSeed {
 
 // How strongly one library entry shapes recommendations. Watched is the
 // strongest taste signal, then Watching, then Want (an aspiration, not a
-// confirmed like). A personal 1–5 rating then CENTERS that weight: ★3 (and
-// unrated) is neutral, ★4–5 amplify the title's pull, ★1–2 shrink it — so a
-// disliked title steers recommendations AWAY from its genres instead of still
-// boosting them. The factor stays positive (★1 → 0.6×, ★5 → 1.4×).
+// confirmed like). A personal 1–5 rating then CENTERS that weight around ★3
+// (and unrated) = neutral. It's ASYMMETRIC: dislikes bite harder than likes
+// reward, because a low score is rarer and more informative ("really not for
+// me") than yet another generous 4. ★5 → ×1.30, ★4 → ×1.15, ★3 → ×1.0,
+// ★2 → ×0.70, ★1 → ×0.40.
 export function seedWeight(entry: WatchlistEntry): number {
   const base = entry.status === "watched" ? 1.2 : entry.status === "watching" ? 0.9 : 0.6;
-  const factor = entry.rating != null ? 1 + (entry.rating - 3) * 0.2 : 1;
+  const r = entry.rating;
+  const factor = r == null ? 1 : r >= 3 ? 1 + (r - 3) * 0.15 : 1 + (r - 3) * 0.3;
   return base * factor;
 }
 

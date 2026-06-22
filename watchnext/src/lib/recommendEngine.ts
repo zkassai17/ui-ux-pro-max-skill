@@ -115,6 +115,41 @@ export function filterByLanguage<T extends { originalLanguage?: string | null }>
   return items.filter((i) => !i.originalLanguage || allowed.has(i.originalLanguage));
 }
 
+// Diversity / exploration: weave a few "stretch" picks (from genres just outside
+// your core) into the mostly-core list, spread out rather than dumped at the end,
+// so the feed isn't the same handful of genres on a loop. Pure: dedupes by
+// titleKey, caps at `total`, and is a no-op when there's nothing to explore.
+export function blendExploration(
+  core: Title[],
+  explore: Title[],
+  opts: { exploreSlots: number; total: number },
+): Title[] {
+  const seen = new Set<string>();
+  const dedupe = (list: Title[]): Title[] =>
+    list.filter((t) => {
+      const k = titleKey(t);
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+
+  const coreU = dedupe(core);
+  const exploreU = dedupe(explore).slice(0, Math.max(0, opts.exploreSlots));
+  if (exploreU.length === 0) return coreU.slice(0, opts.total);
+
+  const coreTake = coreU.slice(0, Math.max(0, opts.total - exploreU.length));
+  const gap = Math.max(2, Math.floor(coreTake.length / (exploreU.length + 1)));
+
+  const out: Title[] = [];
+  let ei = 0;
+  coreTake.forEach((t, i) => {
+    out.push(t);
+    if (ei < exploreU.length && (i + 1) % gap === 0) out.push(exploreU[ei++]);
+  });
+  while (ei < exploreU.length) out.push(exploreU[ei++]);
+  return out.slice(0, opts.total);
+}
+
 export interface HybridWeights {
   content: number;
   collaborative: number;

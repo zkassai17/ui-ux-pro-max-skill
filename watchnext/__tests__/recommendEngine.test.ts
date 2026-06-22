@@ -4,6 +4,7 @@ import {
   collaborativeScore,
   collaborativeWeight,
   dislikePenalty,
+  blendExploration,
   rankHybrid,
   learnLanguages,
   dominantLanguage,
@@ -40,7 +41,7 @@ const key = (tmdbId: number, mediaType: "movie" | "tv" = "movie") => titleKey({ 
 describe("buildGenreProfile", () => {
   it("weights genres by each title's seed weight", () => {
     const lib = [
-      e({ tmdb_id: 1, status: "watched", rating: 5 }), // weight 1.2 * 1.4 = 1.68
+      e({ tmdb_id: 1, status: "watched", rating: 5 }), // weight 1.2 * 1.30 = 1.56
       e({ tmdb_id: 2, status: "want", rating: null }), // weight 0.6
     ];
     const genres = new Map<string, number[]>([
@@ -48,7 +49,7 @@ describe("buildGenreProfile", () => {
       [key(2), [18, 28]], // drama + action
     ]);
     const profile = buildGenreProfile(lib, genres);
-    expect(profile.get(18)).toBeCloseTo(2.28, 6); // 1.68 + 0.6
+    expect(profile.get(18)).toBeCloseTo(2.16, 6); // 1.56 + 0.6
     expect(profile.get(28)).toBeCloseTo(0.6, 6);
   });
 
@@ -102,6 +103,31 @@ describe("dislikePenalty", () => {
 
   it("ignores genres the candidate doesn't have", () => {
     expect(dislikePenalty([99], new Map([[18, 5]]))).toBe(0);
+  });
+});
+
+describe("blendExploration", () => {
+  const mk = (id: number) => gt({ tmdbId: id, title: `T${id}` });
+
+  it("returns core (capped) when there's nothing to explore", () => {
+    const out = blendExploration([mk(1), mk(2), mk(3)], [], { exploreSlots: 2, total: 2 });
+    expect(out.map((t) => t.tmdbId)).toEqual([1, 2]);
+  });
+
+  it("weaves explore picks in and never exceeds total", () => {
+    const core = Array.from({ length: 15 }, (_, i) => mk(i + 1));
+    const out = blendExploration(core, [mk(100), mk(101)], { exploreSlots: 2, total: 15 });
+    expect(out).toHaveLength(15);
+    const ids = out.map((t) => t.tmdbId);
+    expect(ids).toContain(100);
+    expect(ids).toContain(101);
+  });
+
+  it("dedupes — an explore title already in core isn't repeated", () => {
+    const out = blendExploration([mk(1), mk(2)], [mk(2), mk(3)], { exploreSlots: 2, total: 10 });
+    const ids = out.map((t) => t.tmdbId);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toContain(3);
   });
 });
 

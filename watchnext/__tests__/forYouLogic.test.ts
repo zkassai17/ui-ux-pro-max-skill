@@ -37,6 +37,13 @@ describe("seedWeight", () => {
     // A disliked title counts LESS than an unrated one (steers recs away).
     expect(unrated).toBeGreaterThan(disliked);
   });
+
+  it("penalizes dislikes harder than it rewards likes (asymmetric)", () => {
+    const neutral = seedWeight(e({ status: "watched", rating: 3 }));
+    const loved = seedWeight(e({ status: "watched", rating: 5 }));
+    const disliked = seedWeight(e({ status: "watched", rating: 1 }));
+    expect(loved - neutral).toBeLessThan(neutral - disliked);
+  });
 });
 
 describe("selectWeightedSeeds", () => {
