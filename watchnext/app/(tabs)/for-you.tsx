@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator, ScrollView, RefreshControl } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
+import { useRouter, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { getFeed } from "../../src/services/feed";
+import { getFeed, type FeedRow } from "../../src/services/feed";
 import { getLibrary } from "../../src/services/watchlist";
 import { getForYou } from "../../src/services/forYou";
 import { getHiddenKeys, hideRec } from "../../src/services/hiddenRecs";
@@ -131,6 +131,16 @@ export default function HomeScreen() {
   const { t } = useI18n();
   const { data, isLoading } = useQuery({ queryKey: ["feed"], queryFn: getFeed });
   const [refreshing, setRefreshing] = useState(false);
+  const listRef = useRef<FlatList<FeedRow>>(null);
+  const navigation = useNavigation();
+
+  // Tapping the Home tab again jumps the feed back to the top.
+  useEffect(() => {
+    const unsub = (navigation as any).addListener("tabPress", () => {
+      listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    });
+    return unsub;
+  }, [navigation]);
 
   // Reactions for every visible feed item, fetched in one batch.
   const targetIds = (data ?? []).map((r) => r.item.id);
@@ -161,6 +171,7 @@ export default function HomeScreen() {
 
   return (
     <FlatList
+      ref={listRef}
       style={styles.container}
       contentContainerStyle={{ padding: 16 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}

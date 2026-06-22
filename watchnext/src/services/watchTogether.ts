@@ -20,7 +20,7 @@ import {
 // candidates in those genres, filtered to the languages the group watches and
 // above a popularity floor, with a small trending nudge. Titles anyone already
 // has are excluded (everyone watches something new together).
-const SEEDS_PER_PERSON = 25; // ~all of each member's titles shape the group's taste
+const SEEDS_PER_PERSON = 200; // each member's WHOLE library shapes the group's taste (high cap = safety bound)
 const TOP_GENRES = 3; // discover from this many of the group's strongest genres
 const MIN_VOTES = 150; // popularity floor — drop obscure random titles
 const MAX = 20;
