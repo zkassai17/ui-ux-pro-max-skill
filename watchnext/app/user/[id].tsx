@@ -164,7 +164,12 @@ export default function FriendProfileScreen() {
           </View>
 
           {!myLibrary.isLoading && !library.isLoading ? (
-            <TasteMatchCard match={tasteMatch} username={profile.data?.username} />
+            <>
+              <TasteMatchCard match={tasteMatch} username={profile.data?.username} />
+              <Pressable style={styles.blendBtn} onPress={() => router.push(`/blend/${id}`)}>
+                <Text style={styles.blendBtnText}>🧬 {t("blend.openBlend")}</Text>
+              </Pressable>
+            </>
           ) : null}
 
           <View style={styles.tabs}>
@@ -210,6 +215,8 @@ function Stat({ n, label }: { n: number; label: string }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
+  blendBtn: { backgroundColor: "#5b6cff", borderRadius: 14, paddingVertical: 13, alignItems: "center", marginTop: 12 },
+  blendBtnText: { color: "#fff", fontWeight: "800", fontSize: 15 },
   modRow: { flexDirection: "row", gap: 22, marginTop: 12 },
   modText: { color: "#c0392b", fontSize: 13, fontWeight: "600" },
   nameWrap: { marginBottom: 14 },
