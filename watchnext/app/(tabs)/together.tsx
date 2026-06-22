@@ -64,6 +64,10 @@ export default function TogetherScreen() {
             <Text style={styles.groupSub}>{t("home.whatToWatchSub")}</Text>
           </Pressable>
 
+          <Pressable style={styles.addFriendBtn} onPress={() => router.push("/friends/add")}>
+            <Text style={styles.addFriendBtnText}>＋ {t("profile.addFriend")}</Text>
+          </Pressable>
+
           <Text style={styles.section}>🧬 {t("together.yourBlends")}</Text>
           {friends.isLoading ? <ActivityIndicator style={{ marginTop: 16 }} /> : null}
         </View>
@@ -128,6 +132,9 @@ const styles = StyleSheet.create({
   groupCard: { backgroundColor: "#5b6cff", borderRadius: 16, padding: 16, marginBottom: 6 },
   groupTitle: { color: "#fff", fontSize: 17, fontWeight: "800" },
   groupSub: { color: "#dfe3ff", fontSize: 12, marginTop: 6, lineHeight: 17 },
+
+  addFriendBtn: { backgroundColor: "#eef0ff", borderRadius: 12, paddingVertical: 12, alignItems: "center", marginTop: 10 },
+  addFriendBtnText: { color: "#5b6cff", fontWeight: "700", fontSize: 14 },
 
   section: { fontSize: 13, fontWeight: "700", color: "#888", marginTop: 22, marginBottom: 6 },
 
