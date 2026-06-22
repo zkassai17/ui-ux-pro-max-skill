@@ -12,12 +12,20 @@ export default function SignUp() {
 
   async function handleSignUp() {
     setBusy(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
     });
     setBusy(false);
     if (error) return Alert.alert(t("auth.signUpFailed"), error.message);
+    // When email confirmation is enabled there's no session yet — the user must
+    // confirm via the emailed link before signing in. When it's disabled, a
+    // session is returned and we continue straight to onboarding.
+    if (!data.session) {
+      return Alert.alert(t("auth.confirmEmailTitle"), t("auth.confirmEmailBody"), [
+        { text: t("common.ok"), onPress: () => router.replace("/(auth)/sign-in") },
+      ]);
+    }
     router.replace("/onboarding/username");
   }
 
