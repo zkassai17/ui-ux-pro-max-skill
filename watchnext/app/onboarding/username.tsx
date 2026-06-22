@@ -5,9 +5,11 @@ import { supabase } from "../../src/services/supabase";
 import { useAuth } from "../../src/auth/AuthProvider";
 import { isValidUsername, normalizeUsername } from "../../src/lib/username";
 import { generateFriendCode } from "../../src/lib/friendCode";
+import { useI18n } from "../../src/i18n/I18nProvider";
 
 export default function ChooseUsername() {
   const { session, refreshProfile } = useAuth();
+  const { t } = useI18n();
   const [value, setValue] = useState("");
   const [first, setFirst] = useState("");
   const [last, setLast] = useState("");
@@ -16,12 +18,12 @@ export default function ChooseUsername() {
   async function handleSave() {
     const username = normalizeUsername(value);
     if (!isValidUsername(username)) {
-      return Alert.alert("Invalid username", "3–20 chars, start with a letter, letters/numbers/underscore only.");
+      return Alert.alert(t("onboarding.invalidUsername"), t("alert.usernameRule"));
     }
     const firstName = first.trim();
     const lastName = last.trim();
     if (!firstName || !lastName) {
-      return Alert.alert("Name required", "Enter your first and last name so friends can find you.");
+      return Alert.alert(t("onboarding.nameRequiredTitle"), t("onboarding.nameRequiredBody"));
     }
     if (!session) return;
     setBusy(true);
@@ -34,8 +36,8 @@ export default function ChooseUsername() {
     });
     setBusy(false);
     if (error) {
-      const msg = error.code === "23505" ? "That username is taken." : error.message;
-      return Alert.alert("Could not save", msg);
+      const msg = error.code === "23505" ? t("alert.usernameTaken") : error.message;
+      return Alert.alert(t("onboarding.cantSave"), msg);
     }
     await refreshProfile();
     router.replace("/quick-seen?from=onboarding");

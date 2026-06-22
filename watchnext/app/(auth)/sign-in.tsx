@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Link, router } from "expo-router";
 import { Alert, Button, Text, TextInput, View } from "react-native";
 import { supabase } from "../../src/services/supabase";
+import { useI18n } from "../../src/i18n/I18nProvider";
 
 export default function SignIn() {
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -15,22 +17,22 @@ export default function SignIn() {
       password,
     });
     setBusy(false);
-    if (error) return Alert.alert("Sign in failed", error.message);
+    if (error) return Alert.alert(t("auth.signInFailed"), error.message);
     router.replace("/");
   }
 
   return (
     <View style={{ flex: 1, justifyContent: "center", padding: 24, gap: 12 }}>
-      <Text style={{ fontSize: 24, fontWeight: "600" }}>Welcome back</Text>
-      <TextInput placeholder="Email" autoCapitalize="none" keyboardType="email-address"
+      <Text style={{ fontSize: 24, fontWeight: "600" }}>{t("auth.welcomeBack")}</Text>
+      <TextInput placeholder={t("auth.email")} autoCapitalize="none" keyboardType="email-address"
         value={email} onChangeText={setEmail}
         style={{ borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12 }} />
-      <TextInput placeholder="Password" secureTextEntry
+      <TextInput placeholder={t("auth.password")} secureTextEntry
         autoCapitalize="none" autoCorrect={false} textContentType="password"
         value={password} onChangeText={setPassword}
         style={{ borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12 }} />
-      <Button title={busy ? "…" : "Sign in"} onPress={handleSignIn} disabled={busy} />
-      <Link href="/(auth)/sign-up">Need an account? Sign up</Link>
+      <Button title={busy ? "…" : t("auth.signIn")} onPress={handleSignIn} disabled={busy} />
+      <Link href="/(auth)/sign-up">{t("auth.needAccount")}</Link>
     </View>
   );
 }

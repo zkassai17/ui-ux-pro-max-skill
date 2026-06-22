@@ -17,6 +17,7 @@ import { discoverTitles, searchTitles } from "../src/services/tmdb";
 import { getLibrary, addToLibrary } from "../src/services/watchlist";
 import { titleKey } from "../src/lib/forYouLogic";
 import { PosterImage } from "../src/components/PosterImage";
+import { useI18n } from "../src/i18n/I18nProvider";
 import type { Title } from "../src/types/tmdb";
 
 const COLS = 3;
@@ -57,6 +58,7 @@ export default function QuickSeenScreen() {
   const insets = useSafeAreaInsets();
   const { from } = useLocalSearchParams<{ from?: string }>();
   const onboarding = from === "onboarding";
+  const { t } = useI18n();
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [progress, setProgress] = useState(0);
@@ -147,11 +149,11 @@ export default function QuickSeenScreen() {
     <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
       <Stack.Screen
         options={{
-          title: "Quick add",
+          title: t("quick.title"),
           headerRight: () =>
             onboarding ? (
               <Pressable onPress={finish} hitSlop={8}>
-                <Text style={styles.skip}>Skip</Text>
+                <Text style={styles.skip}>{t("quick.skip")}</Text>
               </Pressable>
             ) : null,
         }}
@@ -160,16 +162,13 @@ export default function QuickSeenScreen() {
       {!onboarding ? (
         <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={22} color="#5b6cff" />
-          <Text style={styles.backText}>Back</Text>
+          <Text style={styles.backText}>{t("common.back")}</Text>
         </Pressable>
       ) : null}
 
       <View style={styles.head}>
-        <Text style={styles.title}>Seen any of these?</Text>
-        <Text style={styles.subtitle}>
-          Tap everything you've watched — on any service. We'll add them to your Watched list so your
-          matches and picks work right away.
-        </Text>
+        <Text style={styles.title}>{t("quick.heading")}</Text>
+        <Text style={styles.subtitle}>{t("quick.subtitle")}</Text>
       </View>
 
       <View style={styles.searchWrap}>
@@ -178,7 +177,7 @@ export default function QuickSeenScreen() {
           style={styles.searchInput}
           value={search}
           onChangeText={setSearch}
-          placeholder="Search for a title you've seen…"
+          placeholder={t("quick.searchPlaceholder")}
           placeholderTextColor="#aaa"
           autoCapitalize="none"
           autoCorrect={false}
@@ -194,7 +193,7 @@ export default function QuickSeenScreen() {
             onPress={() => setScope(s)}
           >
             <Text style={[styles.scopeText, scope === s && styles.scopeTextOn]}>
-              {s === "all" ? "All" : s === "movie" ? "Movies" : "TV"}
+              {s === "all" ? t("filter.all") : s === "movie" ? t("media.movies") : t("media.shows")}
             </Text>
           </Pressable>
         ))}
@@ -203,23 +202,23 @@ export default function QuickSeenScreen() {
       {!searching && pool.isLoading ? (
         <View style={styles.center}>
           <ActivityIndicator />
-          <Text style={styles.loadingText}>Loading popular titles…</Text>
+          <Text style={styles.loadingText}>{t("quick.loading")}</Text>
         </View>
       ) : !searching && (pool.isError || (!pool.isLoading && poolTitles.length === 0)) ? (
         <View style={styles.center}>
-          <Text style={styles.loadingText}>Couldn't load titles right now.</Text>
+          <Text style={styles.loadingText}>{t("quick.loadError")}</Text>
           <Pressable style={styles.linkBtn} onPress={finish}>
-            <Text style={styles.linkText}>Continue</Text>
+            <Text style={styles.linkText}>{t("common.continue")}</Text>
           </Pressable>
         </View>
       ) : searching && found.isLoading ? (
         <View style={styles.center}>
           <ActivityIndicator />
-          <Text style={styles.loadingText}>Searching…</Text>
+          <Text style={styles.loadingText}>{t("quick.searching")}</Text>
         </View>
       ) : searching && display.length === 0 ? (
         <View style={styles.center}>
-          <Text style={styles.loadingText}>No matches for "{sq}".</Text>
+          <Text style={styles.loadingText}>{t("quick.noMatches")} "{sq}".</Text>
         </View>
       ) : (
         <FlatList
@@ -271,16 +270,18 @@ export default function QuickSeenScreen() {
             onPress={() => save.mutate()}
           >
             {save.isPending ? (
-              <Text style={styles.primaryBtnText}>Adding {progress}/{count}…</Text>
+              <Text style={styles.primaryBtnText}>
+                {t("quick.adding").replace("{done}", String(progress)).replace("{total}", String(count))}
+              </Text>
             ) : (
               <Text style={styles.primaryBtnText}>
-                {count === 0 ? "Tap the ones you've seen" : `Add ${count} to Watched`}
+                {count === 0 ? t("quick.tapPrompt") : t("quick.addN").replace("{n}", String(count))}
               </Text>
             )}
           </Pressable>
           {!save.isPending ? (
             <Pressable style={styles.ghostBtn} onPress={finish}>
-              <Text style={styles.ghostText}>{onboarding ? "Skip for now" : "Done"}</Text>
+              <Text style={styles.ghostText}>{onboarding ? t("quick.skipForNow") : t("quick.done")}</Text>
             </Pressable>
           ) : null}
         </View>
