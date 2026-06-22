@@ -42,7 +42,10 @@ export default function InboxScreen() {
       {loading ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
       ) : sections.length === 0 ? (
-        <Text style={styles.msg}>{t("requests.empty")}</Text>
+        <View style={styles.empty}>
+          <Text style={styles.emptyEmoji}>📭</Text>
+          <Text style={styles.msg}>{t("requests.empty")}</Text>
+        </View>
       ) : (
         <SectionList
           sections={sections}
@@ -126,4 +129,6 @@ const styles = StyleSheet.create({
   dismiss: { flex: 1, backgroundColor: "#f0f0f3", borderRadius: 10, paddingVertical: 9, alignItems: "center" },
   dismissText: { color: "#333", fontWeight: "600", fontSize: 13 },
   msg: { color: "#888", fontSize: 13, marginTop: 16, textAlign: "center" },
+  empty: { alignItems: "center", marginTop: 48 },
+  emptyEmoji: { fontSize: 40 },
 });
