@@ -33,6 +33,7 @@ export default function TabsLayout() {
         name="together"
         options={{
           title: t("tab.together"),
+          headerRight: () => <EnvelopeButton />,
           tabBarIcon: ({ color, size }) => <Ionicons name="sparkles" color={color} size={size} />,
         }}
       />
