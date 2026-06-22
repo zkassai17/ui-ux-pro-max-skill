@@ -3,6 +3,7 @@ import type { WatchlistEntry } from "../types/db";
 import { getGenres, getTitleDetails, discoverSuggestions, getTrending } from "./tmdb";
 import { getFriends } from "./friends";
 import { getLibrary } from "./watchlist";
+import { getHiddenKeys } from "./hiddenRecs";
 import { computeTasteMatch } from "../lib/tasteMatchLogic";
 import { titleKey, selectWeightedSeeds } from "../lib/forYouLogic";
 import {
@@ -56,9 +57,13 @@ export async function getForYou(
   recWeights: RecWeights = DEFAULT_REC_WEIGHTS,
 ): Promise<Title[]> {
   const mine = library.filter((e) => e.media_type === mediaType);
-  const excludeKeys = new Set(
-    library.map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id }))
-  );
+  // Exclude everything already in the library AND anything marked "Not interested",
+  // so hidden titles never come back and a replacement backfills in their place.
+  const hidden = await getHiddenKeys().catch(() => new Set<string>());
+  const excludeKeys = new Set<string>([
+    ...library.map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id })),
+    ...hidden,
+  ]);
 
   // 1) Genre taste profile from your top-weighted titles.
   const genreList = await getGenres(mediaType).catch(() => []);

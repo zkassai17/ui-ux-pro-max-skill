@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator, ScrollView, RefreshControl } from "react-native";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { getFeed } from "../../src/services/feed";
 import { getLibrary } from "../../src/services/watchlist";
 import { getForYou } from "../../src/services/forYou";
+import { getHiddenKeys, hideRec } from "../../src/services/hiddenRecs";
 import { getRecWeights } from "../../src/services/prefs";
 import { titleKey } from "../../src/lib/forYouLogic";
 import { getReactions } from "../../src/services/reactions";
@@ -35,8 +37,26 @@ function WatchTogetherCard() {
 
 function ForYouRail({ mediaType, heading }: { mediaType: MediaType; heading: string }) {
   const router = useRouter();
+  const qc = useQueryClient();
   const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
   const recWeights = useQuery({ queryKey: ["rec-weights"], queryFn: getRecWeights });
+  const hidden = useQuery({ queryKey: ["hidden-recs"], queryFn: getHiddenKeys });
+
+  // "Not interested": hide the title instantly (optimistic), then refetch the rail
+  // so a fresh pick backfills its slot.
+  const hide = useMutation({
+    mutationFn: (t: Title) => hideRec(t),
+    onMutate: async (t: Title) => {
+      await qc.cancelQueries({ queryKey: ["hidden-recs"] });
+      const prev = qc.getQueryData<Set<string>>(["hidden-recs"]);
+      qc.setQueryData<Set<string>>(["hidden-recs"], new Set([...(prev ?? []), titleKey(t)]));
+      return { prev };
+    },
+    onError: (_e, _t, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["hidden-recs"], ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["for-you"] }),
+  });
 
   const entries = library.data ?? [];
   const excludeKeys = new Set(entries.map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id })));
@@ -54,9 +74,12 @@ function ForYouRail({ mediaType, heading }: { mediaType: MediaType; heading: str
     queryFn: () => getForYou(mediaType, entries, w),
   });
 
-  // Re-filter on every render so a title you just added drops out instantly —
-  // before the query has a chance to refetch.
-  const titles = (recs.data ?? []).filter((t) => !excludeKeys.has(titleKey(t)));
+  // Re-filter on every render so a title you just added (or hid) drops out
+  // instantly — before the query has a chance to refetch.
+  const hiddenSet = hidden.data ?? new Set<string>();
+  const titles = (recs.data ?? []).filter(
+    (t) => !excludeKeys.has(titleKey(t)) && !hiddenSet.has(titleKey(t))
+  );
 
   if (recs.isLoading || library.isLoading) {
     return (
@@ -78,6 +101,14 @@ function ForYouRail({ mediaType, heading }: { mediaType: MediaType; heading: str
             <View>
               <Pressable onPress={() => router.push(`/title/${t.mediaType}/${t.tmdbId}`)}>
                 <PosterImage path={t.posterPath} width={104} height={156} radius={10} />
+              </Pressable>
+              <Pressable
+                style={styles.hideBtn}
+                hitSlop={8}
+                onPress={() => hide.mutate(t)}
+                accessibilityLabel="Not interested"
+              >
+                <Ionicons name="close" size={13} color="#fff" />
               </Pressable>
               <View style={styles.posterAdd} pointerEvents="box-none">
                 <QuickAddButton title={t} compact addStatus="want" />
@@ -197,6 +228,7 @@ const styles = StyleSheet.create({
   suggestion: { width: 104 },
   suggestionTitle: { fontSize: 11, fontWeight: "600", marginTop: 6 },
   posterAdd: { position: "absolute", bottom: 8, left: 0, right: 0, alignItems: "center" },
+  hideBtn: { position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: 11, backgroundColor: "rgba(0,0,0,0.55)", alignItems: "center", justifyContent: "center", zIndex: 2 },
   card: { borderWidth: 1, borderColor: "#eee", borderRadius: 12, padding: 10, marginBottom: 10 },
   head: { fontSize: 12, marginBottom: 8 },
   name: { fontWeight: "700" },
