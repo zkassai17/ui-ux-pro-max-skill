@@ -23,32 +23,6 @@ import { fullName } from "../../src/types/db";
 import type { Title, MediaType } from "../../src/types/tmdb";
 import type { WatchStatus } from "../../src/types/db";
 
-// --- Continue watching: your in-progress titles, front and center ---
-function ContinueWatchingRow() {
-  const router = useRouter();
-  const { t } = useI18n();
-  const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
-  const watching = (library.data ?? []).filter((e) => e.status === "watching");
-  if (watching.length === 0) return null;
-  return (
-    <View style={styles.rail}>
-      <Text style={styles.sectionHeading}>▶  {t("home.continueWatching")}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.railRow}>
-        {watching.map((e) => (
-          <Pressable
-            key={`${e.media_type}:${e.tmdb_id}`}
-            style={styles.suggestion}
-            onPress={() => router.push(`/title/${e.media_type}/${e.tmdb_id}`)}
-          >
-            <PosterImage path={e.poster_path} width={104} height={156} radius={10} />
-            <Text style={styles.suggestionTitle} numberOfLines={2}>{e.title}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-    </View>
-  );
-}
-
 // --- Tonight's pick: one spotlighted recommendation (top of your movie rail,
 // so it reuses that query — no extra fetch) ---
 function TonightHero() {
@@ -307,7 +281,6 @@ export default function HomeScreen() {
       keyExtractor={(r) => r.item.id}
       ListHeaderComponent={
         <View>
-          <ContinueWatchingRow />
           <TonightHero />
           <BlendTeaser />
           <ForYouRail mediaType="movie" heading={t("home.moviesForYou")} />
