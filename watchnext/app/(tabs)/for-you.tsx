@@ -13,6 +13,7 @@ import { getTrending } from "../../src/services/tmdb";
 import { titleKey } from "../../src/lib/forYouLogic";
 import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
 import { filterByLanguage } from "../../src/lib/recommendEngine";
+import { relativeTime } from "../../src/lib/relativeTime";
 import { initials, avatarColor, matchColor } from "../../src/lib/avatar";
 import { getReactions } from "../../src/services/reactions";
 import { PosterImage } from "../../src/components/PosterImage";
@@ -139,11 +140,12 @@ const VERB_KEY: Record<WatchStatus, string> = {
   want: "feed.wantsToWatch",
 };
 
-// Avatar + "@name verb" header line shared by every activity card.
-function FeedCardHeader({ username, verb }: { username: string | null; verb: string }) {
+// Avatar + "@name verb" header line (with a relative time) shared by every card.
+function FeedCardHeader({ username, verb, at }: { username: string | null; verb: string; at: string }) {
   const { t } = useI18n();
   const uname = username ?? undefined;
   const name = username ? `@${username}` : t("feed.aFriend");
+  const time = relativeTime(at, Date.now());
   return (
     <View style={styles.cardHead}>
       <View style={[styles.cardAvatar, { backgroundColor: avatarColor(uname) }]}>
@@ -151,6 +153,7 @@ function FeedCardHeader({ username, verb }: { username: string | null; verb: str
       </View>
       <Text style={styles.cardHeadText} numberOfLines={1}>
         <Text style={styles.name}>{name}</Text> <Text style={styles.verb}>{verb}</Text>
+        {time ? <Text style={styles.time}>{`  ·  ${time}`}</Text> : null}
       </Text>
     </View>
   );
@@ -343,7 +346,7 @@ export default function HomeScreen() {
           const e = row.item.entry;
           return (
             <View style={styles.card}>
-              <FeedCardHeader username={row.username} verb={t(VERB_KEY[e.status])} />
+              <FeedCardHeader username={row.username} verb={t(VERB_KEY[e.status])} at={row.item.at} />
               <Pressable style={styles.cardBody} onPress={() => router.push(`/title/${e.media_type}/${e.tmdb_id}`)}>
                 <PosterImage path={e.poster_path} width={48} height={72} radius={8} />
                 <View style={styles.meta}>
@@ -358,7 +361,7 @@ export default function HomeScreen() {
         const rec = row.item.rec;
         return (
           <View style={styles.card}>
-            <FeedCardHeader username={row.username} verb={t("feed.recommends")} />
+            <FeedCardHeader username={row.username} verb={t("feed.recommends")} at={row.item.at} />
             <Pressable style={styles.cardBody} onPress={() => router.push(`/title/${rec.media_type}/${rec.tmdb_id}`)}>
               <PosterImage path={rec.poster_path} width={48} height={72} radius={8} />
               <View style={styles.meta}>
@@ -407,6 +410,7 @@ const styles = StyleSheet.create({
   cardHeadText: { flex: 1, fontSize: 13 },
   name: { fontWeight: "800" },
   verb: { color: "#888" },
+  time: { color: "#bbb", fontWeight: "600" },
   cardBody: { flexDirection: "row", gap: 12, alignItems: "center" },
   meta: { flex: 1, minWidth: 0 },
   title: { fontSize: 15, fontWeight: "700" },

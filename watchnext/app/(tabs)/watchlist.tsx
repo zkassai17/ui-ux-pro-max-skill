@@ -187,7 +187,8 @@ export default function LibraryScreen() {
       ) : rows.length === 0 ? (
         q !== "" ? (
           <Text style={styles.msg}>{t("lib.noMatch")} "{query.trim()}".</Text>
-        ) : (
+        ) : (data ?? []).length === 0 ? (
+          // Whole library empty — the full onboarding empty state.
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>🎬</Text>
             <Text style={styles.msg}>{t("lib.emptyTitle")}</Text>
@@ -196,6 +197,9 @@ export default function LibraryScreen() {
             </Pressable>
             <Text style={styles.emptyHint}>{t("lib.quickAddHint")}</Text>
           </View>
+        ) : (
+          // Library has items, just not in THIS filter.
+          <Text style={styles.msg}>{t("lib.emptyList")}</Text>
         )
       ) : (
         <FlatList

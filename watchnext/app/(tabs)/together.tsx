@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
+import { View, Text, TextInput, FlatList, Pressable, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getFriends } from "../../src/services/friends";
+import { getFriends, getIncomingRequests } from "../../src/services/friends";
 import { getLibrary } from "../../src/services/watchlist";
 import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
 import { initials, avatarColor, matchColor } from "../../src/lib/avatar";
@@ -14,8 +14,10 @@ export default function TogetherScreen() {
   const qc = useQueryClient();
   const { t } = useI18n();
   const [refreshing, setRefreshing] = useState(false);
+  const [q, setQ] = useState("");
 
   const friends = useQuery({ queryKey: ["friends"], queryFn: getFriends });
+  const requests = useQuery({ queryKey: ["incoming-requests"], queryFn: getIncomingRequests });
   const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
 
   const allFriends = friends.data ?? [];
@@ -38,6 +40,11 @@ export default function TogetherScreen() {
     const sb = compat.data?.[b.id] ?? -1;
     return sb - sa;
   });
+  const fq = q.trim().toLowerCase();
+  const shown = fq
+    ? ranked.filter((f) => `${f.username} ${fullName(f)}`.toLowerCase().includes(fq))
+    : ranked;
+  const requestCount = requests.data?.length ?? 0;
 
   async function onRefresh() {
     setRefreshing(true);
@@ -45,6 +52,7 @@ export default function TogetherScreen() {
       qc.invalidateQueries({ queryKey: ["friends"] }),
       qc.invalidateQueries({ queryKey: ["library"] }),
       qc.invalidateQueries({ queryKey: ["together-compat"] }),
+      qc.invalidateQueries({ queryKey: ["incoming-requests"] }),
     ]);
     setRefreshing(false);
   }
@@ -54,10 +62,19 @@ export default function TogetherScreen() {
       style={styles.container}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      data={ranked}
+      keyboardShouldPersistTaps="handled"
+      data={shown}
       keyExtractor={(f) => f.id}
       ListHeaderComponent={
         <View>
+          {/* Pending friend requests */}
+          {requestCount > 0 ? (
+            <Pressable style={styles.requestBanner} onPress={() => router.push("/requests")}>
+              <Text style={styles.requestText}>📨 {requestCount} · {t("together.newRequests")}</Text>
+              <Text style={styles.requestArrow}>→</Text>
+            </Pressable>
+          ) : null}
+
           {/* Group flow */}
           <Pressable style={styles.groupCard} onPress={() => router.push("/watch-together")}>
             <Text style={styles.groupTitle}>{t("home.whatToWatch")}</Text>
@@ -69,6 +86,21 @@ export default function TogetherScreen() {
           </Pressable>
 
           <Text style={styles.section}>🧬 {t("together.yourBlends")}</Text>
+          {allFriends.length > 0 ? (
+            <View style={styles.searchWrap}>
+              <Text style={styles.searchIcon}>🔍</Text>
+              <TextInput
+                style={styles.searchInput}
+                value={q}
+                onChangeText={setQ}
+                placeholder={t("wt.searchFriends")}
+                placeholderTextColor="#aaa"
+                autoCapitalize="none"
+                autoCorrect={false}
+                clearButtonMode="while-editing"
+              />
+            </View>
+          ) : null}
           {friends.isLoading ? <ActivityIndicator style={{ marginTop: 16 }} /> : null}
         </View>
       }
@@ -110,6 +142,8 @@ export default function TogetherScreen() {
               <Text style={styles.addBtnText}>{t("add.tryAgain")}</Text>
             </Pressable>
           </View>
+        ) : fq ? (
+          <Text style={styles.noMatch}>{t("wt.noFriendsFound")}</Text>
         ) : (
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>🧬</Text>
@@ -135,6 +169,15 @@ const styles = StyleSheet.create({
 
   addFriendBtn: { backgroundColor: "#eef0ff", borderRadius: 12, paddingVertical: 12, alignItems: "center", marginTop: 10 },
   addFriendBtnText: { color: "#5b6cff", fontWeight: "700", fontSize: 14 },
+
+  requestBanner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#fff4e6", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12 },
+  requestText: { color: "#b9690e", fontSize: 13, fontWeight: "700" },
+  requestArrow: { color: "#b9690e", fontSize: 16, fontWeight: "700" },
+
+  searchWrap: { flexDirection: "row", alignItems: "center", backgroundColor: "#f0f0f3", borderRadius: 12, paddingHorizontal: 12, height: 40, marginTop: 4, marginBottom: 8 },
+  searchIcon: { fontSize: 14, marginRight: 8, opacity: 0.5 },
+  searchInput: { flex: 1, fontSize: 15, color: "#111", padding: 0 },
+  noMatch: { textAlign: "center", color: "#888", fontSize: 13, marginTop: 8 },
 
   section: { fontSize: 13, fontWeight: "700", color: "#888", marginTop: 22, marginBottom: 6 },
 
