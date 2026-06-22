@@ -128,6 +128,7 @@ function ForYouRail({ mediaType, heading }: { mediaType: MediaType; heading: str
 
 export default function HomeScreen() {
   const qc = useQueryClient();
+  const router = useRouter();
   const { t } = useI18n();
   const { data, isLoading } = useQuery({ queryKey: ["feed"], queryFn: getFeed });
   const [refreshing, setRefreshing] = useState(false);
@@ -185,7 +186,15 @@ export default function HomeScreen() {
           <Text style={styles.sectionHeading}>{t("home.activity")}</Text>
         </View>
       }
-      ListEmptyComponent={<Text style={styles.msg}>{t("home.noActivity")}</Text>}
+      ListEmptyComponent={
+        <View style={styles.feedEmpty}>
+          <Text style={styles.feedEmptyEmoji}>🍿</Text>
+          <Text style={styles.feedEmptyText}>{t("home.noActivity")}</Text>
+          <Pressable style={styles.feedEmptyBtn} onPress={() => router.push("/friends/add")}>
+            <Text style={styles.feedEmptyBtnText}>{t("profile.addFriend")}</Text>
+          </Pressable>
+        </View>
+      }
       renderItem={({ item: row }) => {
         const name = row.username ? `@${row.username}` : t("feed.aFriend");
         if (row.item.kind === "watchlist") {
@@ -249,4 +258,9 @@ const styles = StyleSheet.create({
   note: { fontSize: 11, color: "#888", marginTop: 2 },
   pill: { alignSelf: "flex-start", marginTop: 4, fontSize: 9, color: "#5b6cff", backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2, overflow: "hidden" },
   msg: { color: "#888", fontSize: 13, marginTop: 24, textAlign: "center" },
+  feedEmpty: { alignItems: "center", paddingVertical: 28, paddingHorizontal: 24 },
+  feedEmptyEmoji: { fontSize: 40, marginBottom: 12 },
+  feedEmptyText: { color: "#888", fontSize: 14, textAlign: "center", lineHeight: 20 },
+  feedEmptyBtn: { backgroundColor: "#5b6cff", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 16 },
+  feedEmptyBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
 });

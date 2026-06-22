@@ -181,6 +181,7 @@ export default function LibraryScreen() {
           <Text style={styles.msg}>{t("lib.noMatch")} "{query.trim()}".</Text>
         ) : (
           <View style={styles.empty}>
+            <Text style={styles.emptyEmoji}>🎬</Text>
             <Text style={styles.msg}>{t("lib.emptyTitle")}</Text>
             <Pressable style={styles.quickBtn} onPress={() => router.push("/quick-seen")}>
               <Text style={styles.quickBtnText}>⚡ {t("lib.quickAdd")}</Text>
@@ -299,6 +300,7 @@ const styles = StyleSheet.create({
   count: { fontSize: 11, color: "#aaa", fontWeight: "600", marginTop: 10, marginBottom: 4 },
   msg: { color: "#888", fontSize: 13, marginTop: 16, textAlign: "center" },
   empty: { alignItems: "center", marginTop: 40, paddingHorizontal: 24 },
+  emptyEmoji: { fontSize: 40, marginBottom: 8 },
   quickBtn: { backgroundColor: "#5b6cff", borderRadius: 12, paddingVertical: 13, paddingHorizontal: 22, marginTop: 14 },
   quickBtnText: { color: "#fff", fontWeight: "800", fontSize: 14 },
   emptyHint: { color: "#aaa", fontSize: 12, marginTop: 12, textAlign: "center", lineHeight: 17 },
