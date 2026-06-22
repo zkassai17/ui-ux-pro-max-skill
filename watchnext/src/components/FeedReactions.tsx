@@ -54,18 +54,18 @@ export function FeedReactions({
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", gap: 6, marginTop: 10 },
+  row: { flexDirection: "row", gap: 5, marginTop: 10 },
   chip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
     borderRadius: 999,
-    backgroundColor: "#f4f4f6",
+    backgroundColor: "#fff",
   },
   chipActive: { backgroundColor: "#e6e8ff", borderWidth: 1, borderColor: "#5b6cff" },
-  emoji: { fontSize: 14 },
+  emoji: { fontSize: 13 },
   count: { fontSize: 11, fontWeight: "700", color: "#888" },
   countActive: { color: "#5b6cff" },
 });

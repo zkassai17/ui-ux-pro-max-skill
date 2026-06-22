@@ -12,6 +12,7 @@ import { getFriends } from "../../src/services/friends";
 import { getTrending } from "../../src/services/tmdb";
 import { titleKey } from "../../src/lib/forYouLogic";
 import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
+import { filterByLanguage } from "../../src/lib/recommendEngine";
 import { initials, avatarColor, matchColor } from "../../src/lib/avatar";
 import { getReactions } from "../../src/services/reactions";
 import { PosterImage } from "../../src/components/PosterImage";
@@ -25,7 +26,7 @@ import type { WatchStatus } from "../../src/types/db";
 
 // --- Tonight's pick: one spotlighted recommendation (top of your movie rail,
 // so it reuses that query — no extra fetch) ---
-function TonightHero() {
+function TonightHero({ mediaType }: { mediaType: MediaType }) {
   const router = useRouter();
   const { t } = useI18n();
   const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
@@ -37,10 +38,10 @@ function TonightHero() {
   const w = recWeights.data;
   const weightKey = w ? `${w.content}-${w.collaborative}-${w.trending}` : "default";
   const recs = useQuery({
-    queryKey: ["for-you", "movie", libHash, weightKey],
+    queryKey: ["for-you", mediaType, libHash, weightKey],
     enabled: !library.isLoading && !recWeights.isLoading,
     staleTime: 5 * 60 * 1000,
-    queryFn: () => getForYou("movie", entries, w),
+    queryFn: () => getForYou(mediaType, entries, w),
   });
   const hiddenSet = hidden.data ?? new Set<string>();
   const hero = (recs.data ?? []).find((x) => !excludeKeys.has(titleKey(x)) && !hiddenSet.has(titleKey(x)));
@@ -107,9 +108,11 @@ function BlendTeaser() {
 // --- Trending this week: discovery beyond your taste ---
 function TrendingRow() {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const trending = useQuery({ queryKey: ["home-trending"], queryFn: getTrending, staleTime: 30 * 60 * 1000 });
-  const titles = (trending.data ?? []).slice(0, 15);
+  // Same language scope as the Add browse — no random foreign-language titles.
+  const allowed = new Set<string>(["en", lang]);
+  const titles = filterByLanguage(trending.data ?? [], allowed).slice(0, 15);
   if (titles.length === 0) return null;
   return (
     <View style={styles.rail}>
@@ -251,6 +254,13 @@ export default function HomeScreen() {
   const router = useRouter();
   const { t } = useI18n();
   const { data, isLoading, isError } = useQuery({ queryKey: ["feed"], queryFn: getFeed });
+  // Spotlight a pick from whichever you watch more of (movies vs shows), so the
+  // hero can be a TV show too — and the matching rail skips it to avoid a dup.
+  const lib = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
+  const libEntries = lib.data ?? [];
+  const tvCount = libEntries.filter((e) => e.media_type === "tv").length;
+  const movieCount = libEntries.filter((e) => e.media_type === "movie").length;
+  const heroMedia: MediaType = tvCount > movieCount ? "tv" : "movie";
   const [refreshing, setRefreshing] = useState(false);
   const listRef = useRef<FlatList<FeedRow>>(null);
   const navigation = useNavigation();
@@ -301,10 +311,10 @@ export default function HomeScreen() {
       keyExtractor={(r) => r.item.id}
       ListHeaderComponent={
         <View>
-          <TonightHero />
+          <TonightHero mediaType={heroMedia} />
           <BlendTeaser />
-          <ForYouRail mediaType="movie" heading={t("home.moviesForYou")} skipFirst />
-          <ForYouRail mediaType="tv" heading={t("home.showsForYou")} />
+          <ForYouRail mediaType="movie" heading={t("home.moviesForYou")} skipFirst={heroMedia === "movie"} />
+          <ForYouRail mediaType="tv" heading={t("home.showsForYou")} skipFirst={heroMedia === "tv"} />
           <TrendingRow />
           <Text style={styles.sectionHeading}>{t("home.activity")}</Text>
         </View>
