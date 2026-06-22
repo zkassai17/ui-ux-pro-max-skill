@@ -8,6 +8,7 @@ import { titleKey, selectWeightedSeeds } from "../lib/forYouLogic";
 import {
   buildGenreProfile,
   rankHybrid,
+  contentScore,
   collaborativeWeight,
   learnLanguages,
   dominantLanguage,
@@ -20,7 +21,8 @@ import { DEFAULT_REC_WEIGHTS, type RecWeights } from "../lib/recPrefs";
 const PROFILE_SEEDS = 12; // how many top-weighted library titles shape the genre profile
 const TOP_GENRES = 3; // discover candidates from this many of your strongest genres
 const MAX = 15;
-const MIN_VOTES = 150; // popularity floor — drop obscure random titles
+const MIN_VOTES = 200; // popularity floor — drop obscure random titles
+const MIN_CONTENT = 0.08; // minimum taste-match for a candidate to qualify (once you have a profile)
 
 type SeedMeta = { genreIds: number[]; language: string | null };
 
@@ -101,15 +103,22 @@ export async function getForYou(
   const trendingForType = trendingAll.filter((t) => t.mediaType === mediaType);
   const trendingKeys = new Set(trendingForType.map((t) => titleKey(t)));
 
-  // Keep only candidates in a language you watch (no-op until you have a library).
-  const candidates: GenreTitle[] = filterByLanguage(
+  // Once we know your taste (non-empty profile), keep the pool ON-GENRE: generic
+  // trending fillers (no genre overlap) are only mixed in at cold start.
+  const hasProfile = profile.size > 0;
+  const pooled: GenreTitle[] = filterByLanguage(
     [
       ...discoverLists.flat(),
-      // trending titles carry no genre ids here — they ride the trending nudge only
-      ...trendingForType.map((t) => ({ ...t, genreIds: [] as number[] })),
+      // trending titles carry no genre ids — only useful before we know your taste
+      ...(hasProfile ? [] : trendingForType.map((t) => ({ ...t, genreIds: [] as number[] }))),
     ],
     allowedLangs,
   );
+
+  // Tighter matching: drop candidates that barely graze your taste — but only when
+  // enough strong matches remain, so the rail never starves.
+  const strong = pooled.filter((c) => contentScore(c.genreIds, profile) >= MIN_CONTENT);
+  const candidates: GenreTitle[] = hasProfile && strong.length >= MAX ? strong : pooled;
 
   // 3) Collaborative signal from friends, weighted by taste-match.
   const neighbors: Neighbor[] = [];
