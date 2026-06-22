@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator, Linking } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import Constants from "expo-constants";
 import * as Clipboard from "expo-clipboard";
@@ -330,6 +330,13 @@ export default function SettingsScreen() {
       <Pressable style={styles.deleteAccount} onPress={confirmDelete} hitSlop={6}>
         <Text style={styles.deleteAccountText}>{t("settings.deleteAccount")}</Text>
       </Pressable>
+
+      <Pressable style={styles.tmdb} onPress={() => Linking.openURL("https://www.themoviedb.org")}>
+        <Text style={styles.tmdbText}>Movie & TV data from TMDB</Text>
+        <Text style={styles.tmdbDisclaimer}>
+          This product uses the TMDB API but is not endorsed or certified by TMDB.
+        </Text>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -399,4 +406,7 @@ const styles = StyleSheet.create({
   signOutText: { color: "#ff3b5b", fontWeight: "700", fontSize: 15 },
   deleteAccount: { alignItems: "center", paddingVertical: 14, marginTop: 4 },
   deleteAccountText: { color: "#999", fontWeight: "600", fontSize: 13, textDecorationLine: "underline" },
+  tmdb: { alignItems: "center", paddingHorizontal: 24, marginTop: 8 },
+  tmdbText: { color: "#888", fontSize: 12, fontWeight: "600" },
+  tmdbDisclaimer: { color: "#bbb", fontSize: 10, textAlign: "center", marginTop: 4, lineHeight: 14 },
 });
