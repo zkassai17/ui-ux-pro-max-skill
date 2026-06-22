@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
+import { useRouter, useNavigation } from "expo-router";
 import { getLibrary, rateEntry } from "../../src/services/watchlist";
 import { sortLibrary, applyInlineRating, type LibrarySort } from "../../src/lib/libraryLogic";
 import { PosterImage } from "../../src/components/PosterImage";
@@ -56,6 +56,16 @@ export default function LibraryScreen() {
   const [openRatingId, setOpenRatingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+  const listRef = useRef<FlatList<WatchlistEntry>>(null);
+  const navigation = useNavigation();
+
+  // Tapping the Library tab again jumps the list back to the top — no scrolling up.
+  useEffect(() => {
+    const unsub = (navigation as any).addListener("tabPress", () => {
+      listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    });
+    return unsub;
+  }, [navigation]);
 
   async function onRefresh() {
     setRefreshing(true);
@@ -180,6 +190,7 @@ export default function LibraryScreen() {
         )
       ) : (
         <FlatList
+          ref={listRef}
           data={rows}
           keyExtractor={(e) => e.id}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
