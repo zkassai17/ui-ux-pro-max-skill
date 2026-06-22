@@ -24,17 +24,6 @@ const VERB_KEY: Record<WatchStatus, string> = {
   want: "feed.wantsToWatch",
 };
 
-function WatchTogetherCard() {
-  const router = useRouter();
-  const { t } = useI18n();
-  return (
-    <Pressable style={styles.wtCard} onPress={() => router.push("/watch-together")}>
-      <Text style={styles.wtTitle}>{t("home.whatToWatch")}</Text>
-      <Text style={styles.wtSub}>{t("home.whatToWatchSub")}</Text>
-    </Pressable>
-  );
-}
-
 function ForYouRail({ mediaType, heading }: { mediaType: MediaType; heading: string }) {
   const router = useRouter();
   const qc = useQueryClient();
@@ -180,7 +169,6 @@ export default function HomeScreen() {
       keyExtractor={(r) => r.item.id}
       ListHeaderComponent={
         <View>
-          <WatchTogetherCard />
           <ForYouRail mediaType="movie" heading={t("home.moviesForYou")} />
           <ForYouRail mediaType="tv" heading={t("home.showsForYou")} />
           <Text style={styles.sectionHeading}>{t("home.activity")}</Text>
@@ -239,9 +227,6 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  wtCard: { backgroundColor: "#5b6cff", borderRadius: 16, padding: 16, marginBottom: 18 },
-  wtTitle: { color: "#fff", fontSize: 17, fontWeight: "800" },
-  wtSub: { color: "#dfe3ff", fontSize: 12, marginTop: 6, lineHeight: 17 },
   rail: { marginBottom: 8 },
   sectionHeading: { fontSize: 13, fontWeight: "700", color: "#888", marginBottom: 10 },
   railRow: { gap: 12, paddingBottom: 4, paddingRight: 8 },
