@@ -17,6 +17,7 @@ import { TitleRow } from "../../src/components/TitleRow";
 import { StatusButtons } from "../../src/components/StatusButtons";
 import { useI18n } from "../../src/i18n/I18nProvider";
 import { TOP_PROVIDERS } from "../../src/lib/providers";
+import { filterByLanguage } from "../../src/lib/recommendEngine";
 import type { MediaType, Title } from "../../src/types/tmdb";
 
 function dedupeByKey(titles: Title[]): Title[] {
@@ -42,7 +43,11 @@ export default function AddScreen() {
   const [streamingOnly, setStreamingOnly] = useState(true); // hide titles not on US streaming
   const router = useRouter();
   const navigation = useNavigation();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  // Browse only shows titles in languages you'd actually watch (your app language
+  // + English), so foreign-language randoms (e.g. Korean/Hindi) don't clutter it.
+  // Typed search is exempt — if you search a specific foreign title, you still get it.
+  const allowedLangs = new Set<string>(["en", lang]);
 
   // Lightning-bolt shortcut in the header → the bulk "Quick add what you've seen" flow.
   useLayoutEffect(() => {
@@ -167,8 +172,10 @@ export default function AddScreen() {
   const rawResults: Title[] = searching
     ? search.data ?? []
     : feed.data?.pages.flatMap((p) => p.results) ?? [];
+  // Language-scope the browse feed (not typed search).
+  const scoped = searching ? rawResults : filterByLanguage(rawResults, allowedLangs);
   const inLibrary = new Set((library.data ?? []).map((e) => `${e.media_type}:${e.tmdb_id}`));
-  const results: Title[] = dedupeByKey(rawResults).filter((t) => {
+  const results: Title[] = dedupeByKey(scoped).filter((t) => {
     const key = `${t.mediaType}:${t.tmdbId}`;
     return !inLibrary.has(key) || grace.has(key);
   });
