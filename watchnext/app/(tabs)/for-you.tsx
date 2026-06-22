@@ -136,7 +136,7 @@ const VERB_KEY: Record<WatchStatus, string> = {
   want: "feed.wantsToWatch",
 };
 
-function ForYouRail({ mediaType, heading }: { mediaType: MediaType; heading: string }) {
+function ForYouRail({ mediaType, heading, skipFirst }: { mediaType: MediaType; heading: string; skipFirst?: boolean }) {
   const router = useRouter();
   const qc = useQueryClient();
   const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
@@ -178,9 +178,11 @@ function ForYouRail({ mediaType, heading }: { mediaType: MediaType; heading: str
   // Re-filter on every render so a title you just added (or hid) drops out
   // instantly — before the query has a chance to refetch.
   const hiddenSet = hidden.data ?? new Set<string>();
-  const titles = (recs.data ?? []).filter(
+  const all = (recs.data ?? []).filter(
     (t) => !excludeKeys.has(titleKey(t)) && !hiddenSet.has(titleKey(t))
   );
+  // Drop the first pick when it's already shown as the "Tonight's pick" hero.
+  const titles = skipFirst ? all.slice(1) : all;
 
   if (recs.isLoading || library.isLoading) {
     return (
@@ -259,7 +261,8 @@ export default function HomeScreen() {
       qc.invalidateQueries({ queryKey: ["feed"] }),
       qc.invalidateQueries({ queryKey: ["library"] }),
       qc.invalidateQueries({ queryKey: ["for-you"] }),
-      qc.invalidateQueries({ queryKey: ["trending"] }),
+      qc.invalidateQueries({ queryKey: ["home-trending"] }),
+      qc.invalidateQueries({ queryKey: ["together-compat"] }),
       qc.invalidateQueries({ queryKey: ["reactions"] }),
       qc.invalidateQueries({ queryKey: ["incoming-requests"] }),
       qc.invalidateQueries({ queryKey: ["received-recs"] }),
@@ -283,7 +286,7 @@ export default function HomeScreen() {
         <View>
           <TonightHero />
           <BlendTeaser />
-          <ForYouRail mediaType="movie" heading={t("home.moviesForYou")} />
+          <ForYouRail mediaType="movie" heading={t("home.moviesForYou")} skipFirst />
           <ForYouRail mediaType="tv" heading={t("home.showsForYou")} />
           <TrendingRow />
           <Text style={styles.sectionHeading}>{t("home.activity")}</Text>
