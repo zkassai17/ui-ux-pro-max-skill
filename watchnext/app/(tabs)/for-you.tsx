@@ -8,15 +8,153 @@ import { getLibrary } from "../../src/services/watchlist";
 import { getForYou } from "../../src/services/forYou";
 import { getHiddenKeys, hideRec } from "../../src/services/hiddenRecs";
 import { getRecWeights } from "../../src/services/prefs";
+import { getFriends } from "../../src/services/friends";
+import { getTrending } from "../../src/services/tmdb";
 import { titleKey } from "../../src/lib/forYouLogic";
+import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
+import { initials, avatarColor, matchColor } from "../../src/lib/avatar";
 import { getReactions } from "../../src/services/reactions";
 import { PosterImage } from "../../src/components/PosterImage";
 import { QuickAddButton } from "../../src/components/QuickAddButton";
 import { FeedReactions } from "../../src/components/FeedReactions";
 import { CDrawLoader } from "../../src/components/CDrawLoader";
 import { useI18n } from "../../src/i18n/I18nProvider";
+import { fullName } from "../../src/types/db";
 import type { Title, MediaType } from "../../src/types/tmdb";
 import type { WatchStatus } from "../../src/types/db";
+
+// --- Continue watching: your in-progress titles, front and center ---
+function ContinueWatchingRow() {
+  const router = useRouter();
+  const { t } = useI18n();
+  const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
+  const watching = (library.data ?? []).filter((e) => e.status === "watching");
+  if (watching.length === 0) return null;
+  return (
+    <View style={styles.rail}>
+      <Text style={styles.sectionHeading}>▶  {t("home.continueWatching")}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.railRow}>
+        {watching.map((e) => (
+          <Pressable
+            key={`${e.media_type}:${e.tmdb_id}`}
+            style={styles.suggestion}
+            onPress={() => router.push(`/title/${e.media_type}/${e.tmdb_id}`)}
+          >
+            <PosterImage path={e.poster_path} width={104} height={156} radius={10} />
+            <Text style={styles.suggestionTitle} numberOfLines={2}>{e.title}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+// --- Tonight's pick: one spotlighted recommendation (top of your movie rail,
+// so it reuses that query — no extra fetch) ---
+function TonightHero() {
+  const router = useRouter();
+  const { t } = useI18n();
+  const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
+  const recWeights = useQuery({ queryKey: ["rec-weights"], queryFn: getRecWeights });
+  const hidden = useQuery({ queryKey: ["hidden-recs"], queryFn: getHiddenKeys });
+  const entries = library.data ?? [];
+  const excludeKeys = new Set(entries.map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id })));
+  const libHash = entries.map((e) => `${e.media_type}:${e.tmdb_id}:${e.status}:${e.rating ?? ""}`).join("|");
+  const w = recWeights.data;
+  const weightKey = w ? `${w.content}-${w.collaborative}-${w.trending}` : "default";
+  const recs = useQuery({
+    queryKey: ["for-you", "movie", libHash, weightKey],
+    enabled: !library.isLoading && !recWeights.isLoading,
+    staleTime: 5 * 60 * 1000,
+    queryFn: () => getForYou("movie", entries, w),
+  });
+  const hiddenSet = hidden.data ?? new Set<string>();
+  const hero = (recs.data ?? []).find((x) => !excludeKeys.has(titleKey(x)) && !hiddenSet.has(titleKey(x)));
+  if (!hero) return null;
+  return (
+    <Pressable style={styles.hero} onPress={() => router.push(`/title/${hero.mediaType}/${hero.tmdbId}`)}>
+      <Text style={styles.heroLabel}>✨ {t("home.tonightsPick")}</Text>
+      <View style={styles.heroBody}>
+        <PosterImage path={hero.posterPath} width={92} height={138} radius={12} />
+        <View style={styles.heroMeta}>
+          <Text style={styles.heroTitle} numberOfLines={3}>{hero.title}</Text>
+          <Text style={styles.heroType}>
+            {hero.mediaType === "movie" ? t("media.movie") : t("media.tv")}{hero.year ? ` · ${hero.year}` : ""}
+          </Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+// --- Blend teaser: your single best taste-match, deep-linking into Blend ---
+function BlendTeaser() {
+  const router = useRouter();
+  const { t } = useI18n();
+  const friends = useQuery({ queryKey: ["friends"], queryFn: getFriends });
+  const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
+  const allFriends = friends.data ?? [];
+  const friendIds = allFriends.map((f) => f.id);
+  const compat = useQuery({
+    queryKey: ["together-compat", friendIds.join(",")],
+    enabled: friendIds.length > 0 && !library.isLoading,
+    queryFn: async () => {
+      const mine = library.data ?? (await getLibrary());
+      const libs = await Promise.all(friendIds.map((id) => getLibrary(id).catch(() => [])));
+      const map: Record<string, number | null> = {};
+      friendIds.forEach((id, i) => (map[id] = computeTasteMatch(mine, libs[i]).score));
+      return map;
+    },
+  });
+  if (!compat.data) return null;
+  let best: { id: string; score: number; username: string; name: string } | null = null;
+  for (const f of allFriends) {
+    const s = compat.data[f.id];
+    if (s != null && (!best || s > best.score)) {
+      best = { id: f.id, score: s, username: f.username, name: fullName(f) || `@${f.username}` };
+    }
+  }
+  if (!best) return null;
+  return (
+    <Pressable style={styles.teaser} onPress={() => router.push(`/blend/${best!.id}`)}>
+      <View style={[styles.teaserAvatar, { backgroundColor: avatarColor(best.username) }]}>
+        <Text style={styles.teaserAvatarText}>{initials(best.username)}</Text>
+      </View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={styles.teaserName} numberOfLines={1}>🧬 {best.name}</Text>
+        <Text style={styles.teaserSub}>{t("together.yourBlends")}</Text>
+      </View>
+      <Text style={[styles.teaserPct, { color: matchColor(best.score) }]}>{best.score}%</Text>
+      <Text style={styles.teaserChevron}>›</Text>
+    </Pressable>
+  );
+}
+
+// --- Trending this week: discovery beyond your taste ---
+function TrendingRow() {
+  const router = useRouter();
+  const { t } = useI18n();
+  const trending = useQuery({ queryKey: ["home-trending"], queryFn: getTrending, staleTime: 30 * 60 * 1000 });
+  const titles = (trending.data ?? []).slice(0, 15);
+  if (titles.length === 0) return null;
+  return (
+    <View style={styles.rail}>
+      <Text style={styles.sectionHeading}>🔥 {t("home.trending")}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.railRow}>
+        {titles.map((tt) => (
+          <Pressable
+            key={`${tt.mediaType}:${tt.tmdbId}`}
+            style={styles.suggestion}
+            onPress={() => router.push(`/title/${tt.mediaType}/${tt.tmdbId}`)}
+          >
+            <PosterImage path={tt.posterPath} width={104} height={156} radius={10} />
+            <Text style={styles.suggestionTitle} numberOfLines={2}>{tt.title}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
 
 const VERB_KEY: Record<WatchStatus, string> = {
   watched: "feed.finishedWatching",
@@ -169,8 +307,12 @@ export default function HomeScreen() {
       keyExtractor={(r) => r.item.id}
       ListHeaderComponent={
         <View>
+          <ContinueWatchingRow />
+          <TonightHero />
+          <BlendTeaser />
           <ForYouRail mediaType="movie" heading={t("home.moviesForYou")} />
           <ForYouRail mediaType="tv" heading={t("home.showsForYou")} />
+          <TrendingRow />
           <Text style={styles.sectionHeading}>{t("home.activity")}</Text>
         </View>
       }
@@ -193,7 +335,7 @@ export default function HomeScreen() {
                 <Text style={styles.name}>{name}</Text> {t(VERB_KEY[e.status])}
               </Text>
               <View style={styles.row}>
-                <PosterImage path={e.poster_path} width={42} height={62} />
+                <PosterImage path={e.poster_path} width={54} height={80} radius={8} />
                 <View style={styles.meta}>
                   <Text style={styles.title}>{e.title}</Text>
                   <Text style={styles.pill}>{e.media_type === "movie" ? t("media.movie") : t("media.tv")}</Text>
@@ -210,7 +352,7 @@ export default function HomeScreen() {
               <Text style={styles.name}>{name}</Text> {t("feed.recommends")}
             </Text>
             <View style={styles.row}>
-              <PosterImage path={rec.poster_path} width={42} height={62} />
+              <PosterImage path={rec.poster_path} width={54} height={80} radius={8} />
               <View style={styles.meta}>
                 <Text style={styles.title}>{rec.title}</Text>
                 {rec.note ? <Text style={styles.note}>“{rec.note}”</Text> : null}
@@ -227,6 +369,22 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+
+  hero: { backgroundColor: "#f7f8ff", borderWidth: 1.5, borderColor: "#eef0ff", borderRadius: 18, padding: 14, marginBottom: 14 },
+  heroLabel: { fontSize: 11, fontWeight: "800", color: "#5b6cff", letterSpacing: 0.5, marginBottom: 10 },
+  heroBody: { flexDirection: "row", gap: 14, alignItems: "center" },
+  heroMeta: { flex: 1, minWidth: 0 },
+  heroTitle: { fontSize: 18, fontWeight: "800" },
+  heroType: { fontSize: 12, color: "#888", marginTop: 6 },
+
+  teaser: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#f6f6f8", borderRadius: 14, padding: 12, marginBottom: 14 },
+  teaserAvatar: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
+  teaserAvatarText: { color: "#fff", fontSize: 15, fontWeight: "800" },
+  teaserName: { fontSize: 15, fontWeight: "700" },
+  teaserSub: { fontSize: 11, color: "#999", fontWeight: "600", marginTop: 1 },
+  teaserPct: { fontSize: 17, fontWeight: "900" },
+  teaserChevron: { fontSize: 22, color: "#ccc" },
+
   rail: { marginBottom: 8 },
   sectionHeading: { fontSize: 13, fontWeight: "700", color: "#888", marginBottom: 10 },
   railRow: { gap: 12, paddingBottom: 4, paddingRight: 8 },
