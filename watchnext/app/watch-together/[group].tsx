@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator } from "react-native";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { getWatchTogether } from "../../src/services/watchTogether";
+import { getHiddenKeys, hideRec } from "../../src/services/hiddenRecs";
 import { filterByGenre, pickHero } from "../../src/lib/watchTogetherLogic";
 import { GENRES } from "../../src/lib/genres";
 import { PosterImage } from "../../src/components/PosterImage";
@@ -26,6 +28,26 @@ export default function WatchTogetherResultsScreen() {
     queryFn: () => getWatchTogether(friendIds),
   });
 
+  const qc = useQueryClient();
+  const hidden = useQuery({ queryKey: ["hidden-recs"], queryFn: getHiddenKeys });
+  const hiddenSet = hidden.data ?? new Set<string>();
+  // "Not interested": hide instantly, persist, and refetch so the group picks
+  // re-learn (the dismissed title's genres now count against future suggestions).
+  const hide = useMutation({
+    mutationFn: (s: { tmdbId: number; mediaType: MediaType }) => hideRec(s),
+    onMutate: async (s) => {
+      const key = `${s.mediaType}:${s.tmdbId}`;
+      await qc.cancelQueries({ queryKey: ["hidden-recs"] });
+      const prev = qc.getQueryData<Set<string>>(["hidden-recs"]);
+      qc.setQueryData<Set<string>>(["hidden-recs"], new Set([...(prev ?? []), key]));
+      return { prev };
+    },
+    onError: (_e, _s, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["hidden-recs"], ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["watch-together"] }),
+  });
+
   function toggleGenre(ids: number[]) {
     // a chip toggles its whole id-set; treat the first id as the chip identity
     const head = ids[0];
@@ -47,7 +69,9 @@ export default function WatchTogetherResultsScreen() {
           // person's want no longer drives "what should we watch". When the group
           // shares no wants, we fall back to history-based suggestions.
           const sharedPicks = data.picks.filter((p) => p.wantedBy >= 2);
-          const suggestions = filterByGenre(data.suggestions, genreIds);
+          const suggestions = filterByGenre(data.suggestions, genreIds).filter(
+            (s) => !hiddenSet.has(`${s.mediaType}:${s.tmdbId}`)
+          );
 
           const sharedHero: HeroItem[] = sharedPicks.map((p) => ({
             tmdbId: p.entry.tmdb_id,
@@ -141,16 +165,26 @@ export default function WatchTogetherResultsScreen() {
               ) : (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggRow}>
                   {suggestions.map((s) => (
-                    <Pressable
-                      key={`${s.mediaType}:${s.tmdbId}`}
-                      style={styles.sugg}
-                      onPress={() => open(s.mediaType, s.tmdbId)}
-                    >
-                      <PosterImage path={s.posterPath} width={104} height={156} radius={10} />
-                      <Text style={styles.suggTitle} numberOfLines={2}>
-                        {s.title}
-                      </Text>
-                    </Pressable>
+                    <View key={`${s.mediaType}:${s.tmdbId}`} style={styles.sugg}>
+                      <View>
+                        <Pressable onPress={() => open(s.mediaType, s.tmdbId)}>
+                          <PosterImage path={s.posterPath} width={104} height={156} radius={10} />
+                        </Pressable>
+                        <Pressable
+                          style={styles.hideBtn}
+                          hitSlop={8}
+                          onPress={() => hide.mutate({ tmdbId: s.tmdbId, mediaType: s.mediaType })}
+                          accessibilityLabel="Not interested"
+                        >
+                          <Ionicons name="close" size={13} color="#fff" />
+                        </Pressable>
+                      </View>
+                      <Pressable onPress={() => open(s.mediaType, s.tmdbId)}>
+                        <Text style={styles.suggTitle} numberOfLines={2}>
+                          {s.title}
+                        </Text>
+                      </Pressable>
+                    </View>
                   ))}
                 </ScrollView>
               )}
@@ -184,5 +218,6 @@ const styles = StyleSheet.create({
   suggRow: { gap: 12, paddingBottom: 8, paddingRight: 8 },
   sugg: { width: 104 },
   suggTitle: { fontSize: 11, fontWeight: "600", marginTop: 6 },
+  hideBtn: { position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: 11, backgroundColor: "rgba(0,0,0,0.55)", alignItems: "center", justifyContent: "center", zIndex: 2 },
   msg: { color: "#888", fontSize: 13, marginTop: 8, lineHeight: 19 },
 });

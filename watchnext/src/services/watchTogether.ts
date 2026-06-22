@@ -1,6 +1,7 @@
 import type { MediaType, Suggestion, Title } from "../types/tmdb";
 import type { WatchlistEntry } from "../types/db";
 import { getLibrary } from "./watchlist";
+import { getHiddenTitles, type HiddenTitle } from "./hiddenRecs";
 import { getGenres, getTitleDetails, discoverSuggestions, getTrending } from "./tmdb";
 import { groupPicks, type GroupPick } from "../lib/watchTogetherLogic";
 import { titleKey, selectWeightedSeeds } from "../lib/forYouLogic";
@@ -34,12 +35,16 @@ type SeedMeta = { genreIds: number[]; language: string | null };
 // Session memo: a title's genres + language never change, so we fetch once.
 const metaMemo = new Map<string, SeedMeta>();
 
-async function seedMeta(entry: WatchlistEntry, nameToId: Map<string, number>): Promise<SeedMeta> {
-  const key = titleKey({ mediaType: entry.media_type, tmdbId: entry.tmdb_id });
+async function metaFor(
+  mediaType: MediaType,
+  tmdbId: number,
+  nameToId: Map<string, number>,
+): Promise<SeedMeta> {
+  const key = titleKey({ mediaType, tmdbId });
   const cached = metaMemo.get(key);
   if (cached) return cached;
   try {
-    const detail = await getTitleDetails(entry.media_type, entry.tmdb_id);
+    const detail = await getTitleDetails(mediaType, tmdbId);
     const genreIds = detail.genres
       .map((name) => nameToId.get(name))
       .filter((id): id is number => typeof id === "number");
@@ -51,12 +56,17 @@ async function seedMeta(entry: WatchlistEntry, nameToId: Map<string, number>): P
   }
 }
 
+function seedMeta(entry: WatchlistEntry, nameToId: Map<string, number>): Promise<SeedMeta> {
+  return metaFor(entry.media_type, entry.tmdb_id, nameToId);
+}
+
 // Hybrid group suggestions for one media type. Returns ranked Suggestions
 // (genreIds preserved so the results screen can genre-filter them).
 async function suggestForMedia(
   mediaType: MediaType,
   libraries: WatchlistEntry[][],
   excludeKeys: Set<string>,
+  hiddenTitles: HiddenTitle[],
 ): Promise<Suggestion[]> {
   const genreList = await getGenres(mediaType).catch(() => []);
   const nameToId = new Map(genreList.map((g) => [g.name, g.id]));
@@ -79,6 +89,18 @@ async function suggestForMedia(
   const profile = buildGenreProfile(seeds.map((s) => s.entry), genresByKey);
   const allowedLangs = learnLanguages(seedLangs);
   const dominant = dominantLanguage(seedLangs);
+
+  // Dislike profile from your "Not interested" dismissals (this media type), so
+  // the group picks learn what you keep rejecting.
+  const dislike = new Map<number, number>();
+  await Promise.all(
+    hiddenTitles
+      .filter((h) => h.mediaType === mediaType)
+      .map(async (h) => {
+        const meta = await metaFor(mediaType, h.tmdbId, nameToId);
+        for (const g of meta.genreIds) dislike.set(g, (dislike.get(g) ?? 0) + 1);
+      })
+  );
 
   const topGenres = [...profile.entries()]
     .sort((a, b) => b[1] - a[1])
@@ -116,6 +138,7 @@ async function suggestForMedia(
     trendingKeys,
     weights: { content: 1, collaborative: 0, trending: 0.25 },
     excludeKeys,
+    dislike,
   });
 
   // rankHybrid types results as Title; map back to the original Suggestions to keep genreIds.
@@ -128,13 +151,15 @@ export async function getWatchTogether(friendIds: string[]): Promise<WatchTogeth
   const libraries = await Promise.all([getLibrary(), ...friendIds.map((id) => getLibrary(id))]);
 
   const picks = groupPicks(libraries);
-  const excludeKeys = new Set(
-    libraries.flat().map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id }))
-  );
+  const hiddenTitles = await getHiddenTitles().catch(() => []);
+  const excludeKeys = new Set([
+    ...libraries.flat().map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id })),
+    ...hiddenTitles.map((h) => titleKey(h)),
+  ]);
 
   const [movieSugg, tvSugg] = await Promise.all([
-    suggestForMedia("movie", libraries, excludeKeys),
-    suggestForMedia("tv", libraries, excludeKeys),
+    suggestForMedia("movie", libraries, excludeKeys, hiddenTitles),
+    suggestForMedia("tv", libraries, excludeKeys, hiddenTitles),
   ]);
 
   // Interleave movies + shows so both are represented, capped at MAX.
