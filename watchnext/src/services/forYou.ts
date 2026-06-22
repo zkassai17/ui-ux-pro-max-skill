@@ -19,7 +19,7 @@ import {
 } from "../lib/recommendEngine";
 import { DEFAULT_REC_WEIGHTS, type RecWeights } from "../lib/recPrefs";
 
-const PROFILE_SEEDS = 12; // how many top-weighted library titles shape the genre profile
+const PROFILE_SEEDS = 200; // shape the genre profile from your WHOLE library (high cap is just a safety bound)
 const TOP_GENRES = 3; // discover candidates from this many of your strongest genres
 const MAX = 15;
 const MIN_VOTES = 200; // popularity floor — drop obscure random titles
