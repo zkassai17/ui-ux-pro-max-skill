@@ -14,6 +14,7 @@ import {
   setRecWeights,
 } from "../src/services/prefs";
 import { exportLibraryCsv } from "../src/services/exportData";
+import { deleteAccount } from "../src/services/account";
 import {
   REC_PRESETS,
   REC_LEVELS,
@@ -121,6 +122,23 @@ export default function SettingsScreen() {
     Alert.alert(t("settings.signOutTitle"), t("settings.signOutBody"), [
       { text: t("common.cancel"), style: "cancel" },
       { text: t("settings.signOut"), style: "destructive", onPress: () => signOut() },
+    ]);
+  }
+
+  function confirmDelete() {
+    Alert.alert(t("settings.deleteAccountTitle"), t("settings.deleteAccountBody"), [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: t("settings.deleteAccountConfirm"),
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteAccount(); // signs out internally → app routes back to sign-in
+          } catch (e) {
+            Alert.alert(t("alert.cantDelete"), (e as Error).message);
+          }
+        },
+      },
     ]);
   }
 
@@ -308,6 +326,10 @@ export default function SettingsScreen() {
       <Pressable style={styles.signOut} onPress={confirmSignOut}>
         <Text style={styles.signOutText}>{t("settings.signOut")}</Text>
       </Pressable>
+
+      <Pressable style={styles.deleteAccount} onPress={confirmDelete} hitSlop={6}>
+        <Text style={styles.deleteAccountText}>{t("settings.deleteAccount")}</Text>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -375,4 +397,6 @@ const styles = StyleSheet.create({
 
   signOut: { marginTop: 28, alignItems: "center", paddingVertical: 12 },
   signOutText: { color: "#ff3b5b", fontWeight: "700", fontSize: 15 },
+  deleteAccount: { alignItems: "center", paddingVertical: 14, marginTop: 4 },
+  deleteAccountText: { color: "#999", fontWeight: "600", fontSize: 13, textDecorationLine: "underline" },
 });

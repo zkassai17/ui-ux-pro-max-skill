@@ -4,6 +4,7 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../src/services/supabase";
 import { getFriendStats, unfriend } from "../../src/services/friends";
+import { blockUser, reportUser } from "../../src/services/account";
 import { getLibrary } from "../../src/services/watchlist";
 import { friendshipWith } from "../../src/lib/friendsLogic";
 import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
@@ -82,6 +83,45 @@ export default function FriendProfileScreen() {
     }
   }
 
+  function doBlock() {
+    Alert.alert(t("user.blockTitle"), t("user.blockBody"), [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: t("user.block"),
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await blockUser(id);
+            await Promise.all([
+              qc.invalidateQueries({ queryKey: ["friends"] }),
+              qc.invalidateQueries({ queryKey: ["feed"] }),
+            ]);
+            router.back();
+          } catch (e) {
+            Alert.alert(t("alert.cantBlock"), (e as Error).message);
+          }
+        },
+      },
+    ]);
+  }
+
+  function doReport() {
+    const submit = (reason: string) => async () => {
+      try {
+        await reportUser(id, reason);
+        Alert.alert(t("user.reportThanks"));
+      } catch (e) {
+        Alert.alert(t("alert.cantReport"), (e as Error).message);
+      }
+    };
+    Alert.alert(t("user.reportTitle"), t("user.reportBody"), [
+      { text: t("report.harassment"), onPress: submit("harassment") },
+      { text: t("report.inappropriate"), onPress: submit("inappropriate") },
+      { text: t("report.spam"), onPress: submit("spam") },
+      { text: t("common.cancel"), style: "cancel" },
+    ]);
+  }
+
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: true, title: profile.data ? `@${profile.data.username}` : t("user.profileFallback") }} />
@@ -111,6 +151,15 @@ export default function FriendProfileScreen() {
             </Pressable>
             <Pressable style={styles.ghost} onPress={doUnfriend}>
               <Text style={styles.ghostText}>{t("user.unfriend")}</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.modRow}>
+            <Pressable onPress={doBlock} hitSlop={8}>
+              <Text style={styles.modText}>{t("user.block")}</Text>
+            </Pressable>
+            <Pressable onPress={doReport} hitSlop={8}>
+              <Text style={styles.modText}>{t("user.report")}</Text>
             </Pressable>
           </View>
 
@@ -161,6 +210,8 @@ function Stat({ n, label }: { n: number; label: string }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
+  modRow: { flexDirection: "row", gap: 22, marginTop: 12 },
+  modText: { color: "#c0392b", fontSize: 13, fontWeight: "600" },
   nameWrap: { marginBottom: 14 },
   nameText: { fontSize: 22, fontWeight: "800" },
   handleText: { fontSize: 14, color: "#888", fontWeight: "600", marginTop: 1 },

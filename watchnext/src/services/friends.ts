@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import type { Friendship, Profile } from "../types/db";
 import { deriveFriendIds, deriveIncomingRequests } from "../lib/friendsLogic";
+import { getBlockedIds } from "./account";
 
 async function currentUserId(): Promise<string | null> {
   const { data } = await supabase.auth.getUser();
@@ -25,7 +26,8 @@ export async function searchUsers(q: string): Promise<Profile[]> {
     .or(`username.ilike.${like},first_name.ilike.${like},last_name.ilike.${like}`)
     .limit(20);
   if (error) throw error;
-  return ((data as Profile[]) ?? []).filter((p) => p.id !== uid);
+  const blocked = new Set(await getBlockedIds().catch(() => []));
+  return ((data as Profile[]) ?? []).filter((p) => p.id !== uid && !blocked.has(p.id));
 }
 
 export async function lookupByFriendCode(
