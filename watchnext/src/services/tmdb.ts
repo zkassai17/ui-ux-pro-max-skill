@@ -80,12 +80,16 @@ export type TrendingScope = "all" | "movie" | "tv";
 export async function getTrendingTitles(opts: {
   scope?: TrendingScope;
   providerIds?: number[];
+  streamingOnly?: boolean;
   page?: number;
 }): Promise<DiscoverPage> {
   const page = opts.page ?? 1;
   const scope = opts.scope ?? "all";
 
-  if (!opts.providerIds?.length) {
+  // /trending can't filter by provider or streaming availability, so when either
+  // is requested we fall back to popularity-sorted discover (which can).
+  const useDiscover = !!opts.providerIds?.length || !!opts.streamingOnly;
+  if (!useDiscover) {
     const raw = await tmdbGet(`/trending/${scope}/week?page=${page}`);
     return {
       results: normalizeSearchResults(raw),
@@ -94,12 +98,13 @@ export async function getTrendingTitles(opts: {
     };
   }
 
+  const d = { providerIds: opts.providerIds, streamingOnly: opts.streamingOnly, page };
   if (scope !== "all") {
-    return discoverTitles({ mediaType: scope, providerIds: opts.providerIds, page });
+    return discoverTitles({ mediaType: scope, ...d });
   }
   const [movies, shows] = await Promise.all([
-    discoverTitles({ mediaType: "movie", providerIds: opts.providerIds, page }),
-    discoverTitles({ mediaType: "tv", providerIds: opts.providerIds, page }),
+    discoverTitles({ mediaType: "movie", ...d }),
+    discoverTitles({ mediaType: "tv", ...d }),
   ]);
   const results: Title[] = [];
   const max = Math.max(movies.results.length, shows.results.length);
@@ -127,6 +132,7 @@ export async function discoverTitles(opts: {
   genreIds?: number[];
   providerIds?: number[];
   sortBy?: string;
+  streamingOnly?: boolean;
   page?: number;
 }): Promise<DiscoverPage> {
   const params = new URLSearchParams({
@@ -138,6 +144,8 @@ export async function discoverTitles(opts: {
   // "|" = OR: titles in ANY selected genre, available on ANY selected provider.
   if (opts.genreIds?.length) params.set("with_genres", opts.genreIds.join("|"));
   if (opts.providerIds?.length) params.set("with_watch_providers", opts.providerIds.join("|"));
+  // Restrict to titles available on a subscription streaming service in the region.
+  if (opts.streamingOnly) params.set("with_watch_monetization_types", "flatrate");
   const raw = await tmdbGet(`/discover/${opts.mediaType}?${params.toString()}`);
   return {
     results: normalizeDiscoverResults(raw, opts.mediaType),

@@ -39,6 +39,7 @@ export default function AddScreen() {
   const [providerIds, setProviderIds] = useState<number[]>([]);
   const [trending, setTrending] = useState(false);
   const [trendScope, setTrendScope] = useState<TrendingScope>("all");
+  const [streamingOnly, setStreamingOnly] = useState(true); // hide titles not on US streaming
   const router = useRouter();
   const navigation = useNavigation();
   const { t } = useI18n();
@@ -90,15 +91,15 @@ export default function AddScreen() {
   const genreKey = [...genreIds].sort((a, b) => a - b).join(",");
   const providerKey = [...providerIds].sort((a, b) => a - b).join(",");
   const discover = useInfiniteQuery({
-    queryKey: ["tmdb-discover", mediaType, genreKey, providerKey],
-    queryFn: ({ pageParam }) => discoverTitles({ mediaType, genreIds, providerIds, page: pageParam }),
+    queryKey: ["tmdb-discover", mediaType, genreKey, providerKey, streamingOnly],
+    queryFn: ({ pageParam }) => discoverTitles({ mediaType, genreIds, providerIds, streamingOnly, page: pageParam }),
     enabled: showingDiscover,
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page < last.totalPages ? last.page + 1 : undefined),
   });
   const trend = useInfiniteQuery({
-    queryKey: ["tmdb-trending", trendScope, providerKey],
-    queryFn: ({ pageParam }) => getTrendingTitles({ scope: trendScope, providerIds, page: pageParam }),
+    queryKey: ["tmdb-trending", trendScope, providerKey, streamingOnly],
+    queryFn: ({ pageParam }) => getTrendingTitles({ scope: trendScope, providerIds, streamingOnly, page: pageParam }),
     enabled: showingTrending,
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page < last.totalPages ? last.page + 1 : undefined),
@@ -124,7 +125,7 @@ export default function AddScreen() {
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   // A new search or filter change clears the grace window — added titles drop out then.
-  const context = `${q.trim()}|${mediaType}|${genreKey}|${providerKey}|${trending}|${trendScope}`;
+  const context = `${q.trim()}|${mediaType}|${genreKey}|${providerKey}|${trending}|${trendScope}|${streamingOnly}`;
   useEffect(() => {
     timers.current.forEach((t) => clearTimeout(t));
     timers.current.clear();
@@ -247,6 +248,14 @@ export default function AddScreen() {
           </ScrollView>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+            <Pressable
+              style={[styles.chip, streamingOnly && styles.streamChipOn]}
+              onPress={() => setStreamingOnly((v) => !v)}
+            >
+              <Text style={[styles.chipText, styles.streamChipText, streamingOnly && styles.chipTextOn]}>
+                📺 {t("add.streaming")}
+              </Text>
+            </Pressable>
             {TOP_PROVIDERS.map((p) => {
               const on = providerIds.includes(p.id);
               return (
@@ -332,6 +341,8 @@ const styles = StyleSheet.create({
   trendChip: { backgroundColor: "#fff0e6" },
   trendChipOn: { backgroundColor: "#ff7a1a" },
   trendChipText: { color: "#e8650e" },
+  streamChipOn: { backgroundColor: "#1dd1a1" },
+  streamChipText: { color: "#0e8f6e" },
   msg: { color: "#888", fontSize: 13, marginTop: 16, textAlign: "center" },
   errorBox: { marginTop: 40, alignItems: "center", paddingHorizontal: 24, gap: 8 },
   errorTitle: { fontSize: 15, fontWeight: "700", color: "#333" },
