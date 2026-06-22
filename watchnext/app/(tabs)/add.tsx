@@ -54,6 +54,15 @@ export default function AddScreen() {
     });
   }, [navigation, router]);
 
+  // Tapping the Add tab again jumps the results list back to the top.
+  const listRef = useRef<FlatList<Title>>(null);
+  useEffect(() => {
+    const unsub = (navigation as any).addListener("tabPress", () => {
+      listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    });
+    return unsub;
+  }, [navigation]);
+
   function toggle(list: number[], id: number): number[] {
     return list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
   }
@@ -268,6 +277,7 @@ export default function AddScreen() {
         <Text style={styles.msg}>{searching ? t("add.noResults") : t("add.noFilterMatch")}</Text>
       ) : (
         <FlatList
+          ref={listRef}
           data={results}
           keyExtractor={(t) => `${t.mediaType}:${t.tmdbId}`}
           onEndReached={() => {
