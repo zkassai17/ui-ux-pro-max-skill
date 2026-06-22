@@ -98,7 +98,15 @@ export default function TogetherScreen() {
         );
       }}
       ListEmptyComponent={
-        friends.isLoading ? null : (
+        friends.isLoading ? null : friends.isError ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyEmoji}>📡</Text>
+            <Text style={styles.emptySub}>{t("add.errorHint")}</Text>
+            <Pressable style={styles.addBtn} onPress={onRefresh}>
+              <Text style={styles.addBtnText}>{t("add.tryAgain")}</Text>
+            </Pressable>
+          </View>
+        ) : (
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>🧬</Text>
             <Text style={styles.emptyText}>{t("profile.noFriends")}</Text>

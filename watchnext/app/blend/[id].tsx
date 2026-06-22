@@ -52,6 +52,14 @@ export default function BlendScreen() {
 
       {blend.isLoading || profile.isLoading ? (
         <ActivityIndicator style={{ marginTop: 40 }} />
+      ) : blend.isError ? (
+        <View style={styles.errBox}>
+          <Text style={styles.errEmoji}>📡</Text>
+          <Text style={styles.errText}>{t("add.errorHint")}</Text>
+          <Pressable style={styles.errBtn} onPress={() => blend.refetch()}>
+            <Text style={styles.errBtnText}>{t("add.tryAgain")}</Text>
+          </Pressable>
+        </View>
       ) : (
         <>
           {/* Shareable match card */}
@@ -121,6 +129,12 @@ export default function BlendScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
+
+  errBox: { alignItems: "center", marginTop: 48, paddingHorizontal: 24 },
+  errEmoji: { fontSize: 40, marginBottom: 12 },
+  errText: { color: "#888", fontSize: 14, textAlign: "center", lineHeight: 20 },
+  errBtn: { backgroundColor: "#5b6cff", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 16 },
+  errBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
 
   card: { borderRadius: 22, padding: 22, alignItems: "center" },
   cardEmoji: { fontSize: 34 },

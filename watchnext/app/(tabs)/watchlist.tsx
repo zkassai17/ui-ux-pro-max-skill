@@ -78,7 +78,7 @@ export default function LibraryScreen() {
   }
   const router = useRouter();
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
+  const { data, isLoading, isError } = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
 
   async function handleRate(entryId: string, rating: number | null) {
     const prev = qc.getQueryData<WatchlistEntry[]>(["library"]);
@@ -176,6 +176,14 @@ export default function LibraryScreen() {
 
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
+      ) : isError ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyEmoji}>📡</Text>
+          <Text style={styles.msg}>{t("add.errorHint")}</Text>
+          <Pressable style={styles.quickBtn} onPress={onRefresh}>
+            <Text style={styles.quickBtnText}>{t("add.tryAgain")}</Text>
+          </Pressable>
+        </View>
       ) : rows.length === 0 ? (
         q !== "" ? (
           <Text style={styles.msg}>{t("lib.noMatch")} "{query.trim()}".</Text>

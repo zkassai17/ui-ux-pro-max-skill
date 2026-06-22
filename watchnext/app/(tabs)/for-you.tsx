@@ -231,7 +231,7 @@ export default function HomeScreen() {
   const qc = useQueryClient();
   const router = useRouter();
   const { t } = useI18n();
-  const { data, isLoading } = useQuery({ queryKey: ["feed"], queryFn: getFeed });
+  const { data, isLoading, isError } = useQuery({ queryKey: ["feed"], queryFn: getFeed });
   const [refreshing, setRefreshing] = useState(false);
   const listRef = useRef<FlatList<FeedRow>>(null);
   const navigation = useNavigation();
@@ -290,6 +290,15 @@ export default function HomeScreen() {
         </View>
       }
       ListEmptyComponent={
+        isError ? (
+          <View style={styles.feedEmpty}>
+            <Text style={styles.feedEmptyEmoji}>📡</Text>
+            <Text style={styles.feedEmptyText}>{t("add.errorHint")}</Text>
+            <Pressable style={styles.feedEmptyBtn} onPress={onRefresh}>
+              <Text style={styles.feedEmptyBtnText}>{t("add.tryAgain")}</Text>
+            </Pressable>
+          </View>
+        ) : (
         <View style={styles.feedEmpty}>
           <Text style={styles.feedEmptyEmoji}>🍿</Text>
           <Text style={styles.feedEmptyText}>{t("home.noActivity")}</Text>
@@ -297,6 +306,7 @@ export default function HomeScreen() {
             <Text style={styles.feedEmptyBtnText}>{t("profile.addFriend")}</Text>
           </Pressable>
         </View>
+        )
       }
       renderItem={({ item: row }) => {
         const name = row.username ? `@${row.username}` : t("feed.aFriend");
