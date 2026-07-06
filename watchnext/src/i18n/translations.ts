@@ -61,6 +61,7 @@ const en: Dict = {
   "home.onYourList": "On your list",
   "home.greeting": "Hey",
   "home.topMatch": "Your top match",
+  "home.forYou": "For you",
   "profile.invite": "Add me / share my code",
   "profile.currentlyWatching": "Currently watching",
   "qr.title": "Add me",

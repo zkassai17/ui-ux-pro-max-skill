@@ -212,7 +212,9 @@ function FeedCardHeader({ username, verb, at }: { username: string | null; verb:
   );
 }
 
-function ForYouRail({ mediaType, heading, skipFirst }: { mediaType: MediaType; heading: string; skipFirst?: boolean }) {
+// One combined "For you" rail: movies and shows recommended for you, interleaved
+// (movie, show, movie, show…) so it's a single varied row instead of two.
+function ForYouRail({ heading }: { heading: string }) {
   const router = useRouter();
   const qc = useQueryClient();
   const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
@@ -243,24 +245,42 @@ function ForYouRail({ mediaType, heading, skipFirst }: { mediaType: MediaType; h
     .join("|");
   const w = recWeights.data;
   const weightKey = w ? `${w.content}-${w.collaborative}-${w.trending}` : "default";
+  const ready = !library.isLoading && !recWeights.isLoading;
 
-  const recs = useQuery({
-    queryKey: ["for-you", mediaType, libHash, weightKey],
-    enabled: !library.isLoading && !recWeights.isLoading,
+  const movieRecs = useQuery({
+    queryKey: ["for-you", "movie", libHash, weightKey],
+    enabled: ready,
     staleTime: 5 * 60 * 1000,
-    queryFn: () => getForYou(mediaType, entries, w),
+    queryFn: () => getForYou("movie", entries, w),
+  });
+  const tvRecs = useQuery({
+    queryKey: ["for-you", "tv", libHash, weightKey],
+    enabled: ready,
+    staleTime: 5 * 60 * 1000,
+    queryFn: () => getForYou("tv", entries, w),
   });
 
-  // Re-filter on every render so a title you just added (or hid) drops out
-  // instantly — before the query has a chance to refetch.
-  const hiddenSet = hidden.data ?? new Set<string>();
-  const all = (recs.data ?? []).filter(
-    (t) => !excludeKeys.has(titleKey(t)) && !hiddenSet.has(titleKey(t))
-  );
-  // Drop the first pick when it's already shown as the "Tonight's pick" hero.
-  const titles = skipFirst ? all.slice(1) : all;
+  // Interleave movies and shows so the row alternates instead of grouping.
+  const m = movieRecs.data ?? [];
+  const tv = tvRecs.data ?? [];
+  const merged: Title[] = [];
+  for (let i = 0; i < Math.max(m.length, tv.length); i++) {
+    if (m[i]) merged.push(m[i]);
+    if (tv[i]) merged.push(tv[i]);
+  }
 
-  if (recs.isLoading || library.isLoading) {
+  // Re-filter on every render so a title you just added (or hid) drops out
+  // instantly; dedupe defensively.
+  const hiddenSet = hidden.data ?? new Set<string>();
+  const seen = new Set<string>();
+  const titles = merged.filter((t) => {
+    const k = titleKey(t);
+    if (excludeKeys.has(k) || hiddenSet.has(k) || seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+
+  if ((movieRecs.isLoading || tvRecs.isLoading || library.isLoading) && titles.length === 0) {
     return (
       <View style={styles.rail}>
         <Text style={styles.sectionHeading}>{heading}</Text>
@@ -373,16 +393,11 @@ export default function HomeScreen() {
           <Text style={styles.greeting}>{greeting}</Text>
           <TonightHero mediaType={heroMedia} />
           <BlendTeaser />
-          <ForYouRail mediaType="movie" heading={t("home.moviesForYou")} skipFirst={heroMedia === "movie"} />
+          <ForYouRail heading={t("home.forYou")} />
           <Text style={styles.sectionHeading}>{t("home.activity")}</Text>
         </View>
       }
-      ListFooterComponent={
-        <View>
-          <ForYouRail mediaType="tv" heading={t("home.showsForYou")} skipFirst={heroMedia === "tv"} />
-          <TrendingRow />
-        </View>
-      }
+      ListFooterComponent={<TrendingRow />}
       ListEmptyComponent={
         isError ? (
           <View style={styles.feedEmpty}>
