@@ -6,12 +6,19 @@ import {
   normalizeGenres,
   normalizeWatchProviders,
   normalizeSuggestions,
+  releasedByParam,
 } from "../lib/tmdbNormalize";
 import { WATCH_REGION } from "../lib/providers";
 import { relaxQueries, rankByFuzzy } from "../lib/searchLogic";
 import type { Lang } from "../i18n/translations";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
+
+// Today as YYYY-MM-DD (device local) — used to keep recommendations to titles
+// that are actually out. Recomputed per call so it stays correct across midnight.
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 // TMDB locale for content (titles, overviews, genre names). Updated by the i18n
 // provider when the app language changes; defaults to English.
@@ -146,6 +153,8 @@ export async function discoverTitles(opts: {
   if (opts.providerIds?.length) params.set("with_watch_providers", opts.providerIds.join("|"));
   // Restrict to titles available on a subscription streaming service in the region.
   if (opts.streamingOnly) params.set("with_watch_monetization_types", "flatrate");
+  // Keep browse/recs to already-released titles (no unreleased sequels sneaking in).
+  params.set(...releasedByParam(opts.mediaType, todayIso()));
   const raw = await tmdbGet(`/discover/${opts.mediaType}?${params.toString()}`);
   return {
     results: normalizeDiscoverResults(raw, opts.mediaType),
@@ -172,6 +181,8 @@ export async function discoverSuggestions(opts: {
   if (opts.genreId) params.set("with_genres", String(opts.genreId));
   if (opts.originalLanguage) params.set("with_original_language", opts.originalLanguage);
   if (opts.minVotes) params.set("vote_count.gte", String(opts.minVotes));
+  // Only recommend titles already released — never an unreleased hyped sequel.
+  params.set(...releasedByParam(opts.mediaType, todayIso()));
   const raw = await tmdbGet(`/discover/${opts.mediaType}?${params.toString()}`);
   return normalizeSuggestions(raw, opts.mediaType);
 }

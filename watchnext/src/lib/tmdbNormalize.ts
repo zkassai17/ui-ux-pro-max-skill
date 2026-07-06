@@ -7,6 +7,15 @@ export function posterUrl(path: string | null, size = "w500"): string | null {
   return `${IMAGE_BASE}/${size}${path}`;
 }
 
+// TMDB discover param that limits results to titles already released on or before
+// `todayIso` (YYYY-MM-DD). Recommendations should only surface things you can
+// actually watch — never an unreleased, hyped sequel. Movies key off release_date,
+// TV off first_air_date (the show has started airing).
+export function releasedByParam(mediaType: MediaType, todayIso: string): [string, string] {
+  const key = mediaType === "movie" ? "release_date.lte" : "first_air_date.lte";
+  return [key, todayIso];
+}
+
 function yearFrom(date: string | null | undefined): string | null {
   if (!date) return null;
   const y = date.slice(0, 4);
