@@ -22,7 +22,9 @@ export default function RootLayout() {
       <I18nProvider>
         <AuthProvider>
           <ProProvider>
-            <Stack screenOptions={{ headerShown: false }} />
+            {/* headerBackButtonDisplayMode "minimal" = chevron only, so the back
+                button never leaks the internal "(tabs)" route-group name. */}
+            <Stack screenOptions={{ headerShown: false, headerBackButtonDisplayMode: "minimal" }} />
           </ProProvider>
         </AuthProvider>
       </I18nProvider>
