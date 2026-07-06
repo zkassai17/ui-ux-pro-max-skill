@@ -58,6 +58,7 @@ const en: Dict = {
   "pro.friendCapBody": "Free accounts can add up to 10 friends. Go Pro for unlimited.",
   "pro.insightsUpsell": "Unlock your full taste breakdown with Pro",
   "pro.maybeLater": "Maybe later",
+  "home.onYourList": "On your list",
   "settings.pro": "watchnext Pro",
   "settings.getPro": "Upgrade to Pro",
   "settings.proActive": "Pro is active",

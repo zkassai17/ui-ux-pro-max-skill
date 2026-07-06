@@ -11,6 +11,7 @@ import { getRecWeights } from "../../src/services/prefs";
 import { getFriends } from "../../src/services/friends";
 import { getTrending } from "../../src/services/tmdb";
 import { titleKey } from "../../src/lib/forYouLogic";
+import { pickTonight } from "../../src/lib/tonightPick";
 import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
 import { filterByLanguage } from "../../src/lib/recommendEngine";
 import { relativeTime } from "../../src/lib/relativeTime";
@@ -64,16 +65,33 @@ function TonightHero({ mediaType }: { mediaType: MediaType }) {
   });
 
   const hiddenSet = hidden.data ?? new Set<string>();
-  const hero = (recs.data ?? []).find((x) => !excludeKeys.has(titleKey(x)) && !hiddenSet.has(titleKey(x)));
+  // Session-only skips: dismissing a Want-list pick means "not tonight", NOT
+  // "never" — so it rotates without nuking a title you still want to watch.
+  const [skipped, setSkipped] = useState<Set<string>>(new Set());
+  const blocked = new Set<string>([...hiddenSet, ...skipped]);
+
+  // Prefer something you already WANT to watch; fall back to a recommendation.
+  const dayNumber = Math.floor(Date.now() / 86_400_000);
+  const wantPick = pickTonight(entries, blocked, dayNumber);
+  const recPick = (recs.data ?? []).find(
+    (x) => !excludeKeys.has(titleKey(x)) && !blocked.has(titleKey(x)),
+  );
+  const hero = wantPick ?? recPick ?? null;
+  const fromWant = wantPick != null;
   if (!hero) return null;
+
+  function dismiss() {
+    if (!hero) return;
+    const key = titleKey(hero);
+    setSkipped((prev) => new Set([...prev, key]));
+    // Only "not interested"-train the engine for recommendation picks. A Want-list
+    // pick you skip tonight should still stay in your list and your recs.
+    if (!fromWant) hide.mutate(hero);
+  }
+
   return (
     <View style={styles.hero}>
-      <Pressable
-        style={styles.heroClose}
-        hitSlop={8}
-        onPress={() => hide.mutate(hero)}
-        accessibilityLabel="Not interested"
-      >
+      <Pressable style={styles.heroClose} hitSlop={8} onPress={dismiss} accessibilityLabel="Not tonight">
         <Ionicons name="close" size={15} color="#fff" />
       </Pressable>
       <Pressable onPress={() => router.push(`/title/${hero.mediaType}/${hero.tmdbId}`)}>
@@ -85,6 +103,11 @@ function TonightHero({ mediaType }: { mediaType: MediaType }) {
             <Text style={styles.heroType}>
               {hero.mediaType === "movie" ? t("media.movie") : t("media.tv")}{hero.year ? ` · ${hero.year}` : ""}
             </Text>
+            {fromWant ? (
+              <View style={styles.heroTag}>
+                <Text style={styles.heroTagText}>🔖 {t("home.onYourList")}</Text>
+              </View>
+            ) : null}
           </View>
         </View>
       </Pressable>
@@ -417,6 +440,8 @@ const styles = StyleSheet.create({
   heroMeta: { flex: 1, minWidth: 0 },
   heroTitle: { fontSize: 18, fontWeight: "800" },
   heroType: { fontSize: 12, color: "#888", marginTop: 6 },
+  heroTag: { alignSelf: "flex-start", backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, marginTop: 10 },
+  heroTagText: { fontSize: 11, fontWeight: "800", color: "#5b6cff" },
 
   teaser: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#f6f6f8", borderRadius: 14, padding: 12, marginBottom: 14 },
   teaserAvatar: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
