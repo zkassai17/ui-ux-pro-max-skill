@@ -38,7 +38,7 @@ function TonightHero({ mediaType }: { mediaType: MediaType }) {
   const excludeKeys = new Set(entries.map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id })));
   const libHash = entries.map((e) => `${e.media_type}:${e.tmdb_id}:${e.status}:${e.rating ?? ""}`).join("|");
   const w = recWeights.data;
-  const weightKey = w ? `${w.content}-${w.collaborative}-${w.trending}` : "default";
+  const weightKey = w ? `${w.content}-${w.collaborative}-${w.trending}-${w.discovery}` : "default";
   const recs = useQuery({
     queryKey: ["for-you", mediaType, libHash, weightKey],
     enabled: !library.isLoading && !recWeights.isLoading,
@@ -214,7 +214,7 @@ function ForYouRail({ heading }: { heading: string }) {
     .map((e) => `${e.media_type}:${e.tmdb_id}:${e.status}:${e.rating ?? ""}`)
     .join("|");
   const w = recWeights.data;
-  const weightKey = w ? `${w.content}-${w.collaborative}-${w.trending}` : "default";
+  const weightKey = w ? `${w.content}-${w.collaborative}-${w.trending}-${w.discovery}` : "default";
   const ready = !library.isLoading && !recWeights.isLoading;
 
   const movieRecs = useQuery({

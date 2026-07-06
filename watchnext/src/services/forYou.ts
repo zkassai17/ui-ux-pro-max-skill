@@ -192,5 +192,7 @@ export async function getForYou(
     excludeKeys,
     dislike,
   });
-  return blendExploration(core, explore, { exploreSlots: EXPLORE_SLOTS, total: MAX });
+  // How many "stretch" picks to weave in is user-steerable (the Discovery dial).
+  const exploreSlots = Math.max(0, Math.min(Math.round(recWeights.discovery ?? EXPLORE_SLOTS), MAX));
+  return blendExploration(core, explore, { exploreSlots, total: MAX });
 }

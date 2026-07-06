@@ -35,6 +35,7 @@ const REC_DIMS: { key: RecDimension; note?: boolean }[] = [
   { key: "content" },
   { key: "collaborative", note: true },
   { key: "trending" },
+  { key: "discovery" },
 ];
 
 const TABS: WatchStatus[] = ["want", "watching", "watched"];
@@ -277,14 +278,22 @@ export default function SettingsScreen() {
           })}
         </View>
 
-        <Pressable style={styles.customToggle} onPress={() => setShowCustom((s) => !s)} hitSlop={6}>
-          <Text style={styles.customToggleText}>
-            {showCustom ? `${t("settings.hideTuning")} ▴` : `${t("settings.customize")} ▾`}
-            {matchPreset(weights) === null ? `  · ${t("settings.custom")}` : ""}
-          </Text>
-        </Pressable>
+        {/* Fine-tuning is a Pro feature; free users get the presets above. */}
+        {isPro ? (
+          <Pressable style={styles.customToggle} onPress={() => setShowCustom((s) => !s)} hitSlop={6}>
+            <Text style={styles.customToggleText}>
+              {showCustom ? `${t("settings.hideTuning")} ▴` : `✦ ${t("settings.customize")} ▾`}
+              {matchPreset(weights) === null ? `  · ${t("settings.custom")}` : ""}
+            </Text>
+          </Pressable>
+        ) : (
+          <Pressable style={styles.proTuneRow} onPress={() => router.push("/paywall")}>
+            <Text style={styles.proTuneText}>✦ {t("settings.fineTunePro")}</Text>
+            <Text style={styles.chevron}>›</Text>
+          </Pressable>
+        )}
 
-        {showCustom ? (
+        {isPro && showCustom ? (
           <View style={styles.customWrap}>
             {REC_DIMS.map((dim) => {
               const idx = levelIndex(dim.key, weights[dim.key]);
@@ -294,6 +303,7 @@ export default function SettingsScreen() {
                     <Text style={styles.dimLabel}>{t(`recdim.${dim.key}`)}</Text>
                     {dim.note ? <Text style={styles.dimNote}>{t("recdim.friendsNote")}</Text> : null}
                   </View>
+                  <Text style={styles.dimDesc}>{t(`recdim.${dim.key}.desc`)}</Text>
                   <View style={styles.levelSeg}>
                     {LEVEL_LABELS.map((_, i) => {
                       const on = idx === i;
@@ -468,6 +478,9 @@ const styles = StyleSheet.create({
   dimLabelWrap: { flexDirection: "row", alignItems: "baseline", gap: 8 },
   dimLabel: { fontSize: 13, fontWeight: "700", color: "#333" },
   dimNote: { fontSize: 10, color: "#aaa" },
+  dimDesc: { fontSize: 11, color: "#999", lineHeight: 15 },
+  proTuneRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#eef0ff", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, marginTop: 14 },
+  proTuneText: { fontSize: 13, fontWeight: "800", color: "#5b6cff" },
   levelSeg: { flexDirection: "row", backgroundColor: "#e9e9ef", borderRadius: 999, padding: 3 },
   level: { flex: 1, paddingVertical: 6, borderRadius: 999, alignItems: "center" },
   levelOn: { backgroundColor: "#5b6cff" },

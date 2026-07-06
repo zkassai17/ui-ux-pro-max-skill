@@ -46,7 +46,9 @@ export async function getRecWeights(): Promise<RecWeights> {
         typeof w?.collaborative === "number" &&
         typeof w?.trending === "number"
       ) {
-        return w;
+        // Merge over defaults so prefs saved before a new dimension existed
+        // (e.g. `discovery`) still get a sensible value instead of undefined.
+        return { ...DEFAULT_REC_WEIGHTS, ...w };
       }
     }
   } catch {

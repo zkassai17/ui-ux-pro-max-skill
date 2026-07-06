@@ -21,10 +21,27 @@ describe("matchPreset", () => {
   });
 
   it("returns null for custom weights", () => {
-    expect(matchPreset({ content: 0.9, collaborative: 0.3, trending: 0.7 })).toBeNull();
+    expect(matchPreset({ content: 0.9, collaborative: 0.3, trending: 0.7, discovery: 3 })).toBeNull();
   });
 
   it("default weights match the Balanced preset", () => {
     expect(matchPreset(DEFAULT_REC_WEIGHTS)).toBe("balanced");
+  });
+
+  it("distinguishes presets that differ only by discovery", () => {
+    const base = { content: 1.0, collaborative: 1.2, trending: 0.2, discovery: 2 };
+    expect(matchPreset(base)).toBe("balanced");
+    expect(matchPreset({ ...base, discovery: 4 })).toBeNull(); // no preset with these + high discovery
+  });
+});
+
+describe("discovery dimension", () => {
+  it("maps discovery weights to levels", () => {
+    expect(levelIndex("discovery", 0)).toBe(0);
+    expect(levelIndex("discovery", 4)).toBe(3);
+  });
+  it("has an Adventurous preset with max discovery", () => {
+    const adv = REC_PRESETS.find((p) => p.key === "adventurous");
+    expect(adv?.weights.discovery).toBe(4);
   });
 });
