@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, Pressable, ScrollView, StyleSheet, RefreshControl } from "react-native";
+import { View, Text, Pressable, ScrollView, StyleSheet, RefreshControl, Share } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -32,7 +32,20 @@ export default function ProfileScreen() {
 
   const lib = library.data ?? [];
   const favorites = selectFavorites(lib, 12);
+  const watching = lib.filter((e) => e.status === "watching");
   const decade = topDecade(lib);
+
+  async function shareProfile() {
+    const codeVal = profile?.friend_code;
+    const message = codeVal
+      ? t("profile.shareText").replace("{code}", codeVal)
+      : t("profile.shareTextNoCode");
+    try {
+      await Share.share({ message });
+    } catch {
+      // user dismissed the share sheet — nothing to do
+    }
+  }
   const libHash = lib.map((e) => `${e.media_type}:${e.tmdb_id}`).join(",");
   const topGenreQuery = useQuery({
     queryKey: ["profile-top-genre", libHash],
@@ -72,10 +85,18 @@ export default function ProfileScreen() {
             <Text style={styles.username} numberOfLines={1}>@{profile?.username ?? "you"}</Text>
           )}
         </View>
+        <Pressable onPress={shareProfile} hitSlop={10} style={styles.gear}>
+          <Ionicons name="share-outline" size={23} color="#5b6cff" />
+        </Pressable>
         <Pressable onPress={() => router.push("/settings")} hitSlop={10} style={styles.gear}>
           <Ionicons name="settings-outline" size={24} color="#666" />
         </Pressable>
       </View>
+
+      <Pressable style={styles.shareBtn} onPress={shareProfile}>
+        <Ionicons name="person-add-outline" size={16} color="#5b6cff" />
+        <Text style={styles.shareBtnText}>{t("profile.invite")}</Text>
+      </Pressable>
 
       {profile && !fullName(profile) ? (
         <Pressable style={styles.nameBanner} onPress={() => router.push("/settings")}>
@@ -99,6 +120,19 @@ export default function ProfileScreen() {
           <Text style={styles.proUpsellText}>✦ {t("pro.insightsUpsell")}</Text>
           <Text style={styles.proUpsellArrow}>›</Text>
         </Pressable>
+      ) : null}
+
+      {watching.length > 0 ? (
+        <View style={styles.favSection}>
+          <Text style={styles.section}>{t("profile.currentlyWatching")}</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.favRow}>
+            {watching.map((e) => (
+              <Pressable key={e.id} onPress={() => router.push(`/title/${e.media_type}/${e.tmdb_id}`)}>
+                <PosterImage path={e.poster_path} width={80} height={120} radius={10} />
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
       ) : null}
 
       {favorites.length > 0 ? (
@@ -150,6 +184,9 @@ const styles = StyleSheet.create({
   username: { fontSize: 22, fontWeight: "700" },
   name: { fontSize: 22, fontWeight: "800" },
   usernameSub: { fontSize: 14, color: "#888", fontWeight: "600", marginTop: 1 },
+
+  shareBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "#eef0ff", borderRadius: 12, paddingVertical: 12, marginTop: 16 },
+  shareBtnText: { fontSize: 14, fontWeight: "800", color: "#5b6cff" },
 
   nameBanner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#eef0ff", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, marginTop: 16 },
   nameBannerText: { flex: 1, fontSize: 13, fontWeight: "600", color: "#3a45c4" },
