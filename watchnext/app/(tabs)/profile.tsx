@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../src/auth/AuthProvider";
 import { useI18n } from "../../src/i18n/I18nProvider";
+import { usePro } from "../../src/pro/ProProvider";
 import { getFriendStats, type StatBucket } from "../../src/services/friends";
 import { fullName } from "../../src/types/db";
 import { getLibrary } from "../../src/services/watchlist";
@@ -16,6 +17,7 @@ import { PosterImage } from "../../src/components/PosterImage";
 export default function ProfileScreen() {
   const { profile, session } = useAuth();
   const { t } = useI18n();
+  const { isPro } = usePro();
   const router = useRouter();
   const qc = useQueryClient();
   const uid = session?.user.id;
@@ -92,6 +94,13 @@ export default function ProfileScreen() {
         <InsightTile big={decade ?? "—"} label={t("profile.topDecade")} />
       </View>
 
+      {!isPro ? (
+        <Pressable style={styles.proUpsell} onPress={() => router.push("/paywall")}>
+          <Text style={styles.proUpsellText}>✦ {t("pro.insightsUpsell")}</Text>
+          <Text style={styles.proUpsellArrow}>›</Text>
+        </Pressable>
+      ) : null}
+
       {favorites.length > 0 ? (
         <View style={styles.favSection}>
           <Text style={styles.section}>{t("profile.favorites")}</Text>
@@ -153,6 +162,9 @@ const styles = StyleSheet.create({
   breakdownSub: { fontSize: 11, color: "#888", marginTop: -2 },
   breakdownMeta: { fontSize: 11, color: "#aaa", marginTop: 6 },
 
+  proUpsell: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#f3f4ff", borderRadius: 14, paddingVertical: 13, paddingHorizontal: 16, marginTop: 10 },
+  proUpsellText: { fontSize: 13, fontWeight: "800", color: "#5b6cff", flex: 1 },
+  proUpsellArrow: { fontSize: 18, color: "#5b6cff", fontWeight: "700" },
   insightRow: { flexDirection: "row", gap: 10, marginTop: 10 },
   insightTile: { flex: 1, backgroundColor: "#eef0ff", borderRadius: 14, paddingVertical: 14, paddingHorizontal: 6, alignItems: "center" },
   insightBig: { fontSize: 18, fontWeight: "800", color: "#3a45c4" },

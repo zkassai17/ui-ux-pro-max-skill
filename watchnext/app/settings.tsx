@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator, Linking } from "react-native";
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator, Linking, Switch } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import Constants from "expo-constants";
 import * as Clipboard from "expo-clipboard";
@@ -26,6 +26,7 @@ import {
   type RecWeights,
 } from "../src/lib/recPrefs";
 import { useI18n } from "../src/i18n/I18nProvider";
+import { usePro } from "../src/pro/ProProvider";
 import { LANGUAGES, translate, type Lang } from "../src/i18n/translations";
 import { fullName, type WatchStatus } from "../src/types/db";
 
@@ -40,6 +41,7 @@ const TABS: WatchStatus[] = ["want", "watching", "watched"];
 export default function SettingsScreen() {
   const { profile, session, refreshProfile, signOut } = useAuth();
   const { t, lang, setLang } = useI18n();
+  const { isPro, setPro } = usePro();
   const qc = useQueryClient();
   const router = useRouter();
 
@@ -314,6 +316,25 @@ export default function SettingsScreen() {
         {exportCsv.isPending ? <ActivityIndicator size="small" /> : <Text style={styles.chevron}>›</Text>}
       </Pressable>
 
+      {/* watchnext Pro */}
+      <Text style={styles.section}>{t("settings.pro")}</Text>
+      {isPro ? (
+        <View style={styles.proActive}>
+          <Text style={styles.proActiveText}>✦ {t("settings.proActive")}</Text>
+        </View>
+      ) : (
+        <Pressable style={styles.proRow} onPress={() => router.push("/paywall")}>
+          <Text style={styles.proRowText}>✦ {t("settings.getPro")}</Text>
+          <Text style={styles.chevron}>›</Text>
+        </Pressable>
+      )}
+      {__DEV__ ? (
+        <View style={[styles.card, styles.devRow]}>
+          <Text style={styles.devLabel}>{t("settings.devPro")}</Text>
+          <Switch value={isPro} onValueChange={(v) => setPro(v)} />
+        </View>
+      ) : null}
+
       {/* About */}
       <Text style={styles.section}>{t("settings.about")}</Text>
       <View style={styles.card}>
@@ -378,6 +399,12 @@ const styles = StyleSheet.create({
   rowBtn: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#f6f6f8", borderRadius: 14, padding: 16 },
   rowBtnText: { fontSize: 15, fontWeight: "600", color: "#5b6cff" },
   chevron: { fontSize: 20, color: "#bbb" },
+  proRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#f3f4ff", borderRadius: 14, padding: 16 },
+  proRowText: { fontSize: 15, fontWeight: "800", color: "#5b6cff" },
+  proActive: { backgroundColor: "#f3f4ff", borderRadius: 14, padding: 16 },
+  proActiveText: { fontSize: 15, fontWeight: "800", color: "#5b6cff" },
+  devRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 },
+  devLabel: { fontSize: 13, fontWeight: "700", color: "#999" },
   segment: { flexDirection: "row", backgroundColor: "#e9e9ef", borderRadius: 999, padding: 3, marginTop: 8 },
   seg: { flex: 1, paddingVertical: 8, borderRadius: 999, alignItems: "center" },
   segOn: { backgroundColor: "#5b6cff" },

@@ -8,11 +8,14 @@ import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
 import { initials, avatarColor, matchColor } from "../../src/lib/avatar";
 import { fullName } from "../../src/types/db";
 import { useI18n } from "../../src/i18n/I18nProvider";
+import { usePro } from "../../src/pro/ProProvider";
+import { isBlendLocked, canAddFriend } from "../../src/lib/proGates";
 
 export default function TogetherScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const { t } = useI18n();
+  const { isPro } = usePro();
   const [refreshing, setRefreshing] = useState(false);
   const [q, setQ] = useState("");
 
@@ -45,6 +48,18 @@ export default function TogetherScreen() {
     ? ranked.filter((f) => `${f.username} ${fullName(f)}`.toLowerCase().includes(fq))
     : ranked;
   const requestCount = requests.data?.length ?? 0;
+
+  // Blend gating: free users unlock their top-N best matches; the rest are locked.
+  // Locking is by true match-rank (position in `ranked`), not filtered position.
+  const lockedIds = new Set(
+    ranked.filter((_, i) => isBlendLocked(isPro, i)).map((f) => f.id)
+  );
+  const atFriendCap = !canAddFriend(isPro, allFriends.length);
+
+  function openBlend(id: string) {
+    if (lockedIds.has(id)) router.push("/paywall");
+    else router.push(`/blend/${id}`);
+  }
 
   async function onRefresh() {
     setRefreshing(true);
@@ -81,7 +96,10 @@ export default function TogetherScreen() {
             <Text style={styles.groupSub}>{t("home.whatToWatchSub")}</Text>
           </Pressable>
 
-          <Pressable style={styles.addFriendBtn} onPress={() => router.push("/friends/add")}>
+          <Pressable
+            style={styles.addFriendBtn}
+            onPress={() => router.push(atFriendCap ? "/paywall" : "/friends/add")}
+          >
             <Text style={styles.addFriendBtnText}>＋ {t("profile.addFriend")}</Text>
           </Pressable>
 
@@ -106,8 +124,9 @@ export default function TogetherScreen() {
       }
       renderItem={({ item }) => {
         const score = compat.data?.[item.id];
+        const locked = lockedIds.has(item.id);
         return (
-          <Pressable style={styles.row} onPress={() => router.push(`/blend/${item.id}`)}>
+          <Pressable style={styles.row} onPress={() => openBlend(item.id)}>
             <View style={[styles.avatar, { backgroundColor: avatarColor(item.username) }]}>
               <Text style={styles.avatarText}>{initials(item.username)}</Text>
             </View>
@@ -129,7 +148,7 @@ export default function TogetherScreen() {
             ) : compat.data ? (
               <Text style={styles.newMatch}>{t("wt.newMatch")}</Text>
             ) : null}
-            <Text style={styles.chevron}>›</Text>
+            {locked ? <Text style={styles.lock}>🔒</Text> : <Text style={styles.chevron}>›</Text>}
           </Pressable>
         );
       }}
@@ -192,6 +211,7 @@ const styles = StyleSheet.create({
   matchLabel: { fontSize: 10, color: "#aaa", fontWeight: "600", marginTop: -2 },
   newMatch: { fontSize: 12, color: "#bbb", fontWeight: "600" },
   chevron: { fontSize: 22, color: "#ccc", marginLeft: 4 },
+  lock: { fontSize: 15, marginLeft: 4 },
 
   empty: { alignItems: "center", marginTop: 32, paddingHorizontal: 24 },
   emptyEmoji: { fontSize: 40, marginBottom: 10 },

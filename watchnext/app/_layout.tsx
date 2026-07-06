@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "../src/auth/AuthProvider";
 import { I18nProvider } from "../src/i18n/I18nProvider";
+import { ProProvider } from "../src/pro/ProProvider";
 
 // Mobile networks drop requests transiently (a momentary dead zone surfaces as
 // "TypeError: Network request failed"). Retry a few times with backoff so a brief
@@ -20,7 +21,9 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
         <AuthProvider>
-          <Stack screenOptions={{ headerShown: false }} />
+          <ProProvider>
+            <Stack screenOptions={{ headerShown: false }} />
+          </ProProvider>
         </AuthProvider>
       </I18nProvider>
     </QueryClientProvider>
