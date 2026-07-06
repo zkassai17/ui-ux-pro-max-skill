@@ -1,4 +1,13 @@
-import { selectFavorites, topDecade, topGenre } from "../src/lib/profileInsights";
+import {
+  selectFavorites,
+  topDecade,
+  topGenre,
+  genreBreakdown,
+  decadeBreakdown,
+  ratingBreakdown,
+  watchedTotals,
+  yearInReview,
+} from "../src/lib/profileInsights";
 import type { WatchlistEntry } from "../src/types/db";
 
 function e(over: Partial<WatchlistEntry>): WatchlistEntry {
@@ -71,5 +80,85 @@ describe("topGenre", () => {
   it("is null for no genres", () => {
     expect(topGenre([])).toBeNull();
     expect(topGenre([[], []])).toBeNull();
+  });
+});
+
+describe("genreBreakdown", () => {
+  it("ranks genres by frequency, capped at max", () => {
+    const lists = [["Comedy", "Action"], ["Comedy"], ["Drama"], ["Comedy", "Action"]];
+    expect(genreBreakdown(lists, 2)).toEqual([
+      { name: "Comedy", count: 3 },
+      { name: "Action", count: 2 },
+    ]);
+  });
+  it("is empty for no genres", () => {
+    expect(genreBreakdown([])).toEqual([]);
+  });
+});
+
+describe("decadeBreakdown", () => {
+  it("ranks decades from watched years", () => {
+    const lib = [
+      e({ tmdb_id: 1, year: "2015" }),
+      e({ tmdb_id: 2, year: "2011" }),
+      e({ tmdb_id: 3, year: "1999" }),
+    ];
+    expect(decadeBreakdown(lib)).toEqual([
+      { decade: "2010s", count: 2 },
+      { decade: "1990s", count: 1 },
+    ]);
+  });
+  it("ignores unwatched and yearless titles", () => {
+    const lib = [
+      e({ tmdb_id: 1, year: "2015", status: "want" }),
+      e({ tmdb_id: 2, year: null }),
+    ];
+    expect(decadeBreakdown(lib)).toEqual([]);
+  });
+});
+
+describe("ratingBreakdown", () => {
+  it("counts each rating 5→1, zero-filled", () => {
+    const lib = [
+      e({ tmdb_id: 1, rating: 5 }),
+      e({ tmdb_id: 2, rating: 5 }),
+      e({ tmdb_id: 3, rating: 3 }),
+    ];
+    expect(ratingBreakdown(lib)).toEqual([
+      { rating: 5, count: 2 },
+      { rating: 4, count: 0 },
+      { rating: 3, count: 1 },
+      { rating: 2, count: 0 },
+      { rating: 1, count: 0 },
+    ]);
+  });
+});
+
+describe("watchedTotals", () => {
+  it("counts watched movies and shows", () => {
+    const lib = [
+      e({ tmdb_id: 1, media_type: "movie" }),
+      e({ tmdb_id: 2, media_type: "tv" }),
+      e({ tmdb_id: 3, media_type: "movie", status: "want" }),
+    ];
+    expect(watchedTotals(lib)).toEqual({ movies: 1, tv: 1, total: 2 });
+  });
+});
+
+describe("yearInReview", () => {
+  it("counts titles logged in the given year with top pick", () => {
+    const lib = [
+      e({ tmdb_id: 1, added_at: "2026-03-01T00:00:00Z", media_type: "movie", rating: 4 }),
+      e({ tmdb_id: 2, added_at: "2026-06-01T00:00:00Z", media_type: "tv", rating: 5 }),
+      e({ tmdb_id: 3, added_at: "2025-06-01T00:00:00Z", media_type: "movie", rating: 5 }),
+    ];
+    const r = yearInReview(lib, 2026);
+    expect(r.count).toBe(2);
+    expect(r.movies).toBe(1);
+    expect(r.tv).toBe(1);
+    expect(r.top?.tmdb_id).toBe(2);
+  });
+  it("is empty for a year with nothing", () => {
+    expect(yearInReview([], 2026)).toEqual({ count: 0, movies: 0, tv: 0, top: null });
   });
 });

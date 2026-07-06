@@ -118,7 +118,18 @@ export default function ProfileScreen() {
           <Text style={styles.proUpsellText}>✦ {t("pro.insightsUpsell")}</Text>
           <Text style={styles.proUpsellArrow}>›</Text>
         </Pressable>
-      ) : null}
+      ) : (
+        <View style={styles.proEntries}>
+          <Pressable style={styles.proEntry} onPress={() => router.push("/insights")}>
+            <Text style={styles.proEntryText}>✦ {t("insights.title")}</Text>
+            <Text style={styles.proUpsellArrow}>›</Text>
+          </Pressable>
+          <Pressable style={styles.proEntry} onPress={() => router.push("/year-in-watch")}>
+            <Text style={styles.proEntryText}>🎞️ {t("recap.title")}</Text>
+            <Text style={styles.proUpsellArrow}>›</Text>
+          </Pressable>
+        </View>
+      )}
 
       {watching.length > 0 ? (
         <View style={styles.favSection}>
@@ -197,6 +208,9 @@ const styles = StyleSheet.create({
   proUpsell: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#f3f4ff", borderRadius: 14, paddingVertical: 13, paddingHorizontal: 16, marginTop: 10 },
   proUpsellText: { fontSize: 13, fontWeight: "800", color: "#5b6cff", flex: 1 },
   proUpsellArrow: { fontSize: 18, color: "#5b6cff", fontWeight: "700" },
+  proEntries: { gap: 10, marginTop: 10 },
+  proEntry: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#f3f4ff", borderRadius: 14, paddingVertical: 13, paddingHorizontal: 16 },
+  proEntryText: { fontSize: 14, fontWeight: "800", color: "#5b6cff", flex: 1 },
   insightRow: { flexDirection: "row", gap: 10, marginTop: 10 },
   insightTile: { flex: 1, backgroundColor: "#eef0ff", borderRadius: 14, paddingVertical: 14, paddingHorizontal: 6, alignItems: "center" },
   insightBig: { fontSize: 18, fontWeight: "800", color: "#3a45c4" },
