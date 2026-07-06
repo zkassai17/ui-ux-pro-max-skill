@@ -85,6 +85,9 @@ export default function ProfileScreen() {
             <Text style={styles.username} numberOfLines={1}>@{profile?.username ?? "you"}</Text>
           )}
         </View>
+        <Pressable onPress={() => router.push("/qr")} hitSlop={10} style={styles.gear}>
+          <Ionicons name="qr-code-outline" size={23} color="#5b6cff" />
+        </Pressable>
         <Pressable onPress={shareProfile} hitSlop={10} style={styles.gear}>
           <Ionicons name="share-outline" size={23} color="#5b6cff" />
         </Pressable>
@@ -92,11 +95,6 @@ export default function ProfileScreen() {
           <Ionicons name="settings-outline" size={24} color="#666" />
         </Pressable>
       </View>
-
-      <Pressable style={styles.shareBtn} onPress={shareProfile}>
-        <Ionicons name="person-add-outline" size={16} color="#5b6cff" />
-        <Text style={styles.shareBtnText}>{t("profile.invite")}</Text>
-      </Pressable>
 
       {profile && !fullName(profile) ? (
         <Pressable style={styles.nameBanner} onPress={() => router.push("/settings")}>
@@ -184,9 +182,6 @@ const styles = StyleSheet.create({
   username: { fontSize: 22, fontWeight: "700" },
   name: { fontSize: 22, fontWeight: "800" },
   usernameSub: { fontSize: 14, color: "#888", fontWeight: "600", marginTop: 1 },
-
-  shareBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "#eef0ff", borderRadius: 12, paddingVertical: 12, marginTop: 16 },
-  shareBtnText: { fontSize: 14, fontWeight: "800", color: "#5b6cff" },
 
   nameBanner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#eef0ff", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, marginTop: 16 },
   nameBannerText: { flex: 1, fontSize: 13, fontWeight: "600", color: "#3a45c4" },

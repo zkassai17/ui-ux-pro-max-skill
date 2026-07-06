@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, TextInput, Pressable, FlatList, StyleSheet, Alert, ActivityIndicator } from "react-native";
-import { Stack } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { searchUsers, lookupByFriendCode, sendFriendRequest } from "../../src/services/friends";
 import { isValidFriendCode } from "../../src/lib/friendCode";
 import { fullName, type Profile } from "../../src/types/db";
@@ -10,13 +10,25 @@ type Found = { id: string; username: string; name: string };
 
 export default function AddFriendScreen() {
   const { t } = useI18n();
+  const params = useLocalSearchParams<{ code?: string }>();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<Found[]>([]);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<Record<string, boolean>>({});
 
-  async function runSearch() {
-    const value = q.trim();
+  // Arrived via a scanned QR / deep link (watchnext://friends/add?code=XXXX):
+  // prefill the code and look them up automatically.
+  useEffect(() => {
+    const code = typeof params.code === "string" ? params.code.trim() : "";
+    if (code) {
+      setQ(code);
+      runSearch(code);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.code]);
+
+  async function runSearch(override?: string) {
+    const value = (override ?? q).trim();
     if (!value) return;
     try {
       setBusy(true);
@@ -53,10 +65,10 @@ export default function AddFriendScreen() {
         onChangeText={setQ}
         autoCapitalize="none"
         autoCorrect={false}
-        onSubmitEditing={runSearch}
+        onSubmitEditing={() => runSearch()}
         returnKeyType="search"
       />
-      <Pressable style={styles.btn} onPress={runSearch}>
+      <Pressable style={styles.btn} onPress={() => runSearch()}>
         <Text style={styles.btnText}>{t("common.search")}</Text>
       </Pressable>
 
