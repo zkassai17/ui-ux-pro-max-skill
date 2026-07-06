@@ -95,8 +95,12 @@ export default function AddScreen() {
   const genreKey = [...genreIds].sort((a, b) => a - b).join(",");
   const providerKey = [...providerIds].sort((a, b) => a - b).join(",");
   const discover = useInfiniteQuery({
+    // Browse the most-rated (recognizable, all-era) titles rather than this week's
+    // buzz — so the opening view is familiar (Inception, Breaking Bad), not a wall
+    // of brand-new releases. Trending stays available as its own chip.
     queryKey: ["tmdb-discover", mediaType, genreKey, providerKey],
-    queryFn: ({ pageParam }) => discoverTitles({ mediaType, genreIds, providerIds, page: pageParam }),
+    queryFn: ({ pageParam }) =>
+      discoverTitles({ mediaType, genreIds, providerIds, sortBy: "vote_count.desc", minVotes: 300, page: pageParam }),
     enabled: showingDiscover,
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page < last.totalPages ? last.page + 1 : undefined),

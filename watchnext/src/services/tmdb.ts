@@ -140,6 +140,7 @@ export async function discoverTitles(opts: {
   providerIds?: number[];
   sortBy?: string;
   streamingOnly?: boolean;
+  minVotes?: number; // popularity floor — drop obscure titles below this vote count
   page?: number;
 }): Promise<DiscoverPage> {
   const params = new URLSearchParams({
@@ -151,6 +152,7 @@ export async function discoverTitles(opts: {
   // "|" = OR: titles in ANY selected genre, available on ANY selected provider.
   if (opts.genreIds?.length) params.set("with_genres", opts.genreIds.join("|"));
   if (opts.providerIds?.length) params.set("with_watch_providers", opts.providerIds.join("|"));
+  if (opts.minVotes) params.set("vote_count.gte", String(opts.minVotes));
   // Restrict to titles available on a subscription streaming service in the region.
   if (opts.streamingOnly) params.set("with_watch_monetization_types", "flatrate");
   // Keep browse/recs to already-released titles (no unreleased sequels sneaking in).
