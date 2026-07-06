@@ -10,11 +10,9 @@ import { getForYou } from "../../src/services/forYou";
 import { getHiddenKeys, hideRec } from "../../src/services/hiddenRecs";
 import { getRecWeights } from "../../src/services/prefs";
 import { getFriends } from "../../src/services/friends";
-import { getTrending } from "../../src/services/tmdb";
 import { titleKey } from "../../src/lib/forYouLogic";
 import { pickTonight } from "../../src/lib/tonightPick";
 import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
-import { filterByLanguage } from "../../src/lib/recommendEngine";
 import { relativeTime } from "../../src/lib/relativeTime";
 import { initials, avatarColor, matchColor } from "../../src/lib/avatar";
 import { getReactions } from "../../src/services/reactions";
@@ -156,34 +154,6 @@ function BlendTeaser() {
       <Text style={[styles.teaserPct, { color: matchColor(best.score) }]}>{best.score}%</Text>
       <Text style={styles.teaserChevron}>›</Text>
     </Pressable>
-  );
-}
-
-// --- Trending this week: discovery beyond your taste ---
-function TrendingRow() {
-  const router = useRouter();
-  const { t, lang } = useI18n();
-  const trending = useQuery({ queryKey: ["home-trending"], queryFn: getTrending, staleTime: 30 * 60 * 1000 });
-  // Same language scope as the Add browse — no random foreign-language titles.
-  const allowed = new Set<string>(["en", lang]);
-  const titles = filterByLanguage(trending.data ?? [], allowed).slice(0, 15);
-  if (titles.length === 0) return null;
-  return (
-    <View style={styles.rail}>
-      <Text style={styles.sectionHeading}>🔥 {t("home.trending")}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.railRow}>
-        {titles.map((tt) => (
-          <Pressable
-            key={`${tt.mediaType}:${tt.tmdbId}`}
-            style={styles.suggestion}
-            onPress={() => router.push(`/title/${tt.mediaType}/${tt.tmdbId}`)}
-          >
-            <PosterImage path={tt.posterPath} width={104} height={156} radius={10} />
-            <Text style={styles.suggestionTitle} numberOfLines={2}>{tt.title}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-    </View>
   );
 }
 
@@ -367,7 +337,6 @@ export default function HomeScreen() {
       qc.invalidateQueries({ queryKey: ["feed"] }),
       qc.invalidateQueries({ queryKey: ["library"] }),
       qc.invalidateQueries({ queryKey: ["for-you"] }),
-      qc.invalidateQueries({ queryKey: ["home-trending"] }),
       qc.invalidateQueries({ queryKey: ["together-compat"] }),
       qc.invalidateQueries({ queryKey: ["reactions"] }),
       qc.invalidateQueries({ queryKey: ["incoming-requests"] }),
@@ -397,7 +366,6 @@ export default function HomeScreen() {
           <Text style={styles.sectionHeading}>{t("home.activity")}</Text>
         </View>
       }
-      ListFooterComponent={<TrendingRow />}
       ListEmptyComponent={
         isError ? (
           <View style={styles.feedEmpty}>
