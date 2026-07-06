@@ -3,6 +3,7 @@ import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator, ScrollV
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../../src/auth/AuthProvider";
 import { getFeed, type FeedRow } from "../../src/services/feed";
 import { getLibrary } from "../../src/services/watchlist";
 import { getForYou } from "../../src/services/forYou";
@@ -150,7 +151,7 @@ function BlendTeaser() {
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={styles.teaserName} numberOfLines={1}>🧬 {best.name}</Text>
-        <Text style={styles.teaserSub}>{t("together.yourBlends")}</Text>
+        <Text style={styles.teaserSub}>{t("home.topMatch")}</Text>
       </View>
       <Text style={[styles.teaserPct, { color: matchColor(best.score) }]}>{best.score}%</Text>
       <Text style={styles.teaserChevron}>›</Text>
@@ -308,6 +309,9 @@ export default function HomeScreen() {
   const qc = useQueryClient();
   const router = useRouter();
   const { t } = useI18n();
+  const { profile } = useAuth();
+  const greetName = profile?.first_name?.trim() || profile?.username || "";
+  const greeting = greetName ? `${t("home.greeting")} ${greetName} 👋` : `${t("home.greeting")} 👋`;
   const { data, isLoading, isError } = useQuery({ queryKey: ["feed"], queryFn: getFeed });
   // Spotlight a pick from whichever you watch more of (movies vs shows), so the
   // hero can be a TV show too — and the matching rail skips it to avoid a dup.
@@ -366,12 +370,17 @@ export default function HomeScreen() {
       keyExtractor={(r) => r.item.id}
       ListHeaderComponent={
         <View>
+          <Text style={styles.greeting}>{greeting}</Text>
           <TonightHero mediaType={heroMedia} />
           <BlendTeaser />
           <ForYouRail mediaType="movie" heading={t("home.moviesForYou")} skipFirst={heroMedia === "movie"} />
+          <Text style={styles.sectionHeading}>{t("home.activity")}</Text>
+        </View>
+      }
+      ListFooterComponent={
+        <View>
           <ForYouRail mediaType="tv" heading={t("home.showsForYou")} skipFirst={heroMedia === "tv"} />
           <TrendingRow />
-          <Text style={styles.sectionHeading}>{t("home.activity")}</Text>
         </View>
       }
       ListEmptyComponent={
@@ -452,6 +461,7 @@ const styles = StyleSheet.create({
   teaserChevron: { fontSize: 22, color: "#ccc" },
 
   rail: { marginBottom: 8 },
+  greeting: { fontSize: 22, fontWeight: "800", color: "#111", marginBottom: 14 },
   sectionHeading: { fontSize: 13, fontWeight: "700", color: "#888", marginBottom: 10 },
   railRow: { gap: 12, paddingBottom: 4, paddingRight: 8 },
   suggestion: { width: 104 },

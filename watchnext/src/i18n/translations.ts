@@ -59,6 +59,8 @@ const en: Dict = {
   "pro.insightsUpsell": "Unlock your full taste breakdown with Pro",
   "pro.maybeLater": "Maybe later",
   "home.onYourList": "On your list",
+  "home.greeting": "Hey",
+  "home.topMatch": "Your top match",
   "profile.invite": "Add me / share my code",
   "profile.currentlyWatching": "Currently watching",
   "qr.title": "Add me",
