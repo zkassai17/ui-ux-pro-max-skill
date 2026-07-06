@@ -85,12 +85,12 @@ export default function LibraryScreen() {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <Pressable onPress={() => router.push("/quick-seen")} hitSlop={10} style={styles.headerBolt}>
-          <Text style={styles.headerBoltText}>⚡</Text>
+        <Pressable onPress={() => router.push("/quick-seen")} hitSlop={10} style={styles.headerQuick}>
+          <Text style={styles.headerQuickText}>⚡ {t("lib.quickAddShort")}</Text>
         </Pressable>
       ),
     });
-  }, [navigation, router]);
+  }, [navigation, router, t]);
 
   async function handleRate(entryId: string, rating: number | null) {
     const prev = qc.getQueryData<WatchlistEntry[]>(["library"]);
@@ -267,8 +267,8 @@ export default function LibraryScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
 
-  headerBolt: { paddingHorizontal: 12 },
-  headerBoltText: { fontSize: 20 },
+  headerQuick: { backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8 },
+  headerQuickText: { color: "#5b6cff", fontWeight: "800", fontSize: 13 },
 
   searchWrap: {
     flexDirection: "row",

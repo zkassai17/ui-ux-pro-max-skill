@@ -52,12 +52,12 @@ export default function AddScreen() {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <Pressable onPress={() => router.push("/quick-seen")} hitSlop={10} style={styles.headerBolt}>
-          <Text style={styles.headerBoltText}>⚡</Text>
+        <Pressable onPress={() => router.push("/quick-seen")} hitSlop={10} style={styles.headerQuick}>
+          <Text style={styles.headerQuickText}>⚡ {t("lib.quickAddShort")}</Text>
         </Pressable>
       ),
     });
-  }, [navigation, router]);
+  }, [navigation, router, t]);
 
   // Tapping the Add tab again jumps the results list back to the top.
   const listRef = useRef<FlatList<Title>>(null);
@@ -324,8 +324,8 @@ export default function AddScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   search: { backgroundColor: "#f0f0f3", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, marginBottom: 12 },
-  headerBolt: { paddingHorizontal: 14, paddingVertical: 4 },
-  headerBoltText: { fontSize: 22 },
+  headerQuick: { backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8 },
+  headerQuickText: { color: "#5b6cff", fontWeight: "800", fontSize: 13 },
   filters: { marginBottom: 8 },
   toggleRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
   toggle: { flex: 1, alignItems: "center", backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
