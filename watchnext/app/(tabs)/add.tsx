@@ -196,6 +196,7 @@ export default function AddScreen() {
         onChangeText={setQ}
         autoCapitalize="none"
         autoCorrect={false}
+        clearButtonMode="while-editing"
       />
 
       {!searching ? (

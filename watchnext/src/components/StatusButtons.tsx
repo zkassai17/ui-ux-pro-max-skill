@@ -88,9 +88,9 @@ export function StatusButtons({
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", gap: 10 },
+  row: { flexDirection: "row", gap: 6 },
   busy: { opacity: 0.5 },
-  item: { alignItems: "center", width: 42 },
+  item: { alignItems: "center", width: 54 },
   label: { fontSize: 9, fontWeight: "600", color: "#b0b0b8", marginTop: 2 },
   labelActive: { color: ACTIVE },
 });
