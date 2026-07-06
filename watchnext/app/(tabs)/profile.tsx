@@ -188,11 +188,11 @@ const styles = StyleSheet.create({
   nameBannerArrow: { fontSize: 16, color: "#3a45c4", marginLeft: 8 },
 
   breakdownRow: { flexDirection: "row", gap: 10, marginTop: 20 },
-  breakdownCard: { flex: 1, backgroundColor: "#f0f0f3", borderRadius: 14, padding: 14 },
+  breakdownCard: { flex: 1, backgroundColor: "#f0f0f3", borderRadius: 14, padding: 14, alignItems: "center" },
   breakdownTitle: { fontSize: 13, fontWeight: "700" },
   breakdownBig: { fontSize: 26, fontWeight: "800", marginTop: 8 },
   breakdownSub: { fontSize: 11, color: "#888", marginTop: -2 },
-  breakdownMeta: { fontSize: 11, color: "#aaa", marginTop: 6 },
+  breakdownMeta: { fontSize: 11, color: "#aaa", marginTop: 6, textAlign: "center" },
 
   proUpsell: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#f3f4ff", borderRadius: 14, paddingVertical: 13, paddingHorizontal: 16, marginTop: 10 },
   proUpsellText: { fontSize: 13, fontWeight: "800", color: "#5b6cff", flex: 1 },
