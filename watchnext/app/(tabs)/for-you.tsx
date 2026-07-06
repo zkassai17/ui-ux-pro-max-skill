@@ -29,6 +29,7 @@ import type { WatchStatus } from "../../src/types/db";
 // so it reuses that query — no extra fetch) ---
 function TonightHero({ mediaType }: { mediaType: MediaType }) {
   const router = useRouter();
+  const qc = useQueryClient();
   const { t } = useI18n();
   const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
   const recWeights = useQuery({ queryKey: ["rec-weights"], queryFn: getRecWeights });
@@ -44,22 +45,50 @@ function TonightHero({ mediaType }: { mediaType: MediaType }) {
     staleTime: 5 * 60 * 1000,
     queryFn: () => getForYou(mediaType, entries, w),
   });
+
+  // "Not interested": hide this pick instantly (optimistic) and refetch so a fresh
+  // one backfills. Also trains the engine — the dismissed title's genres feed the
+  // dislike profile, so the same kind of pick stops surfacing.
+  const hide = useMutation({
+    mutationFn: (tt: Title) => hideRec(tt),
+    onMutate: async (tt: Title) => {
+      await qc.cancelQueries({ queryKey: ["hidden-recs"] });
+      const prev = qc.getQueryData<Set<string>>(["hidden-recs"]);
+      qc.setQueryData<Set<string>>(["hidden-recs"], new Set([...(prev ?? []), titleKey(tt)]));
+      return { prev };
+    },
+    onError: (_e, _t, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["hidden-recs"], ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["for-you"] }),
+  });
+
   const hiddenSet = hidden.data ?? new Set<string>();
   const hero = (recs.data ?? []).find((x) => !excludeKeys.has(titleKey(x)) && !hiddenSet.has(titleKey(x)));
   if (!hero) return null;
   return (
-    <Pressable style={styles.hero} onPress={() => router.push(`/title/${hero.mediaType}/${hero.tmdbId}`)}>
-      <Text style={styles.heroLabel}>✨ {t("home.tonightsPick")}</Text>
-      <View style={styles.heroBody}>
-        <PosterImage path={hero.posterPath} width={92} height={138} radius={12} />
-        <View style={styles.heroMeta}>
-          <Text style={styles.heroTitle} numberOfLines={3}>{hero.title}</Text>
-          <Text style={styles.heroType}>
-            {hero.mediaType === "movie" ? t("media.movie") : t("media.tv")}{hero.year ? ` · ${hero.year}` : ""}
-          </Text>
+    <View style={styles.hero}>
+      <Pressable
+        style={styles.heroClose}
+        hitSlop={8}
+        onPress={() => hide.mutate(hero)}
+        accessibilityLabel="Not interested"
+      >
+        <Ionicons name="close" size={15} color="#fff" />
+      </Pressable>
+      <Pressable onPress={() => router.push(`/title/${hero.mediaType}/${hero.tmdbId}`)}>
+        <Text style={styles.heroLabel}>✨ {t("home.tonightsPick")}</Text>
+        <View style={styles.heroBody}>
+          <PosterImage path={hero.posterPath} width={92} height={138} radius={12} />
+          <View style={styles.heroMeta}>
+            <Text style={styles.heroTitle} numberOfLines={3}>{hero.title}</Text>
+            <Text style={styles.heroType}>
+              {hero.mediaType === "movie" ? t("media.movie") : t("media.tv")}{hero.year ? ` · ${hero.year}` : ""}
+            </Text>
+          </View>
         </View>
-      </View>
-    </Pressable>
+      </Pressable>
+    </View>
   );
 }
 
@@ -382,6 +411,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
 
   hero: { backgroundColor: "#f7f8ff", borderWidth: 1.5, borderColor: "#eef0ff", borderRadius: 18, padding: 14, marginBottom: 14 },
+  heroClose: { position: "absolute", top: 8, right: 8, width: 24, height: 24, borderRadius: 12, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center", zIndex: 2 },
   heroLabel: { fontSize: 11, fontWeight: "800", color: "#5b6cff", letterSpacing: 0.5, marginBottom: 10 },
   heroBody: { flexDirection: "row", gap: 14, alignItems: "center" },
   heroMeta: { flex: 1, minWidth: 0 },
