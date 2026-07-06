@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -80,6 +80,18 @@ export default function LibraryScreen() {
   const qc = useQueryClient();
   const { data, isLoading, isError } = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
 
+  // Quick-add ⚡ in the nav header (matches the Add tab) — the in-page title was a
+  // duplicate of the nav header title, so it's removed.
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable onPress={() => router.push("/quick-seen")} hitSlop={10} style={styles.headerBolt}>
+          <Text style={styles.headerBoltText}>⚡</Text>
+        </Pressable>
+      ),
+    });
+  }, [navigation, router]);
+
   async function handleRate(entryId: string, rating: number | null) {
     const prev = qc.getQueryData<WatchlistEntry[]>(["library"]);
     qc.setQueryData<WatchlistEntry[]>(["library"], (old) => applyInlineRating(old, entryId, rating));
@@ -111,13 +123,6 @@ export default function LibraryScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.topBar}>
-        <Text style={styles.screenTitle}>{t("tab.library")}</Text>
-        <Pressable style={styles.quickAddPill} onPress={() => router.push("/quick-seen")} hitSlop={6}>
-          <Text style={styles.quickAddPillText}>⚡ {t("lib.quickAddShort")}</Text>
-        </Pressable>
-      </View>
-
       <View style={styles.searchWrap}>
         <Text style={styles.searchIcon}>🔍</Text>
         <TextInput
@@ -130,11 +135,6 @@ export default function LibraryScreen() {
           returnKeyType="search"
           clearButtonMode="while-editing"
         />
-        {query.length > 0 ? (
-          <Pressable onPress={() => setQuery("")} hitSlop={8} style={styles.searchClear}>
-            <Text style={styles.searchClearText}>✕</Text>
-          </Pressable>
-        ) : null}
       </View>
 
       <View style={styles.filterRow}>
@@ -267,10 +267,8 @@ export default function LibraryScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
 
-  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
-  screenTitle: { fontSize: 22, fontWeight: "800" },
-  quickAddPill: { backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
-  quickAddPillText: { color: "#5b6cff", fontWeight: "800", fontSize: 13 },
+  headerBolt: { paddingHorizontal: 12 },
+  headerBoltText: { fontSize: 20 },
 
   searchWrap: {
     flexDirection: "row",
@@ -283,8 +281,6 @@ const styles = StyleSheet.create({
   },
   searchIcon: { fontSize: 14, marginRight: 8, opacity: 0.5 },
   searchInput: { flex: 1, fontSize: 15, color: "#111", padding: 0 },
-  searchClear: { paddingLeft: 8 },
-  searchClearText: { fontSize: 13, color: "#999", fontWeight: "700" },
 
   filterRow: { flexDirection: "row", gap: 8 },
   chip: {
