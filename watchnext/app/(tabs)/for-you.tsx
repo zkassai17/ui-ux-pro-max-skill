@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator, ScrollView, RefreshControl } from "react-native";
+import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator, ScrollView, RefreshControl, Alert } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -10,6 +10,7 @@ import { getForYou } from "../../src/services/forYou";
 import { getHiddenKeys, hideRec } from "../../src/services/hiddenRecs";
 import { getRecWeights } from "../../src/services/prefs";
 import { getFriends } from "../../src/services/friends";
+import { reportUser, blockUser } from "../../src/services/account";
 import { titleKey } from "../../src/lib/forYouLogic";
 import { pickTonight } from "../../src/lib/tonightPick";
 import { computeTasteMatch } from "../../src/lib/tasteMatchLogic";
@@ -331,6 +332,41 @@ export default function HomeScreen() {
   });
   const reactionMap = reactions.data ?? {};
 
+  // Long-press a feed post → report or block its author (UGC moderation).
+  function moderate(userId: string, username: string | null) {
+    Alert.alert(
+      t("feed.moderateTitle"),
+      username ? `@${username}` : undefined,
+      [
+        {
+          text: t("feed.report"),
+          onPress: async () => {
+            try {
+              await reportUser(userId, "inappropriate");
+              Alert.alert(t("feed.reported"));
+            } catch (e) {
+              Alert.alert(t("alert.cantSave"), (e as Error).message);
+            }
+          },
+        },
+        {
+          text: t("feed.block"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await blockUser(userId);
+              qc.invalidateQueries({ queryKey: ["feed"] });
+              qc.invalidateQueries({ queryKey: ["friends"] });
+            } catch (e) {
+              Alert.alert(t("alert.cantSave"), (e as Error).message);
+            }
+          },
+        },
+        { text: t("common.cancel"), style: "cancel" },
+      ],
+    );
+  }
+
   async function onRefresh() {
     setRefreshing(true);
     await Promise.all([
@@ -389,22 +425,23 @@ export default function HomeScreen() {
         if (row.item.kind === "watchlist") {
           const e = row.item.entry;
           return (
-            <View style={styles.card}>
+            <Pressable style={styles.card} onLongPress={() => moderate(row.item.userId, row.username)} delayLongPress={400}>
               <FeedCardHeader username={row.username} verb={t(VERB_KEY[e.status])} at={row.item.at} />
               <Pressable style={styles.cardBody} onPress={() => router.push(`/title/${e.media_type}/${e.tmdb_id}`)}>
                 <PosterImage path={e.poster_path} width={48} height={72} radius={8} />
                 <View style={styles.meta}>
                   <Text style={styles.title} numberOfLines={2}>{e.title}</Text>
+                  {e.note ? <Text style={styles.note} numberOfLines={3}>“{e.note}”</Text> : null}
                   <Text style={styles.pill}>{e.media_type === "movie" ? t("media.movie") : t("media.tv")}</Text>
                 </View>
               </Pressable>
               <FeedReactions targetId={row.item.id} targetOwner={row.item.userId} summary={reactionMap[row.item.id]} />
-            </View>
+            </Pressable>
           );
         }
         const rec = row.item.rec;
         return (
-          <View style={styles.card}>
+          <Pressable style={styles.card} onLongPress={() => moderate(row.item.userId, row.username)} delayLongPress={400}>
             <FeedCardHeader username={row.username} verb={t("feed.recommends")} at={row.item.at} />
             <Pressable style={styles.cardBody} onPress={() => router.push(`/title/${rec.media_type}/${rec.tmdb_id}`)}>
               <PosterImage path={rec.poster_path} width={48} height={72} radius={8} />
@@ -415,7 +452,7 @@ export default function HomeScreen() {
               </View>
             </Pressable>
             <FeedReactions targetId={row.item.id} targetOwner={row.item.userId} summary={reactionMap[row.item.id]} />
-          </View>
+          </Pressable>
         );
       }}
     />

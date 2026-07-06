@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { ScrollView, View, Text, Image, StyleSheet, Pressable, ActivityIndicator, Alert } from "react-native";
+import { useState, useEffect } from "react";
+import { ScrollView, View, Text, TextInput, Image, StyleSheet, Pressable, ActivityIndicator, Alert } from "react-native";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getTitleDetails, getWatchProviders } from "../../../src/services/tmdb";
-import { addToLibrary, getLibraryEntry, updateStatus, rateTitle, removeFromLibrary } from "../../../src/services/watchlist";
+import { addToLibrary, getLibraryEntry, updateStatus, rateTitle, removeFromLibrary, setNote } from "../../../src/services/watchlist";
 import { PosterImage } from "../../../src/components/PosterImage";
 import { EmojiRating } from "../../../src/components/EmojiRating";
 import { posterUrl } from "../../../src/lib/tmdbNormalize";
@@ -22,6 +22,8 @@ export default function TitleDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [rating, setRating] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
 
   const detail = useQuery({
     queryKey: ["tmdb-detail", mediaType, tmdbId],
@@ -35,6 +37,26 @@ export default function TitleDetailScreen() {
     queryKey: ["watch-providers", mediaType, tmdbId],
     queryFn: () => getWatchProviders(mediaType as MediaType, tmdbId),
   });
+
+  // Keep the review box in sync with the saved note once the entry loads.
+  useEffect(() => {
+    setNoteText(entry.data?.note ?? "");
+  }, [entry.data?.note]);
+
+  async function saveNote() {
+    if (!entry.data) return;
+    try {
+      setSavingNote(true);
+      await setNote(entry.data.id, noteText);
+      await qc.invalidateQueries({ queryKey: ["library-entry", mediaType, tmdbId] });
+      await qc.invalidateQueries({ queryKey: ["library"] });
+      qc.invalidateQueries({ queryKey: ["feed"] });
+    } catch (e) {
+      Alert.alert(t("alert.cantSave"), (e as Error).message);
+    } finally {
+      setSavingNote(false);
+    }
+  }
 
   async function setStatus(status: WatchStatus, d: TitleDetail) {
     try {
@@ -145,6 +167,32 @@ export default function TitleDetailScreen() {
                 />
               </View>
 
+              {/* Public review — visible to friends in the activity feed. Only for
+                  titles already in your library. */}
+              {entry.data ? (
+                <View style={styles.reviewBox}>
+                  <Text style={styles.section}>{t("title.yourReview")}</Text>
+                  <TextInput
+                    style={styles.reviewInput}
+                    value={noteText}
+                    onChangeText={setNoteText}
+                    placeholder={t("title.reviewPlaceholder")}
+                    placeholderTextColor="#aaa"
+                    multiline
+                    maxLength={500}
+                  />
+                  {noteText.trim() !== (entry.data.note ?? "").trim() ? (
+                    <Pressable style={styles.reviewSave} onPress={saveNote} disabled={savingNote}>
+                      {savingNote ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Text style={styles.reviewSaveText}>{t("common.save")}</Text>
+                      )}
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : null}
+
               <Text style={styles.section}>{t("title.whereToWatch")}</Text>
               {providers.isLoading ? (
                 <ActivityIndicator />
@@ -198,6 +246,10 @@ const styles = StyleSheet.create({
   overview: { fontSize: 14, color: "#444", lineHeight: 21, marginTop: 12 },
   section: { fontSize: 13, fontWeight: "700", marginTop: 22, marginBottom: 8 },
   ratingBox: { alignSelf: "stretch" },
+  reviewBox: { alignSelf: "stretch" },
+  reviewInput: { backgroundColor: "#f4f4f7", borderRadius: 12, padding: 12, fontSize: 14, color: "#111", minHeight: 64, textAlignVertical: "top" },
+  reviewSave: { alignSelf: "flex-start", backgroundColor: "#5b6cff", borderRadius: 10, paddingVertical: 8, paddingHorizontal: 20, marginTop: 8 },
+  reviewSaveText: { color: "#fff", fontWeight: "800", fontSize: 13 },
   ratingHeader: { flexDirection: "row", alignItems: "center" },
   notAvailable: { fontSize: 13, color: "#888" },
   providerGroup: { marginBottom: 10 },

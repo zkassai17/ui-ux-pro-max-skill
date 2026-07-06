@@ -61,6 +61,14 @@ export async function removeFromLibrary(entryId: string): Promise<void> {
   if (error) throw error;
 }
 
+// Save (or clear, with empty/null) a short public review note on an entry.
+// Trimmed and capped so a runaway note can't be stored.
+export async function setNote(entryId: string, note: string | null): Promise<void> {
+  const clean = note?.trim() ? note.trim().slice(0, 500) : null;
+  const { error } = await supabase.from("watchlist").update({ note: clean }).eq("id", entryId);
+  if (error) throw error;
+}
+
 // Rate an existing library entry by id. Setting a rating marks it watched
 // (you only rate what you've seen); clearing (null) leaves the status alone.
 export async function rateEntry(entryId: string, rating: number | null): Promise<void> {
