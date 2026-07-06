@@ -27,6 +27,7 @@ import {
 } from "../src/lib/recPrefs";
 import { useI18n } from "../src/i18n/I18nProvider";
 import { usePro } from "../src/pro/ProProvider";
+import { isValidRedeemCode } from "../src/pro/redeemCode";
 import { LANGUAGES, translate, type Lang } from "../src/i18n/translations";
 import { fullName, type WatchStatus } from "../src/types/db";
 
@@ -52,6 +53,19 @@ export default function SettingsScreen() {
   const [editingName, setEditingName] = useState(false);
   const [first, setFirst] = useState(profile?.first_name ?? "");
   const [last, setLast] = useState(profile?.last_name ?? "");
+  const [redeeming, setRedeeming] = useState(false);
+  const [code, setCode] = useState("");
+
+  async function submitCode() {
+    if (isValidRedeemCode(code)) {
+      await setPro(true);
+      setRedeeming(false);
+      setCode("");
+      Alert.alert(t("pro.unlockedTitle"), t("pro.unlockedBody"));
+    } else {
+      Alert.alert(t("redeem.invalidTitle"), t("redeem.invalidBody"));
+    }
+  }
 
   const saveName = useMutation({
     mutationFn: async () => {
@@ -323,10 +337,39 @@ export default function SettingsScreen() {
           <Text style={styles.proActiveText}>✦ {t("settings.proActive")}</Text>
         </View>
       ) : (
-        <Pressable style={styles.proRow} onPress={() => router.push("/paywall")}>
-          <Text style={styles.proRowText}>✦ {t("settings.getPro")}</Text>
-          <Text style={styles.chevron}>›</Text>
-        </Pressable>
+        <>
+          <Pressable style={styles.proRow} onPress={() => router.push("/paywall")}>
+            <Text style={styles.proRowText}>✦ {t("settings.getPro")}</Text>
+            <Text style={styles.chevron}>›</Text>
+          </Pressable>
+          {redeeming ? (
+            <View style={[styles.card, { marginTop: 10 }]}>
+              <Text style={styles.label}>{t("redeem.enterCode")}</Text>
+              <View style={styles.editRow}>
+                <TextInput
+                  style={styles.input}
+                  value={code}
+                  onChangeText={setCode}
+                  placeholder={t("redeem.placeholder")}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  autoFocus
+                  onSubmitEditing={submitCode}
+                />
+                <Pressable onPress={submitCode} hitSlop={6}>
+                  <Text style={styles.save}>{t("redeem.apply")}</Text>
+                </Pressable>
+                <Pressable onPress={() => { setRedeeming(false); setCode(""); }} hitSlop={6}>
+                  <Text style={styles.cancel}>{t("common.cancel")}</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <Pressable style={styles.redeemRow} onPress={() => setRedeeming(true)} hitSlop={6}>
+              <Text style={styles.redeemText}>{t("redeem.haveCode")}</Text>
+            </Pressable>
+          )}
+        </>
       )}
       {__DEV__ ? (
         <View style={[styles.card, styles.devRow]}>
@@ -403,6 +446,8 @@ const styles = StyleSheet.create({
   proRowText: { fontSize: 15, fontWeight: "800", color: "#5b6cff" },
   proActive: { backgroundColor: "#f3f4ff", borderRadius: 14, padding: 16 },
   proActiveText: { fontSize: 15, fontWeight: "800", color: "#5b6cff" },
+  redeemRow: { alignItems: "center", paddingVertical: 12, marginTop: 4 },
+  redeemText: { fontSize: 13, fontWeight: "700", color: "#888", textDecorationLine: "underline" },
   devRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 },
   devLabel: { fontSize: 13, fontWeight: "700", color: "#999" },
   segment: { flexDirection: "row", backgroundColor: "#e9e9ef", borderRadius: 999, padding: 3, marginTop: 8 },
