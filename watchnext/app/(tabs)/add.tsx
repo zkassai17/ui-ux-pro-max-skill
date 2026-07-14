@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter, useNavigation } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { searchTitles, discoverTitles, getTrendingTitles, getGenres, type TrendingScope } from "../../src/services/tmdb";
 import { getLibrary } from "../../src/services/watchlist";
 import { TitleRow } from "../../src/components/TitleRow";
@@ -52,12 +51,6 @@ export default function AddScreen() {
   // Lightning-bolt shortcut in the header → the bulk "Quick add what you've seen" flow.
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerLeft: () => (
-        <Pressable onPress={() => router.push("/import")} hitSlop={10} style={styles.headerImport}>
-          <Ionicons name="cloud-upload-outline" size={16} color="#5b6cff" />
-          <Text style={styles.headerImportText}>{t("build.import")}</Text>
-        </Pressable>
-      ),
       headerRight: () => (
         <Pressable onPress={() => router.push("/quick-seen")} hitSlop={10} style={styles.headerQuick}>
           <Text style={styles.headerQuickText}>⚡ {t("lib.quickAddShort")}</Text>
@@ -335,8 +328,6 @@ export default function AddScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   search: { backgroundColor: "#f0f0f3", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, marginBottom: 12 },
-  headerImport: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginLeft: 8 },
-  headerImportText: { color: "#5b6cff", fontWeight: "800", fontSize: 13 },
   headerQuick: { backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8 },
   headerQuickText: { color: "#5b6cff", fontWeight: "800", fontSize: 13 },
   filters: { marginBottom: 8 },
