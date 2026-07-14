@@ -15,7 +15,7 @@ const OPTIONS: { key: WatchStatus; on: IconName; off: IconName }[] = [
   { key: "watched", on: "checkmark-circle", off: "checkmark-circle-outline" },
 ];
 
-const ACTIVE = "#b9553c";
+const ACTIVE = "#5b6cff";
 const IDLE = "#c4c4cc";
 
 // Three small icon buttons. Tap one to set that status; tap the active one to

@@ -7,7 +7,7 @@ import { usePro } from "../src/pro/ProProvider";
 import { useI18n } from "../src/i18n/I18nProvider";
 import { ratingEmoji } from "../src/lib/ratingScale";
 
-const ACCENT = "#b9553c";
+const ACCENT = "#5b6cff";
 
 function Bar({ label, count, max }: { label: string; count: number; max: number }) {
   const pct = max > 0 ? Math.round((count / max) * 100) : 0;
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   msg: { color: "#888", fontSize: 13, marginTop: 24, textAlign: "center" },
 
-  totalsCard: { backgroundColor: "#f7f0ea", borderRadius: 16, padding: 20, alignItems: "center", marginBottom: 8 },
+  totalsCard: { backgroundColor: "#f3f4ff", borderRadius: 16, padding: 20, alignItems: "center", marginBottom: 8 },
   totalsBig: { fontSize: 42, fontWeight: "900", color: ACCENT },
   totalsLabel: { fontSize: 13, fontWeight: "700", color: "#7a82c0", marginTop: -4 },
   totalsSplit: { fontSize: 13, color: "#555", fontWeight: "600", marginTop: 10 },

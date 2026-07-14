@@ -182,12 +182,12 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16 },
 
-  groupCard: { backgroundColor: "#b9553c", borderRadius: 16, padding: 16, marginBottom: 6 },
+  groupCard: { backgroundColor: "#5b6cff", borderRadius: 16, padding: 16, marginBottom: 6 },
   groupTitle: { color: "#fff", fontSize: 17, fontWeight: "800" },
-  groupSub: { color: "#f2ddd3", fontSize: 12, marginTop: 6, lineHeight: 17 },
+  groupSub: { color: "#dfe3ff", fontSize: 12, marginTop: 6, lineHeight: 17 },
 
-  addFriendBtn: { backgroundColor: "#f5ede7", borderRadius: 12, paddingVertical: 12, alignItems: "center", marginTop: 10 },
-  addFriendBtnText: { color: "#b9553c", fontWeight: "700", fontSize: 14 },
+  addFriendBtn: { backgroundColor: "#eef0ff", borderRadius: 12, paddingVertical: 12, alignItems: "center", marginTop: 10 },
+  addFriendBtnText: { color: "#5b6cff", fontWeight: "700", fontSize: 14 },
 
   requestBanner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#fff4e6", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12 },
   requestText: { color: "#b9690e", fontSize: 13, fontWeight: "700" },
@@ -217,6 +217,6 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 40, marginBottom: 10 },
   emptyText: { fontSize: 15, fontWeight: "700", color: "#666" },
   emptySub: { fontSize: 12, color: "#aaa", marginTop: 4, textAlign: "center", lineHeight: 17 },
-  addBtn: { backgroundColor: "#b9553c", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 16 },
+  addBtn: { backgroundColor: "#5b6cff", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 16 },
   addBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
 });

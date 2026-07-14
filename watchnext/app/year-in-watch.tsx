@@ -7,7 +7,7 @@ import { usePro } from "../src/pro/ProProvider";
 import { useI18n } from "../src/i18n/I18nProvider";
 import { PosterImage } from "../src/components/PosterImage";
 
-const ACCENT = "#b9553c";
+const ACCENT = "#5b6cff";
 
 export default function YearInWatchScreen() {
   const router = useRouter();
@@ -122,21 +122,21 @@ export default function YearInWatchScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
 
-  card: { backgroundColor: "#b9553c", borderRadius: 22, padding: 24, alignItems: "center" },
+  card: { backgroundColor: "#5b6cff", borderRadius: 22, padding: 24, alignItems: "center" },
   cardYear: { fontSize: 44, fontWeight: "900", color: "#fff" },
-  cardSub: { fontSize: 13, fontWeight: "700", color: "#f2ddd3", marginTop: -4, letterSpacing: 0.5 },
+  cardSub: { fontSize: 13, fontWeight: "700", color: "#dfe3ff", marginTop: -4, letterSpacing: 0.5 },
   bigStat: { alignItems: "center", marginTop: 22 },
   bigNum: { fontSize: 54, fontWeight: "900", color: "#fff" },
-  bigLabel: { fontSize: 13, fontWeight: "700", color: "#f2ddd3", marginTop: -6 },
+  bigLabel: { fontSize: 13, fontWeight: "700", color: "#dfe3ff", marginTop: -6 },
 
   rowStats: { flexDirection: "row", justifyContent: "center", flexWrap: "wrap", gap: 20, marginTop: 22 },
   stat: { alignItems: "center", minWidth: 70 },
   statNum: { fontSize: 24, fontWeight: "900", color: "#fff" },
   statNumSm: { fontSize: 15, fontWeight: "900", color: "#fff", textAlign: "center" },
-  statLabel: { fontSize: 11, fontWeight: "700", color: "#e8cdc0", marginTop: 3 },
+  statLabel: { fontSize: 11, fontWeight: "700", color: "#c9cfff", marginTop: 3 },
 
   topPick: { alignSelf: "stretch", marginTop: 24, backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 14, padding: 12 },
-  topPickLabel: { fontSize: 12, fontWeight: "800", color: "#f2ddd3", marginBottom: 8 },
+  topPickLabel: { fontSize: 12, fontWeight: "800", color: "#dfe3ff", marginBottom: 8 },
   topPickRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   topPickTitle: { flex: 1, fontSize: 15, fontWeight: "800", color: "#fff" },
 

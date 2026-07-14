@@ -32,7 +32,7 @@ export default function SignIn() {
         value={password} onChangeText={setPassword}
         style={{ borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12 }} />
       <Button title={busy ? "…" : t("auth.signIn")} onPress={handleSignIn} disabled={busy} />
-      <Link href="/(auth)/forgot-password" style={{ color: "#b9553c", textAlign: "center" }}>{t("auth.forgot")}</Link>
+      <Link href="/(auth)/forgot-password" style={{ color: "#5b6cff", textAlign: "center" }}>{t("auth.forgot")}</Link>
       <Link href="/(auth)/sign-up">{t("auth.needAccount")}</Link>
     </View>
   );

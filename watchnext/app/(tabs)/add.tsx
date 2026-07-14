@@ -328,8 +328,8 @@ export default function AddScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   search: { backgroundColor: "#f0f0f3", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, marginBottom: 12 },
-  headerQuick: { backgroundColor: "#f5ede7", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8 },
-  headerQuickText: { color: "#b9553c", fontWeight: "800", fontSize: 13 },
+  headerQuick: { backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8 },
+  headerQuickText: { color: "#5b6cff", fontWeight: "800", fontSize: 13 },
   filters: { marginBottom: 8 },
   toggleRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
   toggle: { flex: 1, alignItems: "center", backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
   toggleTextOn: { color: "#fff" },
   chipRow: { gap: 8, paddingVertical: 4, paddingRight: 8 },
   chip: { backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
-  chipOn: { backgroundColor: "#b9553c" },
+  chipOn: { backgroundColor: "#5b6cff" },
   chipText: { fontSize: 12, color: "#666", fontWeight: "600" },
   chipTextOn: { color: "#fff" },
   trendChip: { backgroundColor: "#fff0e6" },
@@ -348,6 +348,6 @@ const styles = StyleSheet.create({
   errorBox: { marginTop: 40, alignItems: "center", paddingHorizontal: 24, gap: 8 },
   errorTitle: { fontSize: 15, fontWeight: "700", color: "#333" },
   errorHint: { fontSize: 13, color: "#888", textAlign: "center", lineHeight: 19 },
-  retryBtn: { marginTop: 8, backgroundColor: "#b9553c", borderRadius: 10, paddingVertical: 11, paddingHorizontal: 28 },
+  retryBtn: { marginTop: 8, backgroundColor: "#5b6cff", borderRadius: 10, paddingVertical: 11, paddingHorizontal: 28 },
   retryBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
 });

@@ -8,7 +8,7 @@ import type { WatchlistEntry } from "../types/db";
 // Color the percentage on a cold→warm scale so the number reads at a glance.
 function scoreColor(score: number): string {
   if (score >= 80) return "#1dd1a1";
-  if (score >= 60) return "#b9553c";
+  if (score >= 60) return "#5b6cff";
   if (score >= 40) return "#ffc048";
   return "#ff9f43";
 }

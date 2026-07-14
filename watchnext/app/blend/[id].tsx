@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   errBox: { alignItems: "center", marginTop: 48, paddingHorizontal: 24 },
   errEmoji: { fontSize: 40, marginBottom: 12 },
   errText: { color: "#888", fontSize: 14, textAlign: "center", lineHeight: 20 },
-  errBtn: { backgroundColor: "#b9553c", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 16 },
+  errBtn: { backgroundColor: "#5b6cff", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 16 },
   errBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
 
   card: { borderRadius: 22, padding: 22, alignItems: "center" },

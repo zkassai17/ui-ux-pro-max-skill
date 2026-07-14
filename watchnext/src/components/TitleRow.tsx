@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
   meta: { flex: 1, minWidth: 0 },
   title: { fontSize: 15, fontWeight: "600" },
   sub: { fontSize: 12, color: "#888", marginTop: 2 },
-  pill: { alignSelf: "flex-start", marginTop: 4, backgroundColor: "#f5ede7", borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2 },
-  pillText: { fontSize: 9, color: "#b9553c", fontWeight: "600" },
+  pill: { alignSelf: "flex-start", marginTop: 4, backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2 },
+  pillText: { fontSize: 9, color: "#5b6cff", fontWeight: "600" },
   accessory: { marginLeft: 8 },
 });

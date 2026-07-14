@@ -161,7 +161,7 @@ export default function QuickSeenScreen() {
 
       {!onboarding ? (
         <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={22} color="#b9553c" />
+          <Ionicons name="chevron-back" size={22} color="#5b6cff" />
           <Text style={styles.backText}>{t("common.back")}</Text>
         </Pressable>
       ) : null}
@@ -293,11 +293,11 @@ export default function QuickSeenScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: PAGE_PAD, paddingTop: 12 },
   backBtn: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", marginLeft: -4, marginBottom: 6 },
-  backText: { color: "#b9553c", fontSize: 16, fontWeight: "600" },
+  backText: { color: "#5b6cff", fontSize: 16, fontWeight: "600" },
   head: { marginBottom: 14 },
   title: { fontSize: 22, fontWeight: "800" },
   subtitle: { fontSize: 13, color: "#666", lineHeight: 19, marginTop: 6 },
-  skip: { color: "#b9553c", fontWeight: "700", fontSize: 15 },
+  skip: { color: "#5b6cff", fontWeight: "700", fontSize: 15 },
 
   searchWrap: { flexDirection: "row", alignItems: "center", backgroundColor: "#f0f0f3", borderRadius: 12, paddingHorizontal: 12, height: 42, marginBottom: 12 },
   searchIcon: { fontSize: 14, marginRight: 8, opacity: 0.5 },
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
 
   cell: { width: POSTER_W },
   posterWrap: { borderRadius: 10, overflow: "hidden", borderWidth: 2, borderColor: "transparent" },
-  posterWrapOn: { borderColor: "#b9553c" },
+  posterWrapOn: { borderColor: "#5b6cff" },
   dim: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(91,108,255,0.18)" },
   checkBadge: {
     position: "absolute",
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 999,
-    backgroundColor: "#b9553c",
+    backgroundColor: "#5b6cff",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 2,
@@ -338,11 +338,11 @@ const styles = StyleSheet.create({
     bottom: 20,
     gap: 6,
   },
-  primaryBtn: { backgroundColor: "#b9553c", borderRadius: 12, paddingVertical: 15, alignItems: "center" },
+  primaryBtn: { backgroundColor: "#5b6cff", borderRadius: 12, paddingVertical: 15, alignItems: "center" },
   primaryBtnText: { color: "#fff", fontWeight: "800", fontSize: 15 },
   btnDisabled: { opacity: 0.4 },
   ghostBtn: { alignItems: "center", paddingVertical: 8 },
   ghostText: { color: "#888", fontWeight: "600", fontSize: 13 },
   linkBtn: { paddingVertical: 10 },
-  linkText: { color: "#b9553c", fontWeight: "700", fontSize: 14 },
+  linkText: { color: "#5b6cff", fontWeight: "700", fontSize: 14 },
 });

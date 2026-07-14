@@ -54,7 +54,7 @@ export default function QrScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", alignItems: "center", paddingTop: 28, paddingHorizontal: 24 },
-  avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: "#b9553c", alignItems: "center", justifyContent: "center" },
+  avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: "#5b6cff", alignItems: "center", justifyContent: "center" },
   avatarText: { color: "#fff", fontSize: 24, fontWeight: "800" },
   name: { fontSize: 20, fontWeight: "800", marginTop: 12 },
   handle: { fontSize: 14, color: "#888", fontWeight: "600", marginTop: 2 },
@@ -62,6 +62,6 @@ const styles = StyleSheet.create({
   noCode: { fontSize: 40, color: "#ccc", width: 220, height: 220, textAlign: "center", textAlignVertical: "center" },
   hint: { fontSize: 14, color: "#666", marginTop: 22, textAlign: "center", fontWeight: "600" },
   code: { fontSize: 22, fontWeight: "900", letterSpacing: 3, marginTop: 10, color: "#111" },
-  shareBtn: { backgroundColor: "#b9553c", borderRadius: 14, paddingVertical: 14, paddingHorizontal: 40, marginTop: 28 },
+  shareBtn: { backgroundColor: "#5b6cff", borderRadius: 14, paddingVertical: 14, paddingHorizontal: 40, marginTop: 28 },
   shareBtnText: { color: "#fff", fontSize: 15, fontWeight: "800" },
 });

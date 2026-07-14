@@ -7,7 +7,7 @@ export function initials(username?: string): string {
 }
 
 // Deterministic avatar color per username so friends are visually distinct.
-const AVATAR_COLORS = ["#b9553c", "#1dd1a1", "#ff9f43", "#ff6b9d", "#a55eea", "#26c6da", "#fd7272"];
+const AVATAR_COLORS = ["#5b6cff", "#1dd1a1", "#ff9f43", "#ff6b9d", "#a55eea", "#26c6da", "#fd7272"];
 export function avatarColor(username?: string): string {
   if (!username) return AVATAR_COLORS[0];
   let h = 0;
@@ -18,7 +18,7 @@ export function avatarColor(username?: string): string {
 // Cold→warm taste-match color so the % reads at a glance.
 export function matchColor(score: number): string {
   if (score >= 80) return "#1dd1a1";
-  if (score >= 60) return "#b9553c";
+  if (score >= 60) return "#5b6cff";
   if (score >= 40) return "#ffc048";
   return "#ff9f43";
 }

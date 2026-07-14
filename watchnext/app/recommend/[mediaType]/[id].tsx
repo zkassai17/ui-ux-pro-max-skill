@@ -107,10 +107,10 @@ const styles = StyleSheet.create({
   section: { fontSize: 11, color: "#888", marginTop: 18, marginBottom: 6, fontWeight: "700" },
   friendRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#eee" },
   friendName: { fontSize: 15, fontWeight: "600" },
-  checkbox: { width: 18, height: 18, borderRadius: 999, borderWidth: 2, borderColor: "#b9553c" },
-  checkboxOn: { backgroundColor: "#b9553c" },
+  checkbox: { width: 18, height: 18, borderRadius: 999, borderWidth: 2, borderColor: "#5b6cff" },
+  checkboxOn: { backgroundColor: "#5b6cff" },
   note: { backgroundColor: "#f0f0f3", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 13, marginTop: 14 },
-  btn: { backgroundColor: "#b9553c", borderRadius: 10, paddingVertical: 12, alignItems: "center", marginTop: 14 },
+  btn: { backgroundColor: "#5b6cff", borderRadius: 10, paddingVertical: 12, alignItems: "center", marginTop: 14 },
   btnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
   msg: { color: "#888", fontSize: 13, marginTop: 16, textAlign: "center" },
 });

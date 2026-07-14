@@ -14,7 +14,7 @@ const SEARCH_AFTER = 6; // show the search box once the list is long enough to s
 // Cold→warm scale so the % reads at a glance (mirrors TasteMatchCard).
 function matchColor(score: number): string {
   if (score >= 80) return "#1dd1a1";
-  if (score >= 60) return "#b9553c";
+  if (score >= 60) return "#5b6cff";
   if (score >= 40) return "#ffc048";
   return "#ff9f43";
 }
@@ -160,14 +160,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 10,
   },
-  rowOn: { borderColor: "#b9553c", backgroundColor: "#f5ede7" },
+  rowOn: { borderColor: "#5b6cff", backgroundColor: "#eef0ff" },
   rowLeft: { flex: 1, minWidth: 0 },
   username: { fontSize: 15, fontWeight: "600" },
   compat: { fontSize: 12, fontWeight: "700", marginTop: 3 },
   compatNone: { fontSize: 12, color: "#bbb", fontWeight: "600", marginTop: 3 },
   check: { fontSize: 18, color: "#bbb", fontWeight: "700", lineHeight: 22 },
-  checkOn: { color: "#b9553c" },
-  primaryBtn: { backgroundColor: "#b9553c", borderRadius: 12, paddingVertical: 14, alignItems: "center", marginTop: 4 },
+  checkOn: { color: "#5b6cff" },
+  primaryBtn: { backgroundColor: "#5b6cff", borderRadius: 12, paddingVertical: 14, alignItems: "center", marginTop: 4 },
   btnDisabled: { backgroundColor: "#c7ccff" },
   primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
   empty: { marginTop: 40, alignItems: "center", gap: 16 },
