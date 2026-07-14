@@ -1,10 +1,26 @@
-import { Stack } from "expo-router";
+import { useEffect } from "react";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts, Fraunces_600SemiBold, Fraunces_700Bold } from "@expo-google-fonts/fraunces";
-import { AuthProvider } from "../src/auth/AuthProvider";
+import { AuthProvider, useAuth } from "../src/auth/AuthProvider";
 import { I18nProvider } from "../src/i18n/I18nProvider";
 import { ProProvider } from "../src/pro/ProProvider";
 import { HEADING } from "../src/theme";
+
+// Global auth guard: the moment there's no session (e.g. after Sign out from
+// anywhere in the app), route to the sign-in screen. Index only routes on entry,
+// so without this, signing out leaves you on an empty logged-in screen.
+function AuthGate() {
+  const { session, loading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+  useEffect(() => {
+    if (loading) return;
+    const inAuth = segments[0] === "(auth)";
+    if (!session && !inAuth) router.replace("/(auth)/sign-in");
+  }, [session, loading, segments, router]);
+  return null;
+}
 
 // Mobile networks drop requests transiently (a momentary dead zone surfaces as
 // "TypeError: Network request failed"). Retry a few times with backoff so a brief
@@ -27,6 +43,7 @@ export default function RootLayout() {
       <I18nProvider>
         <AuthProvider>
           <ProProvider>
+            <AuthGate />
             {/* headerBackButtonDisplayMode "minimal" = chevron only, so the back
                 button never leaks the internal "(tabs)" route-group name.
                 Editorial serif for every pushed-screen header title. */}
