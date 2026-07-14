@@ -304,11 +304,6 @@ export default function HomeScreen() {
   const { profile } = useAuth();
   const greetName = profile?.first_name?.trim() || profile?.username || "";
   const greeting = greetName ? `${t("home.greeting")} ${greetName}` : t("home.greeting");
-  // Editorial dateline under the greeting (masthead feel).
-  const DOW = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  const MON = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  const now = new Date();
-  const dateline = `${DOW[now.getDay()]}, ${MON[now.getMonth()]} ${now.getDate()}`.toUpperCase();
   const { data, isLoading, isError } = useQuery({ queryKey: ["feed"], queryFn: getFeed });
   // Spotlight a pick from whichever you watch more of (movies vs shows), so the
   // hero can be a TV show too — and the matching rail skips it to avoid a dup.
@@ -401,10 +396,7 @@ export default function HomeScreen() {
       keyExtractor={(r) => r.item.id}
       ListHeaderComponent={
         <View>
-          <View style={styles.masthead}>
-            <Text style={styles.dateline}>{dateline}</Text>
-            <Text style={styles.greeting}>{greeting}</Text>
-          </View>
+          <Text style={styles.greeting}>{greeting}</Text>
           <TonightHero mediaType={heroMedia} />
           <BlendTeaser />
           <ForYouRail heading={t("home.forYou")} />
@@ -490,16 +482,14 @@ const styles = StyleSheet.create({
   teaserChevron: { fontSize: 22, color: "#ccc" },
 
   rail: { marginBottom: 8 },
-  masthead: { marginBottom: 20, borderBottomWidth: 1, borderBottomColor: "#ececef", paddingBottom: 16 },
-  dateline: { fontSize: 11, fontWeight: "800", color: "#5b6cff", letterSpacing: 1.5, marginBottom: 4 },
-  greeting: { fontSize: 30, fontFamily: HEADING, color: "#111", letterSpacing: -0.4 },
+  greeting: { fontSize: 28, fontFamily: HEADING, color: "#111", letterSpacing: -0.4, marginBottom: 18 },
   sectionHeading: { fontSize: 12, fontWeight: "800", color: "#9a9a9a", marginBottom: 12, textTransform: "uppercase", letterSpacing: 1 },
   railRow: { gap: 12, paddingBottom: 4, paddingRight: 8 },
   suggestion: { width: 104 },
   suggestionTitle: { fontSize: 11, fontWeight: "600", marginTop: 6 },
   posterAdd: { position: "absolute", bottom: 8, left: 0, right: 0, alignItems: "center" },
   hideBtn: { position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: 11, backgroundColor: "rgba(0,0,0,0.55)", alignItems: "center", justifyContent: "center", zIndex: 2 },
-  card: { backgroundColor: "#fff", paddingVertical: 16, paddingHorizontal: 2, borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
+  card: { backgroundColor: "#f7f7f9", borderRadius: 16, padding: 16, marginBottom: 14 },
   cardHead: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
   cardAvatar: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   cardAvatarText: { color: "#fff", fontSize: 12, fontWeight: "800" },

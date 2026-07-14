@@ -11,7 +11,6 @@ const FEATURES = [
   "pro.feature.blend",
   "pro.feature.friends",
   "pro.feature.insights",
-  "pro.feature.recap",
   "pro.feature.tuning",
 ];
 
