@@ -2,7 +2,9 @@ import "../src/lib/globalFont"; // makes Oxanium the default font for all text
 import { useEffect } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useFonts, Oxanium_400Regular, Oxanium_600SemiBold, Oxanium_700Bold } from "@expo-google-fonts/oxanium";
+import { useFonts } from "expo-font";
+import { Oxanium_600SemiBold, Oxanium_700Bold } from "@expo-google-fonts/oxanium";
+import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/inter";
 import { AuthProvider, useAuth } from "../src/auth/AuthProvider";
 import { I18nProvider } from "../src/i18n/I18nProvider";
 import { ProProvider } from "../src/pro/ProProvider";
@@ -36,7 +38,13 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({ Oxanium_400Regular, Oxanium_600SemiBold, Oxanium_700Bold });
+  const [fontsLoaded] = useFonts({
+    Oxanium_600SemiBold,
+    Oxanium_700Bold,
+    Inter_400Regular,
+    Inter_600SemiBold,
+    Inter_700Bold,
+  });
   if (!fontsLoaded) return null; // brief; cached after first load
 
   return (

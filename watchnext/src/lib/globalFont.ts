@@ -3,16 +3,16 @@ import { Text, TextInput, StyleSheet } from "react-native";
 
 declare const require: (name: string) => any;
 
-// Make Oxanium (the logo typeface) the default font for ALL text in the app.
-// RN 0.81's Text is a plain function component (no `.render` to patch), so we
-// hook the JSX runtime instead: every <Text>/<TextInput> element gets a default
-// fontFamily injected, chosen by its fontWeight so bold stays bold. A style with
-// an explicit fontFamily (e.g. a title's HEADING token) still wins, because the
-// element's own style is applied AFTER our injected default.
+// Two-font system: Inter is the default for ALL body text; titles keep Oxanium
+// (the logo font) via the explicit HEADING token in their styles. RN 0.81's Text
+// is a plain function component (no `.render` to patch), so we hook the JSX
+// runtime: every <Text>/<TextInput> gets a default Inter fontFamily injected,
+// chosen by its fontWeight so bold stays bold. A style with an explicit
+// fontFamily (a title's HEADING) still wins — it's applied AFTER our default.
 
-const REGULAR = "Oxanium_400Regular";
-const MEDIUM = "Oxanium_600SemiBold";
-const BOLD = "Oxanium_700Bold";
+const REGULAR = "Inter_400Regular";
+const MEDIUM = "Inter_600SemiBold";
+const BOLD = "Inter_700Bold";
 
 function familyForWeight(style: unknown): string {
   const flat = (StyleSheet.flatten(style as never) || {}) as { fontWeight?: string | number };
