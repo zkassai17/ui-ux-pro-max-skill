@@ -194,14 +194,6 @@ export default function AddScreen() {
 
   return (
     <View style={styles.container}>
-      {!searching ? (
-        <Pressable style={styles.swipeCta} onPress={() => router.push("/swipe")}>
-          <Ionicons name="albums-outline" size={18} color="#fff" />
-          <Text style={styles.swipeCtaText}>{t("swipe.discoverCta")}</Text>
-          <Ionicons name="chevron-forward" size={16} color="#fff" style={{ opacity: 0.8 }} />
-        </Pressable>
-      ) : null}
-
       <TextInput
         style={styles.search}
         placeholder={t("add.searchPlaceholder")}
@@ -330,6 +322,16 @@ export default function AddScreen() {
           )}
         />
       )}
+
+      {/* Floating swipe-to-discover button, hovering above the tab bar. */}
+      {!searching ? (
+        <View style={styles.swipeFabWrap} pointerEvents="box-none">
+          <Pressable style={styles.swipeFab} onPress={() => router.push("/swipe")}>
+            <Ionicons name="albums-outline" size={18} color="#fff" />
+            <Text style={styles.swipeFabText}>{t("swipe.discoverCta")}</Text>
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -337,8 +339,9 @@ export default function AddScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   search: { backgroundColor: "#f0f0f3", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, marginBottom: 12 },
-  swipeCta: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#5b6cff", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12 },
-  swipeCtaText: { flex: 1, color: "#fff", fontWeight: "800", fontSize: 14 },
+  swipeFabWrap: { position: "absolute", left: 0, right: 0, bottom: 20, alignItems: "center" },
+  swipeFab: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#5b6cff", borderRadius: 999, paddingHorizontal: 22, paddingVertical: 14, shadowColor: "#5b6cff", shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
+  swipeFabText: { color: "#fff", fontWeight: "800", fontSize: 14 },
   headerQuick: { backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8 },
   headerQuickText: { color: "#5b6cff", fontWeight: "800", fontSize: 13 },
   filters: { marginBottom: 8 },
