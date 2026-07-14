@@ -20,6 +20,7 @@ import { PosterImage } from "../src/components/PosterImage";
 import { useI18n } from "../src/i18n/I18nProvider";
 import type { Title } from "../src/types/tmdb";
 
+import { HEADING } from "../src/theme";
 const COLS = 3;
 const GAP = 10;
 const PAGE_PAD = 16;
@@ -295,7 +296,7 @@ const styles = StyleSheet.create({
   backBtn: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", marginLeft: -4, marginBottom: 6 },
   backText: { color: "#5b6cff", fontSize: 16, fontWeight: "600" },
   head: { marginBottom: 14 },
-  title: { fontSize: 22, fontWeight: "800" },
+  title: { fontFamily: HEADING, fontSize: 22, fontWeight: "800" },
   subtitle: { fontSize: 13, color: "#666", lineHeight: 19, marginTop: 6 },
   skip: { color: "#5b6cff", fontWeight: "700", fontSize: 15 },
 

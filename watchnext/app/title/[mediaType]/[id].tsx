@@ -11,6 +11,7 @@ import { useI18n } from "../../../src/i18n/I18nProvider";
 import type { MediaType, TitleDetail, WatchProvider } from "../../../src/types/tmdb";
 import type { WatchStatus } from "../../../src/types/db";
 
+import { HEADING } from "../../../src/theme";
 const STATUS_KEYS: WatchStatus[] = ["want", "watching", "watched"];
 
 export default function TitleDetailScreen() {
@@ -240,7 +241,7 @@ export default function TitleDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { padding: 16, alignItems: "flex-start" },
-  title: { fontSize: 22, fontWeight: "700", marginTop: 14 },
+  title: { fontFamily: HEADING, fontSize: 22, fontWeight: "700", marginTop: 14 },
   sub: { fontSize: 13, color: "#888", marginTop: 4 },
   genres: { fontSize: 12, color: "#5b6cff", marginTop: 8 },
   overview: { fontSize: 14, color: "#444", lineHeight: 21, marginTop: 12 },

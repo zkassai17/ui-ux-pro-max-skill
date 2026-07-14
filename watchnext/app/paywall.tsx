@@ -5,6 +5,7 @@ import { usePro } from "../src/pro/ProProvider";
 import { PRO_PLANS, type ProPlan } from "../src/lib/proGates";
 import { useI18n } from "../src/i18n/I18nProvider";
 
+import { HEADING } from "../src/theme";
 // Only features that are actually built and delivered — so the purchase
 // unlocks exactly what's advertised (App Store Guideline 2.3.1 / 3.1.1).
 const FEATURES = [
@@ -147,7 +148,7 @@ const styles = StyleSheet.create({
 
   hero: { alignItems: "center", paddingVertical: 18 },
   crown: { fontSize: 34, color: ACCENT, marginBottom: 6 },
-  heroTitle: { fontSize: 26, fontWeight: "900", color: "#111", letterSpacing: -0.5 },
+  heroTitle: { fontFamily: HEADING, fontSize: 26, fontWeight: "900", color: "#111", letterSpacing: -0.5 },
   heroTagline: { fontSize: 14, color: "#888", marginTop: 6, fontWeight: "600" },
 
   features: { backgroundColor: "#f7f7fb", borderRadius: 16, padding: 16, gap: 14, marginTop: 8 },
@@ -192,6 +193,6 @@ const styles = StyleSheet.create({
 
   doneWrap: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32 },
   doneEmoji: { fontSize: 56, marginBottom: 12 },
-  doneTitle: { fontSize: 24, fontWeight: "900", color: "#111" },
+  doneTitle: { fontFamily: HEADING, fontSize: 24, fontWeight: "900", color: "#111" },
   doneBody: { fontSize: 15, color: "#666", textAlign: "center", marginTop: 10, lineHeight: 21 },
 });

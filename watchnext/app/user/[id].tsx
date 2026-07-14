@@ -13,6 +13,7 @@ import { TasteMatchCard } from "../../src/components/TasteMatchCard";
 import { useI18n } from "../../src/i18n/I18nProvider";
 import { fullName, type Friendship, type Profile, type WatchStatus } from "../../src/types/db";
 
+import { HEADING } from "../../src/theme";
 async function getProfile(id: string): Promise<Profile | null> {
   const { data, error } = await supabase.from("profiles").select("*").eq("id", id).maybeSingle();
   if (error) throw error;
@@ -220,7 +221,7 @@ const styles = StyleSheet.create({
   modRow: { flexDirection: "row", gap: 22, marginTop: 12 },
   modText: { color: "#c0392b", fontSize: 13, fontWeight: "600" },
   nameWrap: { marginBottom: 14 },
-  nameText: { fontSize: 22, fontWeight: "800" },
+  nameText: { fontFamily: HEADING, fontSize: 22, fontWeight: "800" },
   handleText: { fontSize: 14, color: "#888", fontWeight: "600", marginTop: 1 },
   statRow: { flexDirection: "row", gap: 24 },
   stat: { alignItems: "flex-start" },

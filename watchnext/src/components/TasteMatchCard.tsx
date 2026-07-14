@@ -5,6 +5,7 @@ import { useI18n } from "../i18n/I18nProvider";
 import type { TasteMatch } from "../lib/tasteMatchLogic";
 import type { WatchlistEntry } from "../types/db";
 
+import { HEADING } from "../theme";
 // Color the percentage on a cold→warm scale so the number reads at a glance.
 function scoreColor(score: number): string {
   if (score >= 80) return "#1dd1a1";
@@ -83,7 +84,7 @@ const styles = StyleSheet.create({
   topLeft: { flex: 1, minWidth: 0 },
   heading: { fontSize: 14, fontWeight: "800" },
   sub: { fontSize: 11, color: "#999", marginTop: 2 },
-  score: { fontSize: 30, fontWeight: "900", marginLeft: 12 },
+  score: { fontFamily: HEADING, fontSize: 30, fontWeight: "900", marginLeft: 12 },
   hint: { fontSize: 12, color: "#888", marginTop: 6, lineHeight: 17 },
   note: { fontSize: 11, color: "#aaa", marginTop: 8 },
   barTrack: { height: 8, borderRadius: 999, backgroundColor: "#e6e6ee", marginTop: 12, overflow: "hidden" },

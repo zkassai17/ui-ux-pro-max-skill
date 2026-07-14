@@ -6,6 +6,7 @@ import { useI18n } from "../src/i18n/I18nProvider";
 import { fullName } from "../src/types/db";
 import { initials } from "../src/lib/avatar";
 
+import { HEADING } from "../src/theme";
 // The QR encodes a deep link into the add-friend flow with the code prefilled, so
 // a friend who scans it (in the installed app) lands ready to add you. The code is
 // also shown in text as a fallback for manual entry.
@@ -56,7 +57,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", alignItems: "center", paddingTop: 28, paddingHorizontal: 24 },
   avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: "#5b6cff", alignItems: "center", justifyContent: "center" },
   avatarText: { color: "#fff", fontSize: 24, fontWeight: "800" },
-  name: { fontSize: 20, fontWeight: "800", marginTop: 12 },
+  name: { fontFamily: HEADING, fontSize: 20, fontWeight: "800", marginTop: 12 },
   handle: { fontSize: 14, color: "#888", fontWeight: "600", marginTop: 2 },
   qrCard: { backgroundColor: "#fff", borderRadius: 20, padding: 20, marginTop: 24, borderWidth: 1, borderColor: "#eee", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
   noCode: { fontSize: 40, color: "#ccc", width: 220, height: 220, textAlign: "center", textAlignVertical: "center" },

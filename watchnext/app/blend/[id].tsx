@@ -8,6 +8,7 @@ import { useI18n } from "../../src/i18n/I18nProvider";
 import { matchColor } from "../../src/lib/avatar";
 import { fullName, type Profile } from "../../src/types/db";
 
+import { HEADING } from "../../src/theme";
 type Poster = { tmdbId: number; mediaType: "movie" | "tv"; title: string; posterPath: string | null };
 
 export default function BlendScreen() {
@@ -139,7 +140,7 @@ const styles = StyleSheet.create({
   card: { borderRadius: 22, padding: 22, alignItems: "center" },
   cardEmoji: { fontSize: 34 },
   cardNames: { color: "#fff", fontSize: 17, fontWeight: "800", marginTop: 6, maxWidth: "100%" },
-  cardPct: { color: "#fff", fontSize: 64, fontWeight: "900", marginTop: 8, letterSpacing: -2 },
+  cardPct: { fontFamily: HEADING, color: "#fff", fontSize: 64, fontWeight: "900", marginTop: 8, letterSpacing: -2 },
   cardMatched: { color: "#fff", fontSize: 14, fontWeight: "700", opacity: 0.95, marginTop: -6 },
   cardStat: { color: "#fff", fontSize: 13, fontWeight: "600", opacity: 0.9, marginTop: 10 },
   cardNotEnough: { color: "#fff", fontSize: 14, fontWeight: "600", textAlign: "center", marginTop: 14, lineHeight: 20, opacity: 0.95 },

@@ -14,6 +14,7 @@ import { getTopGenre } from "../../src/services/topGenre";
 import { initials } from "../../src/lib/avatar";
 import { PosterImage } from "../../src/components/PosterImage";
 
+import { HEADING } from "../../src/theme";
 export default function ProfileScreen() {
   const { profile, session } = useAuth();
   const { t } = useI18n();
@@ -184,8 +185,8 @@ const styles = StyleSheet.create({
   avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: "#5b6cff", alignItems: "center", justifyContent: "center" },
   avatarText: { color: "#fff", fontSize: 22, fontWeight: "800" },
   headerMeta: { flex: 1, minWidth: 0 },
-  username: { fontSize: 22, fontWeight: "700" },
-  name: { fontSize: 22, fontWeight: "800" },
+  username: { fontFamily: HEADING, fontSize: 22, fontWeight: "700" },
+  name: { fontFamily: HEADING, fontSize: 22, fontWeight: "800" },
   usernameSub: { fontSize: 14, color: "#888", fontWeight: "600", marginTop: 1 },
 
   nameBanner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#eef0ff", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, marginTop: 16 },
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
   breakdownRow: { flexDirection: "row", gap: 10, marginTop: 20 },
   breakdownCard: { flex: 1, backgroundColor: "#f0f0f3", borderRadius: 14, padding: 14, alignItems: "center" },
   breakdownTitle: { fontSize: 13, fontWeight: "700" },
-  breakdownBig: { fontSize: 26, fontWeight: "800", marginTop: 8 },
+  breakdownBig: { fontFamily: HEADING, fontSize: 26, fontWeight: "800", marginTop: 8 },
   breakdownSub: { fontSize: 11, color: "#888", marginTop: -2 },
   breakdownMeta: { fontSize: 11, color: "#aaa", marginTop: 6, textAlign: "center" },
 

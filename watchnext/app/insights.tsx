@@ -7,6 +7,7 @@ import { usePro } from "../src/pro/ProProvider";
 import { useI18n } from "../src/i18n/I18nProvider";
 import { ratingEmoji } from "../src/lib/ratingScale";
 
+import { HEADING } from "../src/theme";
 const ACCENT = "#5b6cff";
 
 function Bar({ label, count, max }: { label: string; count: number; max: number }) {
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
   msg: { color: "#888", fontSize: 13, marginTop: 24, textAlign: "center" },
 
   totalsCard: { backgroundColor: "#f3f4ff", borderRadius: 16, padding: 20, alignItems: "center", marginBottom: 8 },
-  totalsBig: { fontSize: 42, fontWeight: "900", color: ACCENT },
+  totalsBig: { fontFamily: HEADING, fontSize: 42, fontWeight: "900", color: ACCENT },
   totalsLabel: { fontSize: 13, fontWeight: "700", color: "#7a82c0", marginTop: -4 },
   totalsSplit: { fontSize: 13, color: "#555", fontWeight: "600", marginTop: 10 },
 
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
 
   lock: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32 },
   lockEmoji: { fontSize: 40, color: ACCENT, marginBottom: 10 },
-  lockTitle: { fontSize: 20, fontWeight: "900", color: "#111" },
+  lockTitle: { fontFamily: HEADING, fontSize: 20, fontWeight: "900", color: "#111" },
   lockBody: { fontSize: 14, color: "#666", textAlign: "center", marginTop: 8, lineHeight: 20 },
   cta: { backgroundColor: ACCENT, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 32, marginTop: 20 },
   ctaText: { color: "#fff", fontSize: 15, fontWeight: "800" },
