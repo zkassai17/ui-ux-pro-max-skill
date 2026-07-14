@@ -217,7 +217,7 @@ const en: Dict = {
   "auth.resetSub": "Enter your email and we'll send you a code.",
   "auth.sendCode": "Send code",
   "auth.codeSentTo": "Code sent to",
-  "auth.enterCode": "6-digit code",
+  "auth.enterCode": "Code from your email",
   "auth.newPassword": "New password",
   "auth.resetCta": "Reset password",
   "auth.resend": "Resend code",
