@@ -17,6 +17,32 @@ test("cleanTitle handles limited series / part / volume markers", () => {
   expect(cleanTitle("Arcane: Volume 1: Welcome")).toBe("Arcane");
 });
 
+test("cleanTitle handles spelled-out season/episode names (the bug)", () => {
+  // Netflix uses spelled-out counts for some shows — these used to slip through.
+  expect(cleanTitle("Avatar: The Last Airbender: Book One: The Boy in the Iceberg")).toBe("Avatar: The Last Airbender");
+  expect(cleanTitle("Stranger Things: Chapter One: The Vanishing of Will Byers")).toBe("Stranger Things");
+  expect(cleanTitle("The Chosen: Season One: I Have Called You by Name")).toBe("The Chosen");
+});
+
+test("cleanTitle collapses deep episode rows even without a known marker", () => {
+  // 3+ segments with an unknown middle label still collapse (drop the episode).
+  expect(cleanTitle("The Show: Collection 1: Some Episode")).toBe("The Show: Collection 1");
+});
+
+test("cleanTitle does not over-trim real subtitles", () => {
+  expect(cleanTitle("Mission: Impossible")).toBe("Mission: Impossible");
+  expect(cleanTitle("Book Club: The Next Chapter")).toBe("Book Club: The Next Chapter");
+});
+
+test("parseWatchHistory collapses spelled-out episodes to one show", () => {
+  const csv = [
+    "Title,Date",
+    '"Avatar: The Last Airbender: Book One: The Boy in the Iceberg","1/2/24"',
+    '"Avatar: The Last Airbender: Book One: The Avatar Returns","1/3/24"',
+  ].join("\n");
+  expect(parseWatchHistory(csv)).toEqual(["Avatar: The Last Airbender"]);
+});
+
 test("parseWatchHistory reads a Netflix CSV and collapses episodes to one show", () => {
   const csv = [
     "Title,Date",

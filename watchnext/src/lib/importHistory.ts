@@ -2,21 +2,26 @@
 // CSV) and free-pasted lists into a deduped set of show/movie titles.
 
 // A ": " segment that signals an episode/season descriptor rather than part of
-// the title itself. Used to trim "Cobra Kai: Season 1: Episode 3" → "Cobra Kai"
-// while leaving real colons ("Mission: Impossible") intact.
+// the title itself. Recognizes both numeric ("Season 4") and spelled-out
+// ("Chapter One", "Book Two") counts, plus roman numerals — the count word must
+// be followed by a number/ordinal so real subtitles ("Book Club") stay intact.
+// Standalone descriptors (Limited Series, Miniseries, Specials) match on their own.
 const EPISODE_MARKER =
-  /^(season \d+|episode\b|limited series|miniseries|part \d+|chapter \d+|volume \d+|book \d+|series \d+|specials?)\b/i;
+  /^((season|episode|chapter|part|volume|book|series)\s+(\d+|one|two|three|four|five|six|seven|eight|nine|ten|[ivx]+)|limited series|mini-?series|specials?)\b/i;
 
 export function cleanTitle(raw: string): string {
   const parts = raw.split(":").map((p) => p.trim());
-  let cut = parts.length;
+  // Cut at the first episode/season marker — this keeps a colon'd series name
+  // intact before the marker (e.g. "Avatar: The Last Airbender: Book One" → the
+  // full show), and drops everything from the marker on.
   for (let i = 1; i < parts.length; i++) {
-    if (EPISODE_MARKER.test(parts[i])) {
-      cut = i;
-      break;
-    }
+    if (EPISODE_MARKER.test(parts[i])) return parts.slice(0, i).join(": ").trim();
   }
-  return parts.slice(0, cut).join(": ").trim();
+  // No recognizable marker but 3+ segments is almost always Netflix's
+  // "Series: Season: Episode" shape — drop the trailing episode title so all of a
+  // show's episodes collapse to the same string instead of matching separately.
+  if (parts.length >= 3) return parts.slice(0, parts.length - 1).join(": ").trim();
+  return parts.join(": ").trim();
 }
 
 // Returns the first CSV field of a line, honoring quotes (with "" escapes).
