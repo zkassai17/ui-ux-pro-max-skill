@@ -158,9 +158,9 @@ export default function ImportScreen() {
       <View style={styles.container}>
         <Stack.Screen options={{ title: t("import.title") }} />
         <Text style={styles.intro}>
-          Bring in what you've already watched. Netflix: netflix.com/viewingactivity → “Download all”,
-          then upload the CSV. For Hulu/Max/Prime, copy titles from your watch history and paste below —
-          one per line. Episodes and duplicates are cleaned automatically.
+          Bring in everything you've watched, matched automatically. Upload a CSV export from
+          Netflix (netflix.com/viewingactivity → “Download all”), Letterboxd, or IMDb — or paste any
+          list of titles below, one per line. Episodes and duplicates are cleaned up for you.
         </Text>
 
         <Pressable style={styles.primaryBtn} onPress={pickFile}>

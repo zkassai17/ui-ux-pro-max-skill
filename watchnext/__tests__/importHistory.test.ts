@@ -67,3 +67,21 @@ test("parseWatchHistory dedupes case-insensitively and strips BOM/CRLF", () => {
   const raw = "﻿Title,Date\r\n\"The Matrix\",\"1/1/24\"\r\n\"the matrix\",\"1/2/24\"\r\n";
   expect(parseWatchHistory(raw)).toEqual(["The Matrix"]);
 });
+
+test("parseWatchHistory reads a Letterboxd export (Name column)", () => {
+  const csv = [
+    "Date,Name,Year,Letterboxd URI",
+    "2024-01-02,Parasite,2019,https://boxd.it/x",
+    "2024-01-03,Whiplash,2014,https://boxd.it/y",
+  ].join("\n");
+  expect(parseWatchHistory(csv)).toEqual(["Parasite", "Whiplash"]);
+});
+
+test("parseWatchHistory reads an IMDb ratings export (Title column)", () => {
+  const csv = [
+    "Const,Your Rating,Date Rated,Title,URL,Title Type",
+    'tt0111161,10,2024-01-02,"The Shawshank Redemption",https://imdb.com/x,movie',
+    "tt0903747,9,2024-01-03,Breaking Bad,https://imdb.com/y,tvSeries",
+  ].join("\n");
+  expect(parseWatchHistory(csv)).toEqual(["The Shawshank Redemption", "Breaking Bad"]);
+});

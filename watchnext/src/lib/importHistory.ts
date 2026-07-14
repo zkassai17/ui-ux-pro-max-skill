@@ -24,39 +24,49 @@ export function cleanTitle(raw: string): string {
   return parts.join(": ").trim();
 }
 
-// Returns the first CSV field of a line, honoring quotes (with "" escapes).
-// For a plain line with no leading quote and no comma, returns the whole line.
-function firstField(line: string): string {
-  if (line[0] === '"') {
-    let out = "";
-    let i = 1;
-    while (i < line.length) {
-      if (line[i] === '"') {
-        if (line[i + 1] === '"') {
-          out += '"';
-          i += 2;
-          continue;
-        }
-        break;
-      }
-      out += line[i];
-      i++;
-    }
-    return out;
+// Split one CSV line into fields, honoring quotes and "" escapes.
+export function splitCsvLine(line: string): string[] {
+  const out: string[] = [];
+  let cur = "";
+  let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQ) {
+      if (c === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i++; }
+        else inQ = false;
+      } else cur += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ",") { out.push(cur); cur = ""; }
+    else cur += c;
   }
-  const comma = line.indexOf(",");
-  return comma === -1 ? line : line.slice(0, comma);
+  out.push(cur);
+  return out;
 }
 
+// Parse a watch-history export or pasted list into deduped show/movie titles.
+// Header-aware: picks the title column from Netflix ("Title"), Letterboxd ("Name")
+// or IMDb ("Title") exports; falls back to first-column / whole-line for plain
+// pasted lists.
 export function parseWatchHistory(raw: string): string[] {
   const text = raw.replace(/^﻿/, "");
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (lines.length === 0) return [];
+
+  const header = splitCsvLine(lines[0]).map((h) => h.trim().toLowerCase());
+  const titleCol = header.findIndex((h) => h === "title" || h === "name");
+  const hasHeader = titleCol !== -1;
+  const rows = hasHeader ? lines.slice(1) : lines;
+  const col = hasHeader ? titleCol : 0;
+
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const line of text.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    const field = firstField(trimmed).trim();
-    if (!field || field.toLowerCase() === "title") continue;
+  for (const line of rows) {
+    const fields = splitCsvLine(line);
+    const field = (fields[col] ?? fields[0] ?? "").trim();
+    if (!field) continue;
+    // A stray header word in a plain (headerless) paste shouldn't become a title.
+    if (!hasHeader && (field.toLowerCase() === "title" || field.toLowerCase() === "name")) continue;
     const title = cleanTitle(field);
     if (!title) continue;
     const key = title.toLowerCase();

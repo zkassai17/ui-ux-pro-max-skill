@@ -16,6 +16,8 @@ import { getLibrary, rateEntry } from "../../src/services/watchlist";
 import { sortLibrary, applyInlineRating, type LibrarySort } from "../../src/lib/libraryLogic";
 import { PosterImage } from "../../src/components/PosterImage";
 import { InlineRating } from "../../src/components/InlineRating";
+import { BuildLibraryOptions } from "../../src/components/BuildLibraryOptions";
+import { HEADING } from "../../src/theme";
 import { ratingEmoji } from "../../src/lib/ratingScale";
 import { getDefaultLibraryTab } from "../../src/services/prefs";
 import { useI18n } from "../../src/i18n/I18nProvider";
@@ -188,14 +190,11 @@ export default function LibraryScreen() {
         q !== "" ? (
           <Text style={styles.msg}>{t("lib.noMatch")} "{query.trim()}".</Text>
         ) : (data ?? []).length === 0 ? (
-          // Whole library empty — the full onboarding empty state.
-          <View style={styles.empty}>
-            <Text style={styles.emptyEmoji}>🎬</Text>
-            <Text style={styles.msg}>{t("lib.emptyTitle")}</Text>
-            <Pressable style={styles.quickBtn} onPress={() => router.push("/quick-seen")}>
-              <Text style={styles.quickBtnText}>⚡ {t("lib.quickAdd")}</Text>
-            </Pressable>
-            <Text style={styles.emptyHint}>{t("lib.quickAddHint")}</Text>
+          // Whole library empty — the "build your library" hub.
+          <View style={styles.buildWrap}>
+            <Text style={styles.buildHeading}>{t("build.heading")}</Text>
+            <Text style={styles.buildSub}>{t("build.sub")}</Text>
+            <BuildLibraryOptions />
           </View>
         ) : (
           // Library has items, just not in THIS filter.
@@ -309,6 +308,9 @@ const styles = StyleSheet.create({
   msg: { color: "#888", fontSize: 13, marginTop: 16, textAlign: "center" },
   empty: { alignItems: "center", marginTop: 40, paddingHorizontal: 24 },
   emptyEmoji: { fontSize: 40, marginBottom: 8 },
+  buildWrap: { paddingTop: 28, paddingHorizontal: 4 },
+  buildHeading: { fontSize: 24, fontFamily: HEADING, color: "#111", marginBottom: 6 },
+  buildSub: { fontSize: 14, color: "#777", marginBottom: 22, lineHeight: 20 },
   quickBtn: { backgroundColor: "#5b6cff", borderRadius: 12, paddingVertical: 13, paddingHorizontal: 22, marginTop: 14 },
   quickBtnText: { color: "#fff", fontWeight: "800", fontSize: 14 },
   emptyHint: { color: "#aaa", fontSize: 12, marginTop: 12, textAlign: "center", lineHeight: 17 },
