@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter, useNavigation } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { searchTitles, discoverTitles, getTrendingTitles, getGenres, type TrendingScope } from "../../src/services/tmdb";
 import { getLibrary } from "../../src/services/watchlist";
 import { TitleRow } from "../../src/components/TitleRow";
@@ -193,6 +194,14 @@ export default function AddScreen() {
 
   return (
     <View style={styles.container}>
+      {!searching ? (
+        <Pressable style={styles.swipeCta} onPress={() => router.push("/swipe")}>
+          <Ionicons name="albums-outline" size={18} color="#fff" />
+          <Text style={styles.swipeCtaText}>{t("swipe.discoverCta")}</Text>
+          <Ionicons name="chevron-forward" size={16} color="#fff" style={{ opacity: 0.8 }} />
+        </Pressable>
+      ) : null}
+
       <TextInput
         style={styles.search}
         placeholder={t("add.searchPlaceholder")}
@@ -328,6 +337,8 @@ export default function AddScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   search: { backgroundColor: "#f0f0f3", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, marginBottom: 12 },
+  swipeCta: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#5b6cff", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12 },
+  swipeCtaText: { flex: 1, color: "#fff", fontWeight: "800", fontSize: 14 },
   headerQuick: { backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8 },
   headerQuickText: { color: "#5b6cff", fontWeight: "800", fontSize: 13 },
   filters: { marginBottom: 8 },
