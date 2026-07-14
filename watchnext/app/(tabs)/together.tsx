@@ -85,7 +85,7 @@ export default function TogetherScreen() {
           {/* Pending friend requests */}
           {requestCount > 0 ? (
             <Pressable style={styles.requestBanner} onPress={() => router.push("/requests")}>
-              <Text style={styles.requestText}>📨 {requestCount} · {t("together.newRequests")}</Text>
+              <Text style={styles.requestText}>{requestCount} · {t("together.newRequests")}</Text>
               <Text style={styles.requestArrow}>→</Text>
             </Pressable>
           ) : null}
@@ -103,7 +103,7 @@ export default function TogetherScreen() {
             <Text style={styles.addFriendBtnText}>＋ {t("profile.addFriend")}</Text>
           </Pressable>
 
-          <Text style={styles.section}>🧬 {t("together.yourBlends")}</Text>
+          <Text style={styles.section}>{t("together.yourBlends")}</Text>
           {allFriends.length > 0 ? (
             <View style={styles.searchWrap}>
               <Text style={styles.searchIcon}>🔍</Text>

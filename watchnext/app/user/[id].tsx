@@ -168,7 +168,7 @@ export default function FriendProfileScreen() {
             <>
               <TasteMatchCard match={tasteMatch} username={profile.data?.username} />
               <Pressable style={styles.blendBtn} onPress={() => router.push(`/blend/${id}`)}>
-                <Text style={styles.blendBtnText}>🧬 {t("blend.openBlend")}</Text>
+                <Text style={styles.blendBtnText}>{t("blend.openBlend")}</Text>
               </Pressable>
             </>
           ) : null}

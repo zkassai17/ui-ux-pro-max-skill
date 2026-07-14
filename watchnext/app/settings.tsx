@@ -282,13 +282,13 @@ export default function SettingsScreen() {
         {isPro ? (
           <Pressable style={styles.customToggle} onPress={() => setShowCustom((s) => !s)} hitSlop={6}>
             <Text style={styles.customToggleText}>
-              {showCustom ? `${t("settings.hideTuning")} ▴` : `✦ ${t("settings.customize")} ▾`}
+              {showCustom ? `${t("settings.hideTuning")} ▴` : `${t("settings.customize")} ▾`}
               {matchPreset(weights) === null ? `  · ${t("settings.custom")}` : ""}
             </Text>
           </Pressable>
         ) : (
           <Pressable style={styles.proTuneRow} onPress={() => router.push("/paywall")}>
-            <Text style={styles.proTuneText}>✦ {t("settings.fineTunePro")}</Text>
+            <Text style={styles.proTuneText}>{t("settings.fineTunePro")}</Text>
             <Text style={styles.chevron}>›</Text>
           </Pressable>
         )}
@@ -344,12 +344,12 @@ export default function SettingsScreen() {
       <Text style={styles.section}>{t("settings.pro")}</Text>
       {isPro ? (
         <View style={styles.proActive}>
-          <Text style={styles.proActiveText}>✦ {t("settings.proActive")}</Text>
+          <Text style={styles.proActiveText}>{t("settings.proActive")}</Text>
         </View>
       ) : (
         <>
           <Pressable style={styles.proRow} onPress={() => router.push("/paywall")}>
-            <Text style={styles.proRowText}>✦ {t("settings.getPro")}</Text>
+            <Text style={styles.proRowText}>{t("settings.getPro")}</Text>
             <Text style={styles.chevron}>›</Text>
           </Pressable>
           {redeeming ? (

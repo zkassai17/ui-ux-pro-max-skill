@@ -241,7 +241,7 @@ export default function AddScreen() {
               onPress={toggleTrending}
             >
               <Text style={[styles.chipText, styles.trendChipText, trending && styles.chipTextOn]}>
-                🔥 {t("add.trending")}
+                {t("add.trending")}
               </Text>
             </Pressable>
             {(genres.data ?? []).map((g) => {

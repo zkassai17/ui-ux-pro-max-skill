@@ -116,12 +116,12 @@ export default function ProfileScreen() {
 
       {!isPro ? (
         <Pressable style={styles.proUpsell} onPress={() => router.push("/paywall")}>
-          <Text style={styles.proUpsellText}>✦ {t("pro.insightsUpsell")}</Text>
+          <Text style={styles.proUpsellText}>{t("pro.insightsUpsell")}</Text>
           <Text style={styles.proUpsellArrow}>›</Text>
         </Pressable>
       ) : (
         <Pressable style={styles.proEntry} onPress={() => router.push("/insights")}>
-          <Text style={styles.proEntryText}>✦ {t("insights.title")}</Text>
+          <Text style={styles.proEntryText}>{t("insights.title")}</Text>
           <Text style={styles.proUpsellArrow}>›</Text>
         </Pressable>
       )}

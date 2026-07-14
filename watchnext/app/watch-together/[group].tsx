@@ -141,7 +141,7 @@ export default function WatchTogetherResultsScreen() {
                     const everyone = p.wantedBy >= groupSize && groupSize > 1;
                     const tag = everyone
                       ? t("wt.everyoneWants")
-                      : `🔥 ${p.wantedBy} ${t("wt.wantThis")}`;
+                      : `${p.wantedBy} ${t("wt.wantThis")}`;
                     return (
                       <TitleRow
                         key={`${e.media_type}:${e.tmdb_id}`}
