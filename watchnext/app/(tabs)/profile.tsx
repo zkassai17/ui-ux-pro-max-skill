@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ComponentProps } from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet, RefreshControl, Share } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -105,8 +105,8 @@ export default function ProfileScreen() {
       ) : null}
 
       <View style={styles.breakdownRow}>
-        <BreakdownCard emoji="🎬" label={t("profile.movies")} bucket={stats.data?.movie} />
-        <BreakdownCard emoji="📺" label={t("profile.tvShows")} bucket={stats.data?.tv} />
+        <BreakdownCard icon="film-outline" label={t("profile.movies")} bucket={stats.data?.movie} />
+        <BreakdownCard icon="tv-outline" label={t("profile.tvShows")} bucket={stats.data?.tv} />
       </View>
 
       <View style={styles.insightRow}>
@@ -164,12 +164,15 @@ function InsightTile({ big, label }: { big: string; label: string }) {
   );
 }
 
-function BreakdownCard({ emoji, label, bucket }: { emoji: string; label: string; bucket?: StatBucket }) {
+function BreakdownCard({ icon, label, bucket }: { icon: ComponentProps<typeof Ionicons>["name"]; label: string; bucket?: StatBucket }) {
   const { t } = useI18n();
   const b = bucket ?? { want: 0, watching: 0, watched: 0 };
   return (
     <View style={styles.breakdownCard}>
-      <Text style={styles.breakdownTitle}>{emoji} {label}</Text>
+      <View style={styles.breakdownTitleRow}>
+        <Ionicons name={icon} size={15} color="#555" />
+        <Text style={styles.breakdownTitle}>{label}</Text>
+      </View>
       <Text style={styles.breakdownBig}>{b.watched}</Text>
       <Text style={styles.breakdownSub}>{t("stat.watched")}</Text>
       <Text style={styles.breakdownMeta}>{b.watching} {t("stat.watching")} · {b.want} {t("stat.want")}</Text>
@@ -195,6 +198,7 @@ const styles = StyleSheet.create({
 
   breakdownRow: { flexDirection: "row", gap: 10, marginTop: 20 },
   breakdownCard: { flex: 1, backgroundColor: "#f0f0f3", borderRadius: 14, padding: 14, alignItems: "center" },
+  breakdownTitleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   breakdownTitle: { fontSize: 13, fontWeight: "700" },
   breakdownBig: { fontFamily: HEADING, fontSize: 26, fontWeight: "800", marginTop: 8 },
   breakdownSub: { fontSize: 11, color: "#888", marginTop: -2 },
