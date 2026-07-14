@@ -86,10 +86,10 @@ export default function ProfileScreen() {
           )}
         </View>
         <Pressable onPress={() => router.push("/qr")} hitSlop={10} style={styles.gear}>
-          <Ionicons name="qr-code-outline" size={23} color="#5b6cff" />
+          <Ionicons name="qr-code-outline" size={23} color="#b9553c" />
         </Pressable>
         <Pressable onPress={shareProfile} hitSlop={10} style={styles.gear}>
-          <Ionicons name="share-outline" size={23} color="#5b6cff" />
+          <Ionicons name="share-outline" size={23} color="#b9553c" />
         </Pressable>
         <Pressable onPress={() => router.push("/settings")} hitSlop={10} style={styles.gear}>
           <Ionicons name="settings-outline" size={24} color="#666" />
@@ -187,16 +187,16 @@ const styles = StyleSheet.create({
   content: { padding: 16 },
   header: { flexDirection: "row", alignItems: "center", gap: 14 },
   gear: { padding: 2 },
-  avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: "#5b6cff", alignItems: "center", justifyContent: "center" },
+  avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: "#b9553c", alignItems: "center", justifyContent: "center" },
   avatarText: { color: "#fff", fontSize: 22, fontWeight: "800" },
   headerMeta: { flex: 1, minWidth: 0 },
   username: { fontSize: 22, fontWeight: "700" },
   name: { fontSize: 22, fontWeight: "800" },
   usernameSub: { fontSize: 14, color: "#888", fontWeight: "600", marginTop: 1 },
 
-  nameBanner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#eef0ff", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, marginTop: 16 },
-  nameBannerText: { flex: 1, fontSize: 13, fontWeight: "600", color: "#3a45c4" },
-  nameBannerArrow: { fontSize: 16, color: "#3a45c4", marginLeft: 8 },
+  nameBanner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#f5ede7", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, marginTop: 16 },
+  nameBannerText: { flex: 1, fontSize: 13, fontWeight: "600", color: "#7d3826" },
+  nameBannerArrow: { fontSize: 16, color: "#7d3826", marginLeft: 8 },
 
   breakdownRow: { flexDirection: "row", gap: 10, marginTop: 20 },
   breakdownCard: { flex: 1, backgroundColor: "#f0f0f3", borderRadius: 14, padding: 14, alignItems: "center" },
@@ -205,15 +205,15 @@ const styles = StyleSheet.create({
   breakdownSub: { fontSize: 11, color: "#888", marginTop: -2 },
   breakdownMeta: { fontSize: 11, color: "#aaa", marginTop: 6, textAlign: "center" },
 
-  proUpsell: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#f3f4ff", borderRadius: 14, paddingVertical: 13, paddingHorizontal: 16, marginTop: 10 },
-  proUpsellText: { fontSize: 13, fontWeight: "800", color: "#5b6cff", flex: 1 },
-  proUpsellArrow: { fontSize: 18, color: "#5b6cff", fontWeight: "700" },
+  proUpsell: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#f7f0ea", borderRadius: 14, paddingVertical: 13, paddingHorizontal: 16, marginTop: 10 },
+  proUpsellText: { fontSize: 13, fontWeight: "800", color: "#b9553c", flex: 1 },
+  proUpsellArrow: { fontSize: 18, color: "#b9553c", fontWeight: "700" },
   proEntries: { gap: 10, marginTop: 10 },
-  proEntry: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#f3f4ff", borderRadius: 14, paddingVertical: 13, paddingHorizontal: 16 },
-  proEntryText: { fontSize: 14, fontWeight: "800", color: "#5b6cff", flex: 1 },
+  proEntry: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#f7f0ea", borderRadius: 14, paddingVertical: 13, paddingHorizontal: 16 },
+  proEntryText: { fontSize: 14, fontWeight: "800", color: "#b9553c", flex: 1 },
   insightRow: { flexDirection: "row", gap: 10, marginTop: 10 },
-  insightTile: { flex: 1, backgroundColor: "#eef0ff", borderRadius: 14, paddingVertical: 14, paddingHorizontal: 6, alignItems: "center" },
-  insightBig: { fontSize: 18, fontWeight: "800", color: "#3a45c4" },
+  insightTile: { flex: 1, backgroundColor: "#f5ede7", borderRadius: 14, paddingVertical: 14, paddingHorizontal: 6, alignItems: "center" },
+  insightBig: { fontSize: 18, fontWeight: "800", color: "#7d3826" },
   insightLabel: { fontSize: 10, color: "#7a82c0", marginTop: 3, textAlign: "center" },
   favSection: { marginTop: 20 },
   favRow: { gap: 10, paddingRight: 8 },

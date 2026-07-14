@@ -6,7 +6,7 @@ export const RATING_SCALE: readonly RatingLevel[] = [
   { value: 1, emoji: "😖", label: "Bad", color: "#ff3b5b" },
   { value: 2, emoji: "😕", label: "Meh", color: "#ff9f43" },
   { value: 3, emoji: "🙂", label: "Good", color: "#ffc048" },
-  { value: 4, emoji: "😀", label: "Great", color: "#5b6cff" },
+  { value: 4, emoji: "😀", label: "Great", color: "#b9553c" },
   { value: 5, emoji: "😍", label: "Loved it", color: "#1dd1a1" },
 ];
 

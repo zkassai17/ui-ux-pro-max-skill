@@ -2,11 +2,18 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { EnvelopeButton } from "../../src/components/EnvelopeButton";
 import { useI18n } from "../../src/i18n/I18nProvider";
+import { HEADING, ACCENT } from "../../src/theme";
 
 export default function TabsLayout() {
   const { t } = useI18n();
   return (
-    <Tabs screenOptions={{ headerShown: true }}>
+    <Tabs
+      screenOptions={{
+        headerShown: true,
+        headerTitleStyle: { fontFamily: HEADING, fontSize: 20 },
+        tabBarActiveTintColor: ACCENT,
+      }}
+    >
       <Tabs.Screen
         name="for-you"
         options={{

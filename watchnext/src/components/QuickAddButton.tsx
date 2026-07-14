@@ -99,7 +99,7 @@ export function QuickAddButton({
       hitSlop={8}
     >
       {busy ? (
-        <ActivityIndicator size="small" color={added ? "#fff" : "#5b6cff"} />
+        <ActivityIndicator size="small" color={added ? "#fff" : "#b9553c"} />
       ) : (
         <Text style={[styles.label, added && styles.labelAdded]}>
           {added ? `✓ ${t(`status.${status!}`)}` : `+ ${t("common.add")}`}
@@ -115,12 +115,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 999,
-    backgroundColor: "#eef0ff",
+    backgroundColor: "#f5ede7",
     alignItems: "center",
     justifyContent: "center",
   },
-  btnAdded: { backgroundColor: "#5b6cff" },
-  label: { fontSize: 12, fontWeight: "700", color: "#5b6cff" },
+  btnAdded: { backgroundColor: "#b9553c" },
+  label: { fontSize: 12, fontWeight: "700", color: "#b9553c" },
   labelAdded: { color: "#fff" },
   addPill: {
     alignItems: "center",

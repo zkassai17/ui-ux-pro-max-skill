@@ -83,7 +83,7 @@ export default function ForgotPassword() {
           />
           <Button title={busy ? "…" : t("auth.resetCta")} onPress={completeReset} disabled={busy} />
           <Pressable onPress={sendCode} disabled={busy} hitSlop={8}>
-            <Text style={{ color: "#5b6cff", fontWeight: "600", textAlign: "center" }}>{t("auth.resend")}</Text>
+            <Text style={{ color: "#b9553c", fontWeight: "600", textAlign: "center" }}>{t("auth.resend")}</Text>
           </Pressable>
         </>
       )}

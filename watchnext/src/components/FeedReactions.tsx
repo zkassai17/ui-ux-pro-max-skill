@@ -64,8 +64,8 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "#fff",
   },
-  chipActive: { backgroundColor: "#e6e8ff", borderWidth: 1, borderColor: "#5b6cff" },
+  chipActive: { backgroundColor: "#e6e8ff", borderWidth: 1, borderColor: "#b9553c" },
   emoji: { fontSize: 13 },
   count: { fontSize: 11, fontWeight: "700", color: "#888" },
-  countActive: { color: "#5b6cff" },
+  countActive: { color: "#b9553c" },
 });

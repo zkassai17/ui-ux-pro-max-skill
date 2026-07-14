@@ -140,7 +140,7 @@ export default function PaywallScreen() {
   );
 }
 
-const ACCENT = "#5b6cff";
+const ACCENT = "#b9553c";
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
   },
-  planOn: { borderColor: ACCENT, backgroundColor: "#f3f4ff" },
+  planOn: { borderColor: ACCENT, backgroundColor: "#f7f0ea" },
   planLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
   radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: "#ccc", alignItems: "center", justifyContent: "center" },
   radioOn: { borderColor: ACCENT },

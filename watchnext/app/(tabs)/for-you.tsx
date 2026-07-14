@@ -22,6 +22,7 @@ import { QuickAddButton } from "../../src/components/QuickAddButton";
 import { FeedReactions } from "../../src/components/FeedReactions";
 import { CDrawLoader } from "../../src/components/CDrawLoader";
 import { useI18n } from "../../src/i18n/I18nProvider";
+import { HEADING } from "../../src/theme";
 import { fullName } from "../../src/types/db";
 import type { Title, MediaType } from "../../src/types/tmdb";
 import type { WatchStatus } from "../../src/types/db";
@@ -95,7 +96,7 @@ function TonightHero({ mediaType }: { mediaType: MediaType }) {
         <Ionicons name="close" size={15} color="#fff" />
       </Pressable>
       <Pressable onPress={() => router.push(`/title/${hero.mediaType}/${hero.tmdbId}`)}>
-        <Text style={styles.heroLabel}>✨ {t("home.tonightsPick")}</Text>
+        <Text style={styles.heroLabel}>{t("home.tonightsPick")}</Text>
         <View style={styles.heroBody}>
           <PosterImage path={hero.posterPath} width={92} height={138} radius={12} />
           <View style={styles.heroMeta}>
@@ -105,7 +106,7 @@ function TonightHero({ mediaType }: { mediaType: MediaType }) {
             </Text>
             {fromWant ? (
               <View style={styles.heroTag}>
-                <Text style={styles.heroTagText}>🔖 {t("home.onYourList")}</Text>
+                <Text style={styles.heroTagText}>{t("home.onYourList")}</Text>
               </View>
             ) : null}
           </View>
@@ -149,7 +150,7 @@ function BlendTeaser() {
         <Text style={styles.teaserAvatarText}>{initials(best.username)}</Text>
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={styles.teaserName} numberOfLines={1}>🧬 {best.name}</Text>
+        <Text style={styles.teaserName} numberOfLines={1}>{best.name}</Text>
         <Text style={styles.teaserSub}>{t("home.topMatch")}</Text>
       </View>
       <Text style={[styles.teaserPct, { color: matchColor(best.score) }]}>{best.score}%</Text>
@@ -302,7 +303,7 @@ export default function HomeScreen() {
   const { t } = useI18n();
   const { profile } = useAuth();
   const greetName = profile?.first_name?.trim() || profile?.username || "";
-  const greeting = greetName ? `${t("home.greeting")} ${greetName} 👋` : `${t("home.greeting")} 👋`;
+  const greeting = greetName ? `${t("home.greeting")} ${greetName}` : t("home.greeting");
   const { data, isLoading, isError } = useQuery({ queryKey: ["feed"], queryFn: getFeed });
   // Spotlight a pick from whichever you watch more of (movies vs shows), so the
   // hero can be a TV show too — and the matching rail skips it to avoid a dup.
@@ -462,15 +463,15 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
 
-  hero: { backgroundColor: "#f7f8ff", borderWidth: 1.5, borderColor: "#eef0ff", borderRadius: 18, padding: 14, marginBottom: 14 },
+  hero: { backgroundColor: "#f7f8ff", borderWidth: 1.5, borderColor: "#f5ede7", borderRadius: 18, padding: 14, marginBottom: 14 },
   heroClose: { position: "absolute", top: 8, right: 8, width: 24, height: 24, borderRadius: 12, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center", zIndex: 2 },
-  heroLabel: { fontSize: 11, fontWeight: "800", color: "#5b6cff", letterSpacing: 0.5, marginBottom: 10 },
+  heroLabel: { fontSize: 11, fontWeight: "800", color: "#b9553c", letterSpacing: 0.5, marginBottom: 10 },
   heroBody: { flexDirection: "row", gap: 14, alignItems: "center" },
   heroMeta: { flex: 1, minWidth: 0 },
-  heroTitle: { fontSize: 18, fontWeight: "800" },
+  heroTitle: { fontSize: 20, fontFamily: HEADING, color: "#111" },
   heroType: { fontSize: 12, color: "#888", marginTop: 6 },
-  heroTag: { alignSelf: "flex-start", backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, marginTop: 10 },
-  heroTagText: { fontSize: 11, fontWeight: "800", color: "#5b6cff" },
+  heroTag: { alignSelf: "flex-start", backgroundColor: "#f5ede7", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, marginTop: 10 },
+  heroTagText: { fontSize: 11, fontWeight: "800", color: "#b9553c" },
 
   teaser: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#f6f6f8", borderRadius: 14, padding: 12, marginBottom: 14 },
   teaserAvatar: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
@@ -481,8 +482,8 @@ const styles = StyleSheet.create({
   teaserChevron: { fontSize: 22, color: "#ccc" },
 
   rail: { marginBottom: 8 },
-  greeting: { fontSize: 22, fontWeight: "800", color: "#111", marginBottom: 14 },
-  sectionHeading: { fontSize: 13, fontWeight: "700", color: "#888", marginBottom: 10 },
+  greeting: { fontSize: 27, fontFamily: HEADING, color: "#111", marginBottom: 16, letterSpacing: -0.3 },
+  sectionHeading: { fontSize: 13, fontWeight: "700", color: "#8a8a8a", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.6 },
   railRow: { gap: 12, paddingBottom: 4, paddingRight: 8 },
   suggestion: { width: 104 },
   suggestionTitle: { fontSize: 11, fontWeight: "600", marginTop: 6 },
@@ -500,11 +501,11 @@ const styles = StyleSheet.create({
   meta: { flex: 1, minWidth: 0 },
   title: { fontSize: 15, fontWeight: "700" },
   note: { fontSize: 12, color: "#888", marginTop: 3, fontStyle: "italic" },
-  pill: { alignSelf: "flex-start", marginTop: 4, fontSize: 9, color: "#5b6cff", backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2, overflow: "hidden" },
+  pill: { alignSelf: "flex-start", marginTop: 4, fontSize: 9, color: "#b9553c", backgroundColor: "#f5ede7", borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2, overflow: "hidden" },
   msg: { color: "#888", fontSize: 13, marginTop: 24, textAlign: "center" },
   feedEmpty: { alignItems: "center", paddingVertical: 28, paddingHorizontal: 24 },
   feedEmptyEmoji: { fontSize: 40, marginBottom: 12 },
   feedEmptyText: { color: "#888", fontSize: 14, textAlign: "center", lineHeight: 20 },
-  feedEmptyBtn: { backgroundColor: "#5b6cff", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 16 },
+  feedEmptyBtn: { backgroundColor: "#b9553c", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 16 },
   feedEmptyBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
 });
