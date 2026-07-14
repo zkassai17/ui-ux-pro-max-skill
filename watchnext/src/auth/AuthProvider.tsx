@@ -57,6 +57,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!initialized) return;
     let cancelled = false;
+    // Whenever the session changes (incl. a fresh sign-in), go back to loading
+    // until the NEW profile is resolved — otherwise index routing sees the old
+    // (null) profile and wrongly redirects a returning user to onboarding.
+    setLoading(true);
     (async () => {
       if (session) await loadProfile(session.user.id);
       else setProfile(null);
