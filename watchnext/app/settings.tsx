@@ -142,6 +142,24 @@ export default function SettingsScreen() {
     ]);
   }
 
+  function changePassword() {
+    // Logged-in users can set a new password directly — no email needed.
+    Alert.prompt(
+      t("settings.changePassword"),
+      t("settings.changePasswordBody"),
+      async (pw?: string) => {
+        if (!pw || pw.length < 6) {
+          if (pw !== undefined) Alert.alert(t("auth.resetFailed"), t("auth.passwordTooShort"));
+          return;
+        }
+        const { error } = await supabase.auth.updateUser({ password: pw });
+        if (error) Alert.alert(t("auth.resetFailed"), error.message);
+        else Alert.alert(t("settings.passwordChanged"));
+      },
+      "secure-text",
+    );
+  }
+
   function confirmDelete() {
     Alert.alert(t("settings.deleteAccountTitle"), t("settings.deleteAccountBody"), [
       { text: t("common.cancel"), style: "cancel" },
@@ -245,6 +263,12 @@ export default function SettingsScreen() {
           <Text style={styles.copyHint}>{copied ? t("common.copied") : `${t("common.copy")} ⧉`}</Text>
         </Pressable>
         <Text style={styles.hint}>{t("settings.shareCode")}</Text>
+
+        <View style={styles.divider} />
+        <Pressable style={styles.valueRow} onPress={changePassword} hitSlop={6}>
+          <Text style={styles.label}>{t("settings.changePassword")}</Text>
+          <Text style={styles.edit}>{t("common.edit")}</Text>
+        </Pressable>
       </View>
 
       {/* Preferences */}
