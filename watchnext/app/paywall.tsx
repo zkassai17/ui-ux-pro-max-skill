@@ -5,13 +5,14 @@ import { usePro } from "../src/pro/ProProvider";
 import { PRO_PLANS, type ProPlan } from "../src/lib/proGates";
 import { useI18n } from "../src/i18n/I18nProvider";
 
+// Only features that are actually built and delivered — so the purchase
+// unlocks exactly what's advertised (App Store Guideline 2.3.1 / 3.1.1).
 const FEATURES = [
   "pro.feature.blend",
-  "pro.feature.recs",
+  "pro.feature.friends",
   "pro.feature.insights",
   "pro.feature.recap",
-  "pro.feature.friends",
-  "pro.feature.themes",
+  "pro.feature.tuning",
 ];
 
 export default function PaywallScreen() {

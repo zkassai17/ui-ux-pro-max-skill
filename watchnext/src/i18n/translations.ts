@@ -39,6 +39,7 @@ const en: Dict = {
   "pro.feature.insights": "Full taste insights & stats",
   "pro.feature.recap": "Your Year in Watch recap card",
   "pro.feature.friends": "Unlimited friends",
+  "pro.feature.tuning": "Fine-tune your recommendations",
   "pro.feature.themes": "Profile themes & badge",
   "pro.plan.yearly": "Yearly",
   "pro.plan.monthly": "Monthly",
