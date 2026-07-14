@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter, useNavigation } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { searchTitles, discoverTitles, getTrendingTitles, getGenres, type TrendingScope } from "../../src/services/tmdb";
 import { getLibrary } from "../../src/services/watchlist";
 import { TitleRow } from "../../src/components/TitleRow";
@@ -203,6 +204,15 @@ export default function AddScreen() {
         clearButtonMode="while-editing"
       />
 
+      {/* Bulk-add shortcut — a lot to add? import it all at once. */}
+      {!searching ? (
+        <Pressable style={styles.importBanner} onPress={() => router.push("/import")}>
+          <Ionicons name="cloud-upload-outline" size={18} color="#5b6cff" />
+          <Text style={styles.importBannerText}>{t("build.import")}</Text>
+          <Ionicons name="chevron-forward" size={16} color="#5b6cff" />
+        </Pressable>
+      ) : null}
+
       {!searching ? (
         <View style={styles.filters}>
           {trending ? (
@@ -328,6 +338,8 @@ export default function AddScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   search: { backgroundColor: "#f0f0f3", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, marginBottom: 12 },
+  importBanner: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#eef0ff", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12 },
+  importBannerText: { flex: 1, color: "#5b6cff", fontWeight: "800", fontSize: 13 },
   headerQuick: { backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8 },
   headerQuickText: { color: "#5b6cff", fontWeight: "800", fontSize: 13 },
   filters: { marginBottom: 8 },
