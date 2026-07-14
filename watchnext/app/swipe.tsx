@@ -13,7 +13,6 @@ import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getLibrary, addToLibrary } from "../src/services/watchlist";
-import { getRecWeights } from "../src/services/prefs";
 import { getHiddenKeys, hideRec } from "../src/services/hiddenRecs";
 import { getSwipeDeck } from "../src/services/swipe";
 import { titleKey } from "../src/lib/forYouLogic";
@@ -53,13 +52,12 @@ export default function SwipeScreen() {
   const { t } = useI18n();
 
   const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
-  const recWeights = useQuery({ queryKey: ["rec-weights"], queryFn: getRecWeights });
   const hidden = useQuery({ queryKey: ["hidden-recs"], queryFn: getHiddenKeys });
   const deck = useQuery({
     queryKey: ["swipe-deck"],
-    enabled: !library.isLoading && !recWeights.isLoading,
+    enabled: !library.isLoading,
     staleTime: 10 * 60 * 1000,
-    queryFn: () => getSwipeDeck(library.data ?? [], recWeights.data),
+    queryFn: () => getSwipeDeck(library.data ?? []),
   });
 
   const hiddenSet = hidden.data ?? new Set<string>();
