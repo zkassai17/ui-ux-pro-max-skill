@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
   teaserChevron: { fontSize: 22, color: "#ccc" },
 
   rail: { marginBottom: 8 },
-  greeting: { fontSize: 28, fontFamily: HEADING, color: "#111", letterSpacing: -0.4, marginBottom: 18 },
+  greeting: { fontSize: 21, fontFamily: HEADING, color: "#222", letterSpacing: -0.2, marginBottom: 14 },
   sectionHeading: { fontSize: 12, fontWeight: "800", color: "#9a9a9a", marginBottom: 12, textTransform: "uppercase", letterSpacing: 1 },
   railRow: { gap: 12, paddingBottom: 4, paddingRight: 8 },
   suggestion: { width: 104 },
