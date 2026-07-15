@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { Oxanium_600SemiBold, Oxanium_700Bold } from "@expo-google-fonts/oxanium";
+import { Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
 import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/inter";
 import { AuthProvider, useAuth } from "../src/auth/AuthProvider";
 import { I18nProvider } from "../src/i18n/I18nProvider";
@@ -39,8 +39,8 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    Oxanium_600SemiBold,
-    Oxanium_700Bold,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
     Inter_400Regular,
     Inter_600SemiBold,
     Inter_700Bold,
