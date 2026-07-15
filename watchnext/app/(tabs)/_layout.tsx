@@ -1,4 +1,5 @@
 import { Tabs } from "expo-router";
+import { Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { EnvelopeButton } from "../../src/components/EnvelopeButton";
 import { useI18n } from "../../src/i18n/I18nProvider";
@@ -17,7 +18,15 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="for-you"
         options={{
-          title: t("tab.home"),
+          title: t("tab.home"), // keeps the tab-bar label "Home"
+          headerTitle: "", // wordmark replaces the centered title
+          headerLeft: () => (
+            <Image
+              source={require("../../assets/wordmark.png")}
+              style={{ width: 108, height: 27, marginLeft: 16 }}
+              resizeMode="contain"
+            />
+          ),
           headerRight: () => <EnvelopeButton />,
           tabBarIcon: ({ color, size }) => <Ionicons name="home" color={color} size={size} />,
         }}
