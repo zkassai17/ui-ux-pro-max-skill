@@ -1,5 +1,5 @@
-import type { ComponentProps } from "react";
-import { Pressable, Text, View, StyleSheet, Alert } from "react-native";
+import { useEffect, useRef, type ComponentProps } from "react";
+import { Pressable, Text, View, StyleSheet, Alert, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getLibraryEntry, addToLibrary, updateStatus, removeFromLibrary } from "../services/watchlist";
@@ -66,24 +66,65 @@ export function StatusButtons({
 
   return (
     <View style={[styles.row, busy && styles.busy]}>
-      {OPTIONS.map((o) => {
-        const active = current === o.key;
-        return (
-          <Pressable
-            key={o.key}
-            style={styles.item}
-            onPress={() => choose.mutate(o.key)}
-            disabled={busy}
-            hitSlop={6}
-          >
-            <Ionicons name={active ? o.on : o.off} size={22} color={active ? ACTIVE : IDLE} />
-            <Text style={[styles.label, active && styles.labelActive]} numberOfLines={1}>
-              {t(`status.${o.key}`)}
-            </Text>
-          </Pressable>
-        );
-      })}
+      {OPTIONS.map((o) => (
+        <StatusItem
+          key={o.key}
+          on={o.on}
+          off={o.off}
+          label={t(`status.${o.key}`)}
+          active={current === o.key}
+          disabled={busy}
+          onPress={() => choose.mutate(o.key)}
+        />
+      ))}
     </View>
+  );
+}
+
+// One status icon. Pops when it becomes active (satisfying confirmation) and
+// scales down while pressed. Native-driven so it stays smooth.
+function StatusItem({
+  on,
+  off,
+  label,
+  active,
+  disabled,
+  onPress,
+}: {
+  on: IconName;
+  off: IconName;
+  label: string;
+  active: boolean;
+  disabled?: boolean;
+  onPress: () => void;
+}) {
+  const press = useRef(new Animated.Value(1)).current;
+  const pop = useRef(new Animated.Value(1)).current;
+  const wasActive = useRef(active);
+  useEffect(() => {
+    if (active && !wasActive.current) {
+      pop.setValue(0.7);
+      Animated.spring(pop, { toValue: 1, useNativeDriver: true, speed: 16, bounciness: 16 }).start();
+    }
+    wasActive.current = active;
+  }, [active, pop]);
+
+  return (
+    <Pressable
+      style={styles.item}
+      onPress={onPress}
+      onPressIn={() => Animated.spring(press, { toValue: 0.9, useNativeDriver: true, speed: 40, bounciness: 0 }).start()}
+      onPressOut={() => Animated.spring(press, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 8 }).start()}
+      disabled={disabled}
+      hitSlop={6}
+    >
+      <Animated.View style={{ transform: [{ scale: press }, { scale: pop }] }}>
+        <Ionicons name={active ? on : off} size={22} color={active ? ACTIVE : IDLE} />
+      </Animated.View>
+      <Text style={[styles.label, active && styles.labelActive]} numberOfLines={1}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 

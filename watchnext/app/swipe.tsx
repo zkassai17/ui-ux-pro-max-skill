@@ -17,6 +17,7 @@ import { getHiddenKeys, hideRec } from "../src/services/hiddenRecs";
 import { getSwipeDeck } from "../src/services/swipe";
 import { titleKey } from "../src/lib/forYouLogic";
 import { PosterImage } from "../src/components/PosterImage";
+import { PressableScale } from "../src/components/PressableScale";
 import { useI18n } from "../src/i18n/I18nProvider";
 import { ACCENT, HEADING } from "../src/theme";
 import type { Title } from "../src/types/tmdb";
@@ -65,6 +66,9 @@ export default function SwipeScreen() {
 
   const [index, setIndex] = useState(0);
   const position = useRef(new Animated.ValueXY()).current;
+  // The incoming card springs up from the "behind" size to full as it becomes
+  // the top card — makes the deck feel like it's dealing you the next one.
+  const topScale = useRef(new Animated.Value(1)).current;
 
   // Refs so the PanResponder (created once) always reads current values.
   const cardsRef = useRef<Title[]>(cards);
@@ -78,6 +82,8 @@ export default function SwipeScreen() {
     else hideRec(card).catch(() => {});
     setIndex((i) => i + 1);
     position.setValue({ x: 0, y: 0 });
+    topScale.setValue(0.94);
+    Animated.spring(topScale, { toValue: 1, useNativeDriver: false, speed: 20, bounciness: 8 }).start();
     qc.invalidateQueries({ queryKey: ["library"] });
     if (dir === "left") qc.invalidateQueries({ queryKey: ["hidden-recs"] });
   }
@@ -156,7 +162,7 @@ export default function SwipeScreen() {
               </View>
             ) : null}
             <Animated.View
-              style={[styles.card, { transform: [{ translateX: position.x }, { translateY: position.y }, { rotate }] }]}
+              style={[styles.card, { transform: [{ translateX: position.x }, { translateY: position.y }, { rotate }, { scale: topScale }] }]}
               {...panResponder.panHandlers}
             >
               <CardContent title={current} />
@@ -174,21 +180,21 @@ export default function SwipeScreen() {
 
           <View style={styles.actions}>
             <View style={styles.actionCol}>
-              <Pressable style={styles.actionBtn} onPress={() => swipeOff("left")}>
+              <PressableScale style={styles.actionBtn} onPress={() => swipeOff("left")} to={0.88}>
                 <Ionicons name="close" size={28} color="#ff3b5b" />
-              </Pressable>
+              </PressableScale>
               <Text style={[styles.actionLabel, { color: "#ff3b5b" }]}>{t("swipe.btnSkip")}</Text>
             </View>
             <View style={styles.actionCol}>
-              <Pressable style={styles.actionBtn} onPress={() => swipeOff("up")}>
+              <PressableScale style={styles.actionBtn} onPress={() => swipeOff("up")} to={0.88}>
                 <Ionicons name="eye" size={24} color="#5b6cff" />
-              </Pressable>
+              </PressableScale>
               <Text style={[styles.actionLabel, { color: "#5b6cff" }]}>{t("swipe.btnSeen")}</Text>
             </View>
             <View style={styles.actionCol}>
-              <Pressable style={styles.actionBtn} onPress={() => swipeOff("right")}>
+              <PressableScale style={styles.actionBtn} onPress={() => swipeOff("right")} to={0.88}>
                 <Ionicons name="bookmark" size={24} color="#1dd1a1" />
-              </Pressable>
+              </PressableScale>
               <Text style={[styles.actionLabel, { color: "#12b886" }]}>{t("swipe.btnWant")}</Text>
             </View>
           </View>

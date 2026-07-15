@@ -1,4 +1,5 @@
-import { Pressable, Text, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import { useEffect, useRef } from "react";
+import { Pressable, Text, StyleSheet, ActivityIndicator, Alert, Animated } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getLibraryEntry, addToLibrary, updateStatus, removeFromLibrary } from "../services/watchlist";
 import { useI18n } from "../i18n/I18nProvider";
@@ -70,41 +71,63 @@ export function QuickAddButton({
   const status = entry.data?.status ?? null;
   const added = status !== null;
 
+  // Press feedback (scales down while held) + a satisfying "pop" the moment a
+  // title becomes added. Both are native-driven so they never drop frames.
+  const press = useRef(new Animated.Value(1)).current;
+  const pop = useRef(new Animated.Value(1)).current;
+  const wasAdded = useRef(added);
+  useEffect(() => {
+    if (added && !wasAdded.current) {
+      pop.setValue(0.8);
+      Animated.spring(pop, { toValue: 1, useNativeDriver: true, speed: 18, bounciness: 14 }).start();
+    }
+    wasAdded.current = added;
+  }, [added, pop]);
+  const pressIn = () => Animated.spring(press, { toValue: 0.94, useNativeDriver: true, speed: 40, bounciness: 0 }).start();
+  const pressOut = () => Animated.spring(press, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 6 }).start();
+  const animStyle = { transform: [{ scale: press }, { scale: pop }] };
+
   if (compact) {
     // Labelled "Add" pill designed to sit at the bottom of a poster. Tap to add
     // (as `addStatus`, or remove); long-press for the Want/Watching/Watched chooser.
     return (
       <Pressable
-        style={[styles.addPill, added && styles.addPillAdded]}
         onPress={() => (added ? remove.mutate() : set.mutate(addStatus))}
         onLongPress={pickStatus}
+        onPressIn={pressIn}
+        onPressOut={pressOut}
         disabled={busy}
         hitSlop={6}
       >
-        {busy ? (
-          <ActivityIndicator size="small" color="#fff" />
-        ) : (
-          <Text style={styles.addPillText}>{added ? `✓ ${t(`status.${status!}`)}` : `＋ ${t("common.add")}`}</Text>
-        )}
+        <Animated.View style={[styles.addPill, added && styles.addPillAdded, animStyle]}>
+          {busy ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.addPillText}>{added ? `✓ ${t(`status.${status!}`)}` : `＋ ${t("common.add")}`}</Text>
+          )}
+        </Animated.View>
       </Pressable>
     );
   }
 
   return (
     <Pressable
-      style={[styles.btn, added && styles.btnAdded]}
       onPress={() => (added ? remove.mutate() : set.mutate("watched"))}
       onLongPress={pickStatus}
+      onPressIn={pressIn}
+      onPressOut={pressOut}
       disabled={busy}
       hitSlop={8}
     >
-      {busy ? (
-        <ActivityIndicator size="small" color={added ? "#fff" : "#5b6cff"} />
-      ) : (
-        <Text style={[styles.label, added && styles.labelAdded]}>
-          {added ? `✓ ${t(`status.${status!}`)}` : `+ ${t("common.add")}`}
-        </Text>
-      )}
+      <Animated.View style={[styles.btn, added && styles.btnAdded, animStyle]}>
+        {busy ? (
+          <ActivityIndicator size="small" color={added ? "#fff" : "#5b6cff"} />
+        ) : (
+          <Text style={[styles.label, added && styles.labelAdded]}>
+            {added ? `✓ ${t(`status.${status!}`)}` : `+ ${t("common.add")}`}
+          </Text>
+        )}
+      </Animated.View>
     </Pressable>
   );
 }

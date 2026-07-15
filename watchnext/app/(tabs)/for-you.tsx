@@ -20,6 +20,8 @@ import { getReactions } from "../../src/services/reactions";
 import { PosterImage } from "../../src/components/PosterImage";
 import { QuickAddButton } from "../../src/components/QuickAddButton";
 import { FeedReactions } from "../../src/components/FeedReactions";
+import { FadeInView } from "../../src/components/FadeInView";
+import { PressableScale } from "../../src/components/PressableScale";
 import { CDrawLoader } from "../../src/components/CDrawLoader";
 import { useI18n } from "../../src/i18n/I18nProvider";
 import { HEADING } from "../../src/theme";
@@ -270,9 +272,9 @@ function ForYouRail({ heading }: { heading: string }) {
           <View key={`${t.mediaType}:${t.tmdbId}`} style={styles.suggestion}>
             {/* Poster + the add button are siblings, so tapping + never triggers navigation. */}
             <View>
-              <Pressable onPress={() => router.push(`/title/${t.mediaType}/${t.tmdbId}`)}>
+              <PressableScale onPress={() => router.push(`/title/${t.mediaType}/${t.tmdbId}`)}>
                 <PosterImage path={t.posterPath} width={104} height={156} radius={10} />
-              </Pressable>
+              </PressableScale>
               <Pressable
                 style={styles.hideBtn}
                 hitSlop={8}
@@ -422,10 +424,14 @@ export default function HomeScreen() {
         </View>
         )
       }
-      renderItem={({ item: row }) => {
+      renderItem={({ item: row, index }) => {
+        // Stagger the fade so the first few cards cascade in; cap the delay so
+        // items far down the list don't feel sluggish.
+        const delay = Math.min(index, 6) * 60;
         if (row.item.kind === "watchlist") {
           const e = row.item.entry;
           return (
+            <FadeInView delay={delay}>
             <Pressable style={styles.card} onLongPress={() => moderate(row.item.userId, row.username)} delayLongPress={400}>
               <FeedCardHeader username={row.username} verb={t(VERB_KEY[e.status])} at={row.item.at} />
               <Pressable style={styles.cardBody} onPress={() => router.push(`/title/${e.media_type}/${e.tmdb_id}`)}>
@@ -438,10 +444,12 @@ export default function HomeScreen() {
               </Pressable>
               <FeedReactions targetId={row.item.id} targetOwner={row.item.userId} summary={reactionMap[row.item.id]} />
             </Pressable>
+            </FadeInView>
           );
         }
         const rec = row.item.rec;
         return (
+          <FadeInView delay={delay}>
           <Pressable style={styles.card} onLongPress={() => moderate(row.item.userId, row.username)} delayLongPress={400}>
             <FeedCardHeader username={row.username} verb={t("feed.recommends")} at={row.item.at} />
             <Pressable style={styles.cardBody} onPress={() => router.push(`/title/${rec.media_type}/${rec.tmdb_id}`)}>
@@ -454,6 +462,7 @@ export default function HomeScreen() {
             </Pressable>
             <FeedReactions targetId={row.item.id} targetOwner={row.item.userId} summary={reactionMap[row.item.id]} />
           </Pressable>
+          </FadeInView>
         );
       }}
     />
