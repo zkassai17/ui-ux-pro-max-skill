@@ -173,15 +173,24 @@ export default function SwipeScreen() {
           </View>
 
           <View style={styles.actions}>
-            <Pressable style={[styles.actionBtn, styles.nopeBtn]} onPress={() => swipeOff("left")}>
-              <Ionicons name="close" size={28} color="#ff3b5b" />
-            </Pressable>
-            <Pressable style={[styles.actionBtn, styles.seenBtn]} onPress={() => swipeOff("up")}>
-              <Ionicons name="eye" size={24} color="#5b6cff" />
-            </Pressable>
-            <Pressable style={[styles.actionBtn, styles.wantBtn]} onPress={() => swipeOff("right")}>
-              <Ionicons name="bookmark" size={24} color="#1dd1a1" />
-            </Pressable>
+            <View style={styles.actionCol}>
+              <Pressable style={styles.actionBtn} onPress={() => swipeOff("left")}>
+                <Ionicons name="close" size={28} color="#ff3b5b" />
+              </Pressable>
+              <Text style={[styles.actionLabel, { color: "#ff3b5b" }]}>{t("swipe.btnSkip")}</Text>
+            </View>
+            <View style={styles.actionCol}>
+              <Pressable style={styles.actionBtn} onPress={() => swipeOff("up")}>
+                <Ionicons name="eye" size={24} color="#5b6cff" />
+              </Pressable>
+              <Text style={[styles.actionLabel, { color: "#5b6cff" }]}>{t("swipe.btnSeen")}</Text>
+            </View>
+            <View style={styles.actionCol}>
+              <Pressable style={styles.actionBtn} onPress={() => swipeOff("right")}>
+                <Ionicons name="bookmark" size={24} color="#1dd1a1" />
+              </Pressable>
+              <Text style={[styles.actionLabel, { color: "#12b886" }]}>{t("swipe.btnWant")}</Text>
+            </View>
           </View>
 
           <Text style={styles.instr}>{t("swipe.instr")}</Text>
@@ -215,10 +224,9 @@ const styles = StyleSheet.create({
   stampSeen: { alignSelf: "center", left: 0, right: 0, top: 40, marginHorizontal: "auto", borderColor: "#5b6cff", alignItems: "center" },
   stampSeenText: { color: "#5b6cff", fontSize: 22, fontWeight: "900", letterSpacing: 1 },
 
-  actions: { flexDirection: "row", justifyContent: "center", gap: 22, paddingVertical: 14 },
+  actions: { flexDirection: "row", justifyContent: "center", gap: 28, paddingVertical: 10 },
+  actionCol: { alignItems: "center", gap: 6 },
   actionBtn: { width: 58, height: 58, borderRadius: 29, alignItems: "center", justifyContent: "center", backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#eee", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
-  nopeBtn: {},
-  seenBtn: {},
-  wantBtn: {},
+  actionLabel: { fontSize: 12, fontWeight: "800" },
   instr: { textAlign: "center", color: "#aaa", fontSize: 12, paddingBottom: 20, paddingHorizontal: 24, lineHeight: 17 },
 });
