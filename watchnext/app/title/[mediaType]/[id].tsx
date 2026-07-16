@@ -7,6 +7,7 @@ import { addToLibrary, getLibraryEntry, updateStatus, rateTitle, removeFromLibra
 import { PosterImage } from "../../../src/components/PosterImage";
 import { EmojiRating } from "../../../src/components/EmojiRating";
 import { posterUrl } from "../../../src/lib/tmdbNormalize";
+import { containsProfanity } from "../../../src/lib/profanity";
 import { useI18n } from "../../../src/i18n/I18nProvider";
 import type { MediaType, TitleDetail, WatchProvider } from "../../../src/types/tmdb";
 import type { WatchStatus } from "../../../src/types/db";
@@ -46,6 +47,10 @@ export default function TitleDetailScreen() {
 
   async function saveNote() {
     if (!entry.data) return;
+    if (containsProfanity(noteText)) {
+      Alert.alert(t("review.blockedTitle"), t("review.blockedBody"));
+      return;
+    }
     try {
       setSavingNote(true);
       await setNote(entry.data.id, noteText);

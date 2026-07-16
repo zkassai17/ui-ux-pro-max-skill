@@ -421,6 +421,16 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      <Text style={styles.section}>{t("settings.legal")}</Text>
+      <Pressable style={styles.rowBtn} onPress={() => router.push("/legal/terms")}>
+        <Text style={styles.rowBtnText}>{t("settings.terms")}</Text>
+        <Text style={styles.chevron}>›</Text>
+      </Pressable>
+      <Pressable style={[styles.rowBtn, { marginTop: 10 }]} onPress={() => router.push("/legal/privacy")}>
+        <Text style={styles.rowBtnText}>{t("settings.privacy")}</Text>
+        <Text style={styles.chevron}>›</Text>
+      </Pressable>
+
       <Pressable style={styles.signOut} onPress={confirmSignOut}>
         <Text style={styles.signOutText}>{t("settings.signOut")}</Text>
       </Pressable>

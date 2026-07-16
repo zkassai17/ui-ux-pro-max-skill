@@ -11,9 +11,11 @@ export default function SignUp() {
   const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
 
   async function handleSignUp() {
+    if (!agreed) return;
     setBusy(true);
     const { data, error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
@@ -80,10 +82,28 @@ export default function SignUp() {
             </View>
           </View>
 
+          <View style={styles.agreeRow}>
+            <Pressable
+              onPress={() => setAgreed((a) => !a)}
+              hitSlop={8}
+              style={[styles.checkbox, agreed && styles.checkboxOn]}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: agreed }}
+            >
+              {agreed ? <Ionicons name="checkmark" size={14} color="#fff" /> : null}
+            </Pressable>
+            <Text style={styles.agreeText}>
+              {t("auth.agreePrefix")}{" "}
+              <Text style={styles.agreeLink} onPress={() => router.push("/legal/terms")}>{t("auth.termsOfUse")}</Text>
+              {" "}{t("auth.and")}{" "}
+              <Text style={styles.agreeLink} onPress={() => router.push("/legal/privacy")}>{t("auth.privacyPolicy")}</Text>
+            </Text>
+          </View>
+
           <Pressable
-            style={[styles.signUpBtn, busy && styles.btnDisabled]}
+            style={[styles.signUpBtn, (busy || !agreed) && styles.btnDisabled]}
             onPress={handleSignUp}
-            disabled={busy}
+            disabled={busy || !agreed}
           >
             <Text style={styles.signUpText}>{busy ? "…" : t("auth.signUp")}</Text>
           </Pressable>
@@ -116,6 +136,12 @@ const styles = StyleSheet.create({
   inputWrap: { flexDirection: "row", alignItems: "center", backgroundColor: "#f6f6f8", borderWidth: 1, borderColor: "#ececef", borderRadius: 12, paddingHorizontal: 12, height: 50 },
   inputIcon: { marginRight: 8 },
   input: { flex: 1, fontSize: 15, color: "#111", padding: 0 },
+
+  agreeRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginTop: 2 },
+  checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: "#ccced6", alignItems: "center", justifyContent: "center", marginTop: 1 },
+  checkboxOn: { backgroundColor: ACCENT, borderColor: ACCENT },
+  agreeText: { flex: 1, fontSize: 13, color: "#777", lineHeight: 19 },
+  agreeLink: { color: ACCENT, fontWeight: "700" },
 
   signUpBtn: { backgroundColor: ACCENT, borderRadius: 12, height: 50, alignItems: "center", justifyContent: "center", marginTop: 4 },
   signUpText: { color: "#fff", fontSize: 16, fontWeight: "800" },

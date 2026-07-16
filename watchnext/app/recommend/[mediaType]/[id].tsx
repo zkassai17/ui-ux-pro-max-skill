@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getTitleDetails } from "../../../src/services/tmdb";
 import { getFriends } from "../../../src/services/friends";
 import { sendRecommendation } from "../../../src/services/recommendations";
+import { containsProfanity } from "../../../src/lib/profanity";
 import { PosterImage } from "../../../src/components/PosterImage";
 import type { MediaType } from "../../../src/types/tmdb";
 import { useI18n } from "../../../src/i18n/I18nProvider";
@@ -34,6 +35,10 @@ export default function SendRecScreen() {
     const ids = Object.keys(selected).filter((k) => selected[k]);
     if (ids.length === 0) {
       Alert.alert(t("alert.pickFriend"));
+      return;
+    }
+    if (containsProfanity(note)) {
+      Alert.alert(t("review.blockedTitle"), t("review.blockedBody"));
       return;
     }
     try {
