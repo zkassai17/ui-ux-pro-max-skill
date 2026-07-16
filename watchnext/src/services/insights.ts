@@ -8,18 +8,29 @@ import {
   yearInReview,
 } from "../lib/profileInsights";
 
-// Genres aren't stored per title, so we pull them from TMDB for a bounded sample
-// of watched titles. Enough for a representative breakdown without a huge fan-out.
-const GENRE_SAMPLE = 60;
+// Genres aren't stored per title, so we pull them from TMDB per watched title.
+// GENRE_SAMPLE bounds the worst case (a huge library) so we never fan out
+// unboundedly; GENRE_CONCURRENCY caps how many run at once so we don't burst
+// TMDB. For a typical library this now covers *every* watched title.
+const GENRE_SAMPLE = 400;
+const GENRE_CONCURRENCY = 12;
 
 async function genreListsFor(entries: WatchlistEntry[]): Promise<string[][]> {
-  return Promise.all(
-    entries.map((e) =>
-      getTitleDetails(e.media_type, e.tmdb_id)
+  const out: string[][] = new Array(entries.length);
+  let cursor = 0;
+  async function worker() {
+    while (cursor < entries.length) {
+      const idx = cursor++;
+      const e = entries[idx];
+      out[idx] = await getTitleDetails(e.media_type, e.tmdb_id)
         .then((d) => d.genres)
-        .catch(() => [] as string[]),
-    ),
+        .catch(() => [] as string[]);
+    }
+  }
+  await Promise.all(
+    Array.from({ length: Math.min(GENRE_CONCURRENCY, entries.length) }, worker),
   );
+  return out;
 }
 
 export type Insights = {

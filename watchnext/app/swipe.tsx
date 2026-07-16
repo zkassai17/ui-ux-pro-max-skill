@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ComponentProps } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getLibrary, addToLibrary } from "../src/services/watchlist";
 import { getHiddenKeys, hideRec } from "../src/services/hiddenRecs";
@@ -29,6 +30,19 @@ const SWIPE_X = width * 0.26;
 const SWIPE_Y = height * 0.16;
 
 type Dir = "right" | "left" | "up";
+type IconName = ComponentProps<typeof Ionicons>["name"];
+
+// One line in the first-run "how it works" card.
+function CoachRow({ icon, color, text }: { icon: IconName; color: string; text: string }) {
+  return (
+    <View style={styles.coachRow}>
+      <View style={[styles.coachIcon, { backgroundColor: `${color}22` }]}>
+        <Ionicons name={icon} size={22} color={color} />
+      </View>
+      <Text style={styles.coachText}>{text}</Text>
+    </View>
+  );
+}
 
 function CardContent({ title }: { title: Title }) {
   const { t } = useI18n();
@@ -111,6 +125,16 @@ export default function SwipeScreen() {
     topScale.setValue(0.96);
     Animated.spring(topScale, { toValue: 1, useNativeDriver: false, speed: 22, bounciness: 5 }).start();
   }, [index, position, topScale]);
+
+  // First-run coach card: show the "how it works" overlay once, then remember it.
+  const [coached, setCoached] = useState<boolean | null>(null);
+  useEffect(() => {
+    AsyncStorage.getItem("swipe:coached").then((v) => setCoached(v === "1")).catch(() => setCoached(true));
+  }, []);
+  function dismissCoach() {
+    setCoached(true);
+    AsyncStorage.setItem("swipe:coached", "1").catch(() => {});
+  }
 
   function swipeOff(dir: Dir) {
     const card = cardsRef.current[indexRef.current];
@@ -226,6 +250,22 @@ export default function SwipeScreen() {
           <Text style={styles.instr}>{t("swipe.instr")}</Text>
         </>
       )}
+
+      {/* First-run "how it works" overlay — shown once, then remembered. */}
+      {coached === false && current ? (
+        <View style={styles.coach}>
+          <View style={styles.coachCard}>
+            <Text style={styles.coachTitle}>{t("swipe.coachTitle")}</Text>
+            <CoachRow icon="arrow-forward" color="#12b886" text={t("swipe.coachRight")} />
+            <CoachRow icon="arrow-back" color="#ff3b5b" text={t("swipe.coachLeft")} />
+            <CoachRow icon="arrow-up" color="#5b6cff" text={t("swipe.coachUp")} />
+            <CoachRow icon="hand-left-outline" color="#888" text={t("swipe.coachTap")} />
+            <Pressable style={styles.coachBtn} onPress={dismissCoach}>
+              <Text style={styles.coachBtnText}>{t("swipe.coachGotIt")}</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -259,4 +299,13 @@ const styles = StyleSheet.create({
   actionBtn: { width: 58, height: 58, borderRadius: 29, alignItems: "center", justifyContent: "center", backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#eee", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
   actionLabel: { fontSize: 12, fontWeight: "800" },
   instr: { textAlign: "center", color: "#aaa", fontSize: 12, paddingBottom: 20, paddingHorizontal: 24, lineHeight: 17 },
+
+  coach: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(17,17,17,0.72)", alignItems: "center", justifyContent: "center", padding: 28 },
+  coachCard: { backgroundColor: "#fff", borderRadius: 20, padding: 24, width: "100%", maxWidth: 360 },
+  coachTitle: { fontFamily: HEADING, fontSize: 20, color: "#111", marginBottom: 12, textAlign: "center" },
+  coachRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 9 },
+  coachIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  coachText: { flex: 1, fontSize: 15, color: "#333", fontWeight: "600" },
+  coachBtn: { backgroundColor: ACCENT, borderRadius: 14, paddingVertical: 14, alignItems: "center", marginTop: 16 },
+  coachBtnText: { color: "#fff", fontSize: 15, fontWeight: "800" },
 });
