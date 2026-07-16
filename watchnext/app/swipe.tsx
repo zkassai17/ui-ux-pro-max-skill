@@ -8,6 +8,7 @@ import {
   Dimensions,
   Pressable,
   ActivityIndicator,
+  Easing,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -97,6 +98,22 @@ export default function SwipeScreen() {
   // The incoming card springs up from the "behind" size to full as it becomes
   // the top card — makes the deck feel like it's dealing you the next one.
   const topScale = useRef(new Animated.Value(1)).current;
+  // Idle "float": the resting card gently bobs up and down on its own.
+  const float = useRef(new Animated.Value(0)).current;
+  // "Lift": grows the card + deepens its shadow while you're holding it, so it
+  // feels like you picked it up off the stack (settles back on release).
+  const lift = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(float, { toValue: -7, duration: 1500, easing: Easing.inOut(Easing.sin), useNativeDriver: false }),
+        Animated.timing(float, { toValue: 0, duration: 1500, easing: Easing.inOut(Easing.sin), useNativeDriver: false }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [float]);
 
   // Refs so the PanResponder (created once) always reads current values.
   const cardsRef = useRef<Title[]>(cards);
@@ -148,12 +165,18 @@ export default function SwipeScreen() {
     Animated.timing(position, { toValue, duration: 220, useNativeDriver: false }).start(() => act(dir, card));
   }
 
+  const setLift = (toValue: number) =>
+    Animated.spring(lift, { toValue, useNativeDriver: false, speed: 30, bounciness: 4 }).start();
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 4 || Math.abs(g.dy) > 4,
+      onPanResponderGrant: () => setLift(1), // pick the card up
       onPanResponderMove: (_e, g) => position.setValue({ x: g.dx, y: g.dy }),
+      onPanResponderTerminate: () => setLift(0),
       onPanResponderRelease: (_e, g) => {
+        setLift(0); // set it back down
         const card = cardsRef.current[indexRef.current];
         if (!card) return;
         if (Math.abs(g.dx) < 5 && Math.abs(g.dy) < 5) {
@@ -172,6 +195,16 @@ export default function SwipeScreen() {
   const likeOp = position.x.interpolate({ inputRange: [0, SWIPE_X], outputRange: [0, 1], extrapolate: "clamp" });
   const nopeOp = position.x.interpolate({ inputRange: [-SWIPE_X, 0], outputRange: [1, 0], extrapolate: "clamp" });
   const seenOp = position.y.interpolate({ inputRange: [-SWIPE_Y, 0], outputRange: [1, 0], extrapolate: "clamp" });
+
+  // Top-card motion: pan + idle float on translateY, deal-in * grab-lift on scale,
+  // and a shadow that deepens while the card is held (the "picked up" feel).
+  const cardTranslateY = Animated.add(position.y, float);
+  const cardScale = Animated.multiply(topScale, lift.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] }));
+  const cardShadow = {
+    shadowOpacity: lift.interpolate({ inputRange: [0, 1], outputRange: [0.18, 0.34] }),
+    shadowRadius: lift.interpolate({ inputRange: [0, 1], outputRange: [12, 24] }),
+    elevation: lift.interpolate({ inputRange: [0, 1], outputRange: [8, 18] }),
+  };
 
   const current = cards[index];
   const next = cards[index + 1];
@@ -210,7 +243,11 @@ export default function SwipeScreen() {
               </View>
             ) : null}
             <Animated.View
-              style={[styles.card, { transform: [{ translateX: position.x }, { translateY: position.y }, { rotate }, { scale: topScale }] }]}
+              style={[
+                styles.card,
+                cardShadow,
+                { transform: [{ translateX: position.x }, { translateY: cardTranslateY }, { rotate }, { scale: cardScale }] },
+              ]}
               {...panResponder.panHandlers}
             >
               <CardContent title={current} />
@@ -279,8 +316,21 @@ const styles = StyleSheet.create({
   done: { color: ACCENT, fontWeight: "800", fontSize: 15 },
 
   deck: { flex: 1, alignItems: "center", justifyContent: "center" },
-  card: { position: "absolute", width: CARD_W, height: CARD_H, borderRadius: 18, backgroundColor: "#eee" },
-  cardBehind: { transform: [{ scale: 0.94 }, { translateY: 14 }] },
+  card: {
+    position: "absolute",
+    width: CARD_W,
+    height: CARD_H,
+    borderRadius: 18,
+    backgroundColor: "#eee",
+    // Resting shadow so the card always looks lifted off the background. The top
+    // card animates this deeper while held (see cardShadow).
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  cardBehind: { transform: [{ scale: 0.94 }, { translateY: 14 }], shadowOpacity: 0.1, elevation: 4 },
   cardInner: { width: CARD_W, height: CARD_H, borderRadius: 18, overflow: "hidden", backgroundColor: "#111" },
   cardFooter: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 16, backgroundColor: "rgba(0,0,0,0.55)" },
   cardTitle: { color: "#fff", fontSize: 20, fontFamily: HEADING },
