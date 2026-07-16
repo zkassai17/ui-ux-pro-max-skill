@@ -17,12 +17,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getLibrary, addToLibrary } from "../src/services/watchlist";
 import { getHiddenKeys, hideRec } from "../src/services/hiddenRecs";
 import { getSwipeDeck } from "../src/services/swipe";
+import { getTitleDetails } from "../src/services/tmdb";
 import { titleKey } from "../src/lib/forYouLogic";
 import { PosterImage } from "../src/components/PosterImage";
 import { PressableScale } from "../src/components/PressableScale";
 import { useI18n } from "../src/i18n/I18nProvider";
 import { ACCENT, HEADING } from "../src/theme";
-import type { Title } from "../src/types/tmdb";
+import type { Title, TitleDetail } from "../src/types/tmdb";
 
 const { width, height } = Dimensions.get("window");
 // Wider + a touch taller than a natural 2:3 poster so the card fills more of the
@@ -61,6 +62,32 @@ function CardContent({ title }: { title: Title }) {
           {title.rating ? `  ⭐ ${title.rating}` : ""}
         </Text>
       </View>
+    </View>
+  );
+}
+
+// The back of the card — the info you'd otherwise get on the detail page.
+function CardBack({ title, detail, loading }: { title: Title; detail?: TitleDetail; loading: boolean }) {
+  const { t } = useI18n();
+  return (
+    <View style={styles.backInner}>
+      <Text style={styles.backTitle} numberOfLines={2}>{title.title}</Text>
+      <Text style={styles.backMeta}>
+        {title.mediaType === "movie" ? t("media.movie") : t("media.tv")}
+        {title.year ? ` · ${title.year}` : ""}
+        {title.rating ? `  ⭐ ${title.rating}` : ""}
+      </Text>
+      {detail?.genres?.length ? (
+        <Text style={styles.backGenres}>{detail.genres.slice(0, 4).join("  ·  ")}</Text>
+      ) : null}
+      {loading && !detail ? (
+        <ActivityIndicator style={{ marginTop: 24 }} color="#fff" />
+      ) : (
+        <Text style={styles.backOverview} numberOfLines={14}>
+          {detail?.overview?.trim() ? detail.overview : t("swipe.noOverview")}
+        </Text>
+      )}
+      <Text style={styles.backHint}>{t("swipe.flipHint")}</Text>
     </View>
   );
 }
@@ -118,6 +145,19 @@ export default function SwipeScreen() {
     return () => loop.stop();
   }, [float]);
 
+  // Card flip: tapping the card turns it over to show details on the back
+  // (instead of navigating to a whole new page). `flip` 0 = front, 1 = back.
+  const flip = useRef(new Animated.Value(0)).current;
+  const [flipped, setFlipped] = useState(false);
+  const flippedRef = useRef(false);
+  function doFlip(toBack: boolean) {
+    flippedRef.current = toBack;
+    setFlipped(toBack);
+    Animated.spring(flip, { toValue: toBack ? 1 : 0, useNativeDriver: true, speed: 12, bounciness: 7 }).start();
+  }
+  const frontRotate = flip.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "180deg"] });
+  const backRotate = flip.interpolate({ inputRange: [0, 1], outputRange: ["180deg", "360deg"] });
+
   // Refs so the PanResponder (created once) always reads current values.
   const cardsRef = useRef<Title[]>(cards);
   const indexRef = useRef(index);
@@ -144,7 +184,20 @@ export default function SwipeScreen() {
     position.setValue({ x: 0, y: 0 });
     topScale.setValue(0.96);
     Animated.spring(topScale, { toValue: 1, useNativeDriver: false, speed: 22, bounciness: 5 }).start();
-  }, [index, position, topScale]);
+    // A new card always starts on its front (poster) side.
+    flip.setValue(0);
+    flippedRef.current = false;
+    setFlipped(false);
+  }, [index, position, topScale, flip]);
+
+  // Details for the back of the current card — fetched only once it's flipped.
+  const activeCard = cards[index];
+  const details = useQuery({
+    queryKey: ["title-detail", activeCard?.mediaType, activeCard?.tmdbId],
+    enabled: !!activeCard && flipped,
+    staleTime: 30 * 60 * 1000,
+    queryFn: () => getTitleDetails(activeCard!.mediaType, activeCard!.tmdbId),
+  });
 
   // First-run coach card: show the "how it works" overlay once, then remember it.
   const [coached, setCoached] = useState<boolean | null>(null);
@@ -174,18 +227,23 @@ export default function SwipeScreen() {
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 4 || Math.abs(g.dy) > 4,
-      onPanResponderGrant: () => setLift(1), // pick the card up
+      // Don't drag while the card is flipped (info side) — a tap flips it back.
+      onMoveShouldSetPanResponder: (_e, g) => !flippedRef.current && (Math.abs(g.dx) > 4 || Math.abs(g.dy) > 4),
+      onPanResponderGrant: () => { if (!flippedRef.current) setLift(1); }, // pick the card up
       onPanResponderMove: (_e, g) => position.setValue({ x: g.dx, y: g.dy }),
       onPanResponderTerminate: () => setLift(0),
       onPanResponderRelease: (_e, g) => {
         setLift(0); // set it back down
         const card = cardsRef.current[indexRef.current];
         if (!card) return;
-        if (Math.abs(g.dx) < 5 && Math.abs(g.dy) < 5) {
-          router.push(`/title/${card.mediaType}/${card.tmdbId}`);
+        const isTap = Math.abs(g.dx) < 5 && Math.abs(g.dy) < 5;
+        // Tap the card to flip it over (front poster <-> back details).
+        if (flippedRef.current) {
+          if (isTap) doFlip(false);
+          else Animated.spring(position, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
           return;
         }
+        if (isTap) { doFlip(true); return; }
         if (g.dx > SWIPE_X) swipeOff("right");
         else if (g.dx < -SWIPE_X) swipeOff("left");
         else if (g.dy < -SWIPE_Y) swipeOff("up");
@@ -259,15 +317,24 @@ export default function SwipeScreen() {
               ]}
               {...panResponder.panHandlers}
             >
-              <CardContent title={current} />
-              <Animated.View style={[styles.stamp, styles.stampLike, { opacity: likeOp }]}>
-                <Text style={styles.stampLikeText}>{t("swipe.want")}</Text>
+              {/* Front (poster) — flips away when the card is turned over. */}
+              <Animated.View style={[styles.face, { transform: [{ perspective: 1200 }, { rotateY: frontRotate }] }]}>
+                <CardContent title={current} />
+                <Animated.View style={[styles.stamp, styles.stampLike, { opacity: likeOp }]}>
+                  <Text style={styles.stampLikeText}>{t("swipe.want")}</Text>
+                </Animated.View>
+                <Animated.View style={[styles.stamp, styles.stampNope, { opacity: nopeOp }]}>
+                  <Text style={styles.stampNopeText}>{t("swipe.nope")}</Text>
+                </Animated.View>
+                <Animated.View style={[styles.stamp, styles.stampSeen, { opacity: seenOp }]}>
+                  <Text style={styles.stampSeenText}>{t("swipe.watched")}</Text>
+                </Animated.View>
               </Animated.View>
-              <Animated.View style={[styles.stamp, styles.stampNope, { opacity: nopeOp }]}>
-                <Text style={styles.stampNopeText}>{t("swipe.nope")}</Text>
-              </Animated.View>
-              <Animated.View style={[styles.stamp, styles.stampSeen, { opacity: seenOp }]}>
-                <Text style={styles.stampSeenText}>{t("swipe.watched")}</Text>
+              {/* Back (details) */}
+              <Animated.View
+                style={[styles.face, styles.faceBack, { transform: [{ perspective: 1200 }, { rotateY: backRotate }] }]}
+              >
+                <CardBack title={current} detail={details.data} loading={details.isLoading} />
               </Animated.View>
             </Animated.View>
           </View>
@@ -339,6 +406,16 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   cardBehind: { transform: [{ scale: 0.94 }, { translateY: 14 }], shadowOpacity: 0.1, elevation: 4 },
+  // The two flip faces stack on top of each other; backfaceVisibility hides
+  // whichever one is currently turned away from the viewer.
+  face: { position: "absolute", top: 0, left: 0, width: CARD_W, height: CARD_H, borderRadius: 18, overflow: "hidden", backfaceVisibility: "hidden", backgroundColor: "#111" },
+  faceBack: { backgroundColor: "#16161d" },
+  backInner: { flex: 1, padding: 22 },
+  backTitle: { color: "#fff", fontFamily: HEADING, fontSize: 23, lineHeight: 28 },
+  backMeta: { color: "#c9c9d6", fontSize: 13, fontWeight: "700", marginTop: 8 },
+  backGenres: { color: "#8ea2ff", fontSize: 13, fontWeight: "700", marginTop: 12 },
+  backOverview: { color: "#d7d7df", fontSize: 15, lineHeight: 22, marginTop: 14 },
+  backHint: { position: "absolute", left: 22, right: 22, bottom: 18, textAlign: "center", color: "#6f6f7e", fontSize: 12, fontWeight: "700" },
   cardInner: { width: CARD_W, height: CARD_H, borderRadius: 18, overflow: "hidden", backgroundColor: "#111" },
   cardFooter: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 16, backgroundColor: "rgba(0,0,0,0.55)" },
   cardTitle: { color: "#fff", fontSize: 20, fontFamily: HEADING },
