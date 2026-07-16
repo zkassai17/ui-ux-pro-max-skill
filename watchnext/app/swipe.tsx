@@ -14,6 +14,7 @@ import {
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { LinearGradient } from "expo-linear-gradient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getLibrary, addToLibrary } from "../src/services/watchlist";
 import { getHiddenKeys, hideRec } from "../src/services/hiddenRecs";
@@ -359,10 +360,35 @@ export default function SwipeScreen() {
               {/* Front (poster) — flips away when the card is turned over. */}
               <Animated.View style={[styles.face, { transform: [{ perspective: 1200 }, { rotateY: frontRotate }] }]}>
                 <CardContent title={current} />
-                {/* Edge glows: the side you're swiping toward lights up its colour. */}
-                <Animated.View pointerEvents="none" style={[styles.edge, styles.edgeLeft, { opacity: nopeOp }]} />
-                <Animated.View pointerEvents="none" style={[styles.edge, styles.edgeRight, { opacity: likeOp }]} />
-                <Animated.View pointerEvents="none" style={[styles.edge, styles.edgeTop, { opacity: seenOp }]} />
+                {/* Directional glow: the side you're swiping toward washes the card
+                    in its colour, fading softly across so there's no hard edge. */}
+                <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: nopeOp }]}>
+                  <LinearGradient
+                    colors={["rgba(255,59,91,0.72)", "rgba(255,59,91,0)"]}
+                    locations={[0, 0.92]}
+                    start={{ x: 0, y: 0.5 }}
+                    end={{ x: 1, y: 0.5 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                </Animated.View>
+                <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: likeOp }]}>
+                  <LinearGradient
+                    colors={["rgba(18,184,134,0)", "rgba(18,184,134,0.72)"]}
+                    locations={[0.08, 1]}
+                    start={{ x: 0, y: 0.5 }}
+                    end={{ x: 1, y: 0.5 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                </Animated.View>
+                <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: seenOp }]}>
+                  <LinearGradient
+                    colors={["rgba(91,108,255,0.72)", "rgba(91,108,255,0)"]}
+                    locations={[0, 0.92]}
+                    start={{ x: 0.5, y: 0 }}
+                    end={{ x: 0.5, y: 1 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                </Animated.View>
                 <Animated.View style={[styles.stamp, styles.stampLike, { opacity: likeOp }]}>
                   <Text style={styles.stampLikeText}>{t("swipe.want")}</Text>
                 </Animated.View>
@@ -464,13 +490,6 @@ const styles = StyleSheet.create({
   backWatchName: { color: "#dcdce4", fontSize: 13, fontWeight: "700", backgroundColor: "rgba(255,255,255,0.1)", paddingHorizontal: 10, paddingVertical: 7, borderRadius: 9 },
   backWatchNone: { color: "#9a9aab", fontSize: 13, marginTop: 8 },
   backHint: { position: "absolute", left: 22, right: 22, bottom: 18, textAlign: "center", color: "#6f6f7e", fontSize: 12, fontWeight: "700" },
-
-  // Directional edge glows on the front face (clip to the card's rounded corners
-  // because the face has overflow: hidden).
-  edge: { position: "absolute" },
-  edgeLeft: { left: 0, top: 0, bottom: 0, width: 90, backgroundColor: "rgba(255,59,91,0.6)" },
-  edgeRight: { right: 0, top: 0, bottom: 0, width: 90, backgroundColor: "rgba(18,184,134,0.6)" },
-  edgeTop: { left: 0, right: 0, top: 0, height: 90, backgroundColor: "rgba(91,108,255,0.6)" },
   cardInner: { width: CARD_W, height: CARD_H, borderRadius: 18, overflow: "hidden", backgroundColor: "#111" },
   cardFooter: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 16, backgroundColor: "rgba(0,0,0,0.55)" },
   cardTitle: { color: "#fff", fontSize: 20, fontFamily: HEADING },

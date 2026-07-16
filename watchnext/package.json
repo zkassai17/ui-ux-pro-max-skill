@@ -17,6 +17,7 @@
     "expo-document-picker": "~14.0.8",
     "expo-file-system": "~19.0.23",
     "expo-font": "^57.0.0",
+    "expo-linear-gradient": "~15.0.8",
     "expo-linking": "~8.0.12",
     "expo-localization": "~17.0.9",
     "expo-router": "~6.0.24",
