@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -94,13 +94,23 @@ export default function SwipeScreen() {
     if (dir === "right") addToLibrary(card, "want").catch(() => {});
     else if (dir === "up") addToLibrary(card, "watched").catch(() => {});
     else hideRec(card).catch(() => {});
+    // Advance the deck. The position + scale reset happens in the layout effect
+    // below (keyed on `index`), NOT here — if we reset the shared position now,
+    // the reused card view would snap to center while still showing the old
+    // poster for one painted frame (the "glitch" flash).
     setIndex((i) => i + 1);
-    position.setValue({ x: 0, y: 0 });
-    topScale.setValue(0.94);
-    Animated.spring(topScale, { toValue: 1, useNativeDriver: false, speed: 20, bounciness: 8 }).start();
     qc.invalidateQueries({ queryKey: ["library"] });
     if (dir === "left") qc.invalidateQueries({ queryKey: ["hidden-recs"] });
   }
+
+  // Snap the freshly-promoted top card to center and give it a subtle deal-in.
+  // useLayoutEffect runs after the new card has rendered but BEFORE the frame is
+  // painted, so the position reset is never visible on screen.
+  useLayoutEffect(() => {
+    position.setValue({ x: 0, y: 0 });
+    topScale.setValue(0.96);
+    Animated.spring(topScale, { toValue: 1, useNativeDriver: false, speed: 22, bounciness: 5 }).start();
+  }, [index, position, topScale]);
 
   function swipeOff(dir: Dir) {
     const card = cardsRef.current[indexRef.current];
