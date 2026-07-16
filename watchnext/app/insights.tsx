@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getLibrary } from "../src/services/watchlist";
 import { getInsights } from "../src/services/insights";
 import { usePro } from "../src/pro/ProProvider";
+import { PRO_AVAILABLE } from "../src/lib/proGates";
 import { useI18n } from "../src/i18n/I18nProvider";
 import { ratingEmoji } from "../src/lib/ratingScale";
 
@@ -46,9 +47,11 @@ export default function InsightsScreen() {
           <Text style={styles.lockEmoji}>✦</Text>
           <Text style={styles.lockTitle}>{t("insights.title")}</Text>
           <Text style={styles.lockBody}>{t("pro.feature.insights")}</Text>
-          <Pressable style={styles.cta} onPress={() => router.replace("/paywall")}>
-            <Text style={styles.ctaText}>{t("settings.getPro")}</Text>
-          </Pressable>
+          {PRO_AVAILABLE ? (
+            <Pressable style={styles.cta} onPress={() => router.replace("/paywall")}>
+              <Text style={styles.ctaText}>{t("settings.getPro")}</Text>
+            </Pressable>
+          ) : null}
         </View>
       </View>
     );

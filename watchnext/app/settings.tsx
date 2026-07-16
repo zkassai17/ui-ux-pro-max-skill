@@ -27,6 +27,7 @@ import {
 } from "../src/lib/recPrefs";
 import { useI18n } from "../src/i18n/I18nProvider";
 import { usePro } from "../src/pro/ProProvider";
+import { PRO_AVAILABLE } from "../src/lib/proGates";
 import { isValidRedeemCode } from "../src/pro/redeemCode";
 import { LANGUAGES, translate, type Lang } from "../src/i18n/translations";
 import { fullName, type WatchStatus } from "../src/types/db";
@@ -310,12 +311,12 @@ export default function SettingsScreen() {
               {matchPreset(weights) === null ? `  · ${t("settings.custom")}` : ""}
             </Text>
           </Pressable>
-        ) : (
+        ) : PRO_AVAILABLE ? (
           <Pressable style={styles.proTuneRow} onPress={() => router.push("/paywall")}>
             <Text style={styles.proTuneText}>{t("settings.fineTunePro")}</Text>
             <Text style={styles.chevron}>›</Text>
           </Pressable>
-        )}
+        ) : null}
 
         {isPro && showCustom ? (
           <View style={styles.customWrap}>
@@ -372,10 +373,12 @@ export default function SettingsScreen() {
         </View>
       ) : (
         <>
-          <Pressable style={styles.proRow} onPress={() => router.push("/paywall")}>
-            <Text style={styles.proRowText}>{t("settings.getPro")}</Text>
-            <Text style={styles.chevron}>›</Text>
-          </Pressable>
+          {PRO_AVAILABLE ? (
+            <Pressable style={styles.proRow} onPress={() => router.push("/paywall")}>
+              <Text style={styles.proRowText}>{t("settings.getPro")}</Text>
+              <Text style={styles.chevron}>›</Text>
+            </Pressable>
+          ) : null}
           {redeeming ? (
             <View style={[styles.card, { marginTop: 10 }]}>
               <Text style={styles.label}>{t("redeem.enterCode")}</Text>

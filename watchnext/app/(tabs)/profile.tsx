@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../src/auth/AuthProvider";
 import { useI18n } from "../../src/i18n/I18nProvider";
 import { usePro } from "../../src/pro/ProProvider";
+import { PRO_AVAILABLE } from "../../src/lib/proGates";
 import { getFriendStats, type StatBucket } from "../../src/services/friends";
 import { fullName } from "../../src/types/db";
 import { getLibrary } from "../../src/services/watchlist";
@@ -114,17 +115,17 @@ export default function ProfileScreen() {
         <InsightTile big={decade ?? "—"} label={t("profile.topDecade")} />
       </View>
 
-      {!isPro ? (
-        <Pressable style={styles.proUpsell} onPress={() => router.push("/paywall")}>
-          <Text style={styles.proUpsellText}>{t("pro.insightsUpsell")}</Text>
-          <Text style={styles.proUpsellArrow}>›</Text>
-        </Pressable>
-      ) : (
+      {isPro ? (
         <Pressable style={styles.proEntry} onPress={() => router.push("/insights")}>
           <Text style={styles.proEntryText}>{t("insights.title")}</Text>
           <Text style={styles.proUpsellArrow}>›</Text>
         </Pressable>
-      )}
+      ) : PRO_AVAILABLE ? (
+        <Pressable style={styles.proUpsell} onPress={() => router.push("/paywall")}>
+          <Text style={styles.proUpsellText}>{t("pro.insightsUpsell")}</Text>
+          <Text style={styles.proUpsellArrow}>›</Text>
+        </Pressable>
+      ) : null}
 
       {watching.length > 0 ? (
         <View style={styles.favSection}>

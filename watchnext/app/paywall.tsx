@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
-import { Stack, useRouter } from "expo-router";
+import { Stack, useRouter, Redirect } from "expo-router";
 import { usePro } from "../src/pro/ProProvider";
-import { PRO_PLANS, type ProPlan } from "../src/lib/proGates";
+import { PRO_PLANS, PRO_AVAILABLE, type ProPlan } from "../src/lib/proGates";
 import { useI18n } from "../src/i18n/I18nProvider";
 
 import { HEADING } from "../src/theme";
@@ -23,6 +23,10 @@ export default function PaywallScreen() {
     PRO_PLANS.find((p) => p.bestValue)?.id ?? PRO_PLANS[0].id
   );
   const [busy, setBusy] = useState(false);
+
+  // Pro isn't for sale yet (no in-app purchase wired). Never show pricing — bounce
+  // anyone who deep-links here back to Settings. Remove once PRO_AVAILABLE is true.
+  if (!PRO_AVAILABLE) return <Redirect href="/settings" />;
 
   async function buy() {
     const plan = PRO_PLANS.find((p) => p.id === selected);

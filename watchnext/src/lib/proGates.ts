@@ -3,6 +3,14 @@
 // and the UI simply reads the answers. The `isPro` flag is sourced elsewhere
 // (ProProvider) — at launch that source becomes the real store receipt.
 
+// Master switch for whether Pro is *offered for sale* yet. The v1 App Store build
+// ships with this OFF: the Pro features stay built and gated (isPro is false for
+// everyone), but the paywall and every "Upgrade / price" surface is hidden, so
+// there's no purchase UI without real in-app purchase (Apple Guideline 3.1.1).
+// To launch Pro later: wire real IAP into ProProvider.startPurchase, then flip
+// this to true — every upgrade surface reappears automatically.
+export const PRO_AVAILABLE = false;
+
 // Free-tier caps. Bump these to change what "free" means in one place.
 export const FREE_FRIEND_LIMIT = 10;
 // Free users can open a Blend with their top-N friends (ranked by match); the

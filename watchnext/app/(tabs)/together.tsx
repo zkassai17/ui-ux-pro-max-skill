@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, FlatList, Pressable, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
+import { View, Text, TextInput, FlatList, Pressable, StyleSheet, ActivityIndicator, RefreshControl, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getFriends, getIncomingRequests } from "../../src/services/friends";
@@ -9,7 +9,7 @@ import { initials, avatarColor, matchColor } from "../../src/lib/avatar";
 import { fullName } from "../../src/types/db";
 import { useI18n } from "../../src/i18n/I18nProvider";
 import { usePro } from "../../src/pro/ProProvider";
-import { isBlendLocked, canAddFriend } from "../../src/lib/proGates";
+import { isBlendLocked, canAddFriend, PRO_AVAILABLE } from "../../src/lib/proGates";
 
 export default function TogetherScreen() {
   const router = useRouter();
@@ -57,8 +57,17 @@ export default function TogetherScreen() {
   const atFriendCap = !canAddFriend(isPro, allFriends.length);
 
   function openBlend(id: string) {
-    if (lockedIds.has(id)) router.push("/paywall");
-    else router.push(`/blend/${id}`);
+    if (lockedIds.has(id)) {
+      // Pro isn't for sale yet — locked blends just explain the free limit.
+      if (PRO_AVAILABLE) router.push("/paywall");
+      else Alert.alert(t("together.blendLockedTitle"), t("together.blendLockedBody"));
+    } else router.push(`/blend/${id}`);
+  }
+
+  function onAddFriend() {
+    if (!atFriendCap) return router.push("/friends/add");
+    if (PRO_AVAILABLE) router.push("/paywall");
+    else Alert.alert(t("together.friendCapTitle"), t("together.friendCapBody"));
   }
 
   async function onRefresh() {
@@ -96,10 +105,7 @@ export default function TogetherScreen() {
             <Text style={styles.groupSub}>{t("home.whatToWatchSub")}</Text>
           </Pressable>
 
-          <Pressable
-            style={styles.addFriendBtn}
-            onPress={() => router.push(atFriendCap ? "/paywall" : "/friends/add")}
-          >
+          <Pressable style={styles.addFriendBtn} onPress={onAddFriend}>
             <Text style={styles.addFriendBtnText}>＋ {t("profile.addFriend")}</Text>
           </Pressable>
 
