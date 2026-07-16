@@ -8,6 +8,7 @@ import {
   Dimensions,
   Pressable,
   ActivityIndicator,
+  Image,
   Easing,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
@@ -17,20 +18,21 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getLibrary, addToLibrary } from "../src/services/watchlist";
 import { getHiddenKeys, hideRec } from "../src/services/hiddenRecs";
 import { getSwipeDeck } from "../src/services/swipe";
-import { getTitleDetails } from "../src/services/tmdb";
+import { getTitleDetails, getWatchProviders } from "../src/services/tmdb";
+import { posterUrl } from "../src/lib/tmdbNormalize";
 import { titleKey } from "../src/lib/forYouLogic";
 import { PosterImage } from "../src/components/PosterImage";
 import { PressableScale } from "../src/components/PressableScale";
 import { useI18n } from "../src/i18n/I18nProvider";
 import { ACCENT, HEADING } from "../src/theme";
-import type { Title, TitleDetail } from "../src/types/tmdb";
+import type { Title, TitleDetail, WatchProviders } from "../src/types/tmdb";
 
 const { width, height } = Dimensions.get("window");
-// Wider + a touch taller than a natural 2:3 poster so the card fills more of the
-// screen (poster cover-crops slightly); still bounded by screen height on small
-// devices. Buttons stay below the card.
-const CARD_W = width - 28;
-const CARD_H = Math.min(CARD_W * 1.6, height * 0.68);
+// Wider + taller than a natural 2:3 poster so the card fills the space (poster
+// cover-crops slightly); still bounded by screen height on small devices.
+// Buttons stay below the card.
+const CARD_W = width - 20;
+const CARD_H = Math.min(CARD_W * 1.72, height * 0.72);
 const SWIPE_X = width * 0.26;
 const SWIPE_Y = height * 0.16;
 
@@ -67,8 +69,20 @@ function CardContent({ title }: { title: Title }) {
 }
 
 // The back of the card — the info you'd otherwise get on the detail page.
-function CardBack({ title, detail, loading }: { title: Title; detail?: TitleDetail; loading: boolean }) {
+function CardBack({
+  title,
+  detail,
+  providers,
+  loading,
+}: {
+  title: Title;
+  detail?: TitleDetail;
+  providers?: WatchProviders;
+  loading: boolean;
+}) {
   const { t } = useI18n();
+  // Prefer streaming (flatrate); fall back to rent/buy so we show something.
+  const watch = providers?.flatrate?.length ? providers.flatrate : providers?.rent?.length ? providers.rent : providers?.buy ?? [];
   return (
     <View style={styles.backInner}>
       <Text style={styles.backTitle} numberOfLines={2}>{title.title}</Text>
@@ -80,13 +94,32 @@ function CardBack({ title, detail, loading }: { title: Title; detail?: TitleDeta
       {detail?.genres?.length ? (
         <Text style={styles.backGenres}>{detail.genres.slice(0, 4).join("  ·  ")}</Text>
       ) : null}
+
       {loading && !detail ? (
         <ActivityIndicator style={{ marginTop: 24 }} color="#fff" />
       ) : (
-        <Text style={styles.backOverview} numberOfLines={14}>
+        <Text style={styles.backOverview} numberOfLines={9}>
           {detail?.overview?.trim() ? detail.overview : t("swipe.noOverview")}
         </Text>
       )}
+
+      {/* Where to watch */}
+      <Text style={styles.backWatchLabel}>{t("title.whereToWatch")}</Text>
+      {watch.length ? (
+        <View style={styles.backWatchRow}>
+          {watch.slice(0, 6).map((p) => {
+            const logo = posterUrl(p.logoPath, "w92");
+            return logo ? (
+              <Image key={p.providerId} source={{ uri: logo }} style={styles.backWatchLogo} />
+            ) : (
+              <Text key={p.providerId} style={styles.backWatchName}>{p.name}</Text>
+            );
+          })}
+        </View>
+      ) : (
+        <Text style={styles.backWatchNone}>{t("title.notAvailable")}</Text>
+      )}
+
       <Text style={styles.backHint}>{t("swipe.flipHint")}</Text>
     </View>
   );
@@ -190,13 +223,19 @@ export default function SwipeScreen() {
     setFlipped(false);
   }, [index, position, topScale, flip]);
 
-  // Details for the back of the current card — fetched only once it's flipped.
+  // Back-of-card data — fetched only once the card is flipped, then cached.
   const activeCard = cards[index];
   const details = useQuery({
     queryKey: ["title-detail", activeCard?.mediaType, activeCard?.tmdbId],
     enabled: !!activeCard && flipped,
     staleTime: 30 * 60 * 1000,
     queryFn: () => getTitleDetails(activeCard!.mediaType, activeCard!.tmdbId),
+  });
+  const providers = useQuery({
+    queryKey: ["watch-providers", activeCard?.mediaType, activeCard?.tmdbId],
+    enabled: !!activeCard && flipped,
+    staleTime: 30 * 60 * 1000,
+    queryFn: () => getWatchProviders(activeCard!.mediaType, activeCard!.tmdbId),
   });
 
   // First-run coach card: show the "how it works" overlay once, then remember it.
@@ -320,6 +359,10 @@ export default function SwipeScreen() {
               {/* Front (poster) — flips away when the card is turned over. */}
               <Animated.View style={[styles.face, { transform: [{ perspective: 1200 }, { rotateY: frontRotate }] }]}>
                 <CardContent title={current} />
+                {/* Edge glows: the side you're swiping toward lights up its colour. */}
+                <Animated.View pointerEvents="none" style={[styles.edge, styles.edgeLeft, { opacity: nopeOp }]} />
+                <Animated.View pointerEvents="none" style={[styles.edge, styles.edgeRight, { opacity: likeOp }]} />
+                <Animated.View pointerEvents="none" style={[styles.edge, styles.edgeTop, { opacity: seenOp }]} />
                 <Animated.View style={[styles.stamp, styles.stampLike, { opacity: likeOp }]}>
                   <Text style={styles.stampLikeText}>{t("swipe.want")}</Text>
                 </Animated.View>
@@ -334,7 +377,7 @@ export default function SwipeScreen() {
               <Animated.View
                 style={[styles.face, styles.faceBack, { transform: [{ perspective: 1200 }, { rotateY: backRotate }] }]}
               >
-                <CardBack title={current} detail={details.data} loading={details.isLoading} />
+                <CardBack title={current} detail={details.data} providers={providers.data} loading={details.isLoading} />
               </Animated.View>
             </Animated.View>
           </View>
@@ -415,7 +458,19 @@ const styles = StyleSheet.create({
   backMeta: { color: "#c9c9d6", fontSize: 13, fontWeight: "700", marginTop: 8 },
   backGenres: { color: "#8ea2ff", fontSize: 13, fontWeight: "700", marginTop: 12 },
   backOverview: { color: "#d7d7df", fontSize: 15, lineHeight: 22, marginTop: 14 },
+  backWatchLabel: { color: "#8a8a99", fontSize: 11, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.6, marginTop: 18 },
+  backWatchRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
+  backWatchLogo: { width: 40, height: 40, borderRadius: 9 },
+  backWatchName: { color: "#dcdce4", fontSize: 13, fontWeight: "700", backgroundColor: "rgba(255,255,255,0.1)", paddingHorizontal: 10, paddingVertical: 7, borderRadius: 9 },
+  backWatchNone: { color: "#9a9aab", fontSize: 13, marginTop: 8 },
   backHint: { position: "absolute", left: 22, right: 22, bottom: 18, textAlign: "center", color: "#6f6f7e", fontSize: 12, fontWeight: "700" },
+
+  // Directional edge glows on the front face (clip to the card's rounded corners
+  // because the face has overflow: hidden).
+  edge: { position: "absolute" },
+  edgeLeft: { left: 0, top: 0, bottom: 0, width: 90, backgroundColor: "rgba(255,59,91,0.6)" },
+  edgeRight: { right: 0, top: 0, bottom: 0, width: 90, backgroundColor: "rgba(18,184,134,0.6)" },
+  edgeTop: { left: 0, right: 0, top: 0, height: 90, backgroundColor: "rgba(91,108,255,0.6)" },
   cardInner: { width: CARD_W, height: CARD_H, borderRadius: 18, overflow: "hidden", backgroundColor: "#111" },
   cardFooter: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 16, backgroundColor: "rgba(0,0,0,0.55)" },
   cardTitle: { color: "#fff", fontSize: 20, fontFamily: HEADING },
