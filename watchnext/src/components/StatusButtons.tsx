@@ -2,7 +2,7 @@ import { useEffect, useRef, type ComponentProps } from "react";
 import { Pressable, Text, View, StyleSheet, Alert, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getLibraryEntry, addToLibrary, updateStatus, removeFromLibrary } from "../services/watchlist";
+import { getLibrary, addToLibrary, updateStatus, removeFromLibrary } from "../services/watchlist";
 import { useI18n } from "../i18n/I18nProvider";
 import type { Title } from "../types/tmdb";
 import type { WatchStatus } from "../types/db";
@@ -31,25 +31,26 @@ export function StatusButtons({
 }) {
   const qc = useQueryClient();
   const { t } = useI18n();
-  const entryKey = ["library-entry", title.mediaType, title.tmdbId];
-  const entry = useQuery({
-    queryKey: entryKey,
-    queryFn: () => getLibraryEntry(title.tmdbId, title.mediaType),
-  });
+
+  // Derive membership from the shared ["library"] cache — one fetch for the whole
+  // screen instead of a separate network query behind every row of buttons.
+  const lib = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
+  const entry =
+    (lib.data ?? []).find((e) => e.tmdb_id === title.tmdbId && e.media_type === title.mediaType) ?? null;
 
   function refresh() {
-    qc.invalidateQueries({ queryKey: entryKey });
     qc.invalidateQueries({ queryKey: ["library"] });
+    // Keep the (separately cached) title detail page in sync with this change.
+    qc.invalidateQueries({ queryKey: ["library-entry"] });
   }
 
   const choose = useMutation({
     mutationFn: async (status: WatchStatus): Promise<"set" | "removed"> => {
-      const existing = entry.data;
-      if (existing && existing.status === status) {
-        await removeFromLibrary(existing.id);
+      if (entry && entry.status === status) {
+        await removeFromLibrary(entry.id);
         return "removed";
       }
-      if (existing) await updateStatus(existing.id, status);
+      if (entry) await updateStatus(entry.id, status);
       else await addToLibrary(title, status);
       return "set";
     },
@@ -61,8 +62,8 @@ export function StatusButtons({
     onError: (e) => Alert.alert("Couldn't update", (e as Error).message),
   });
 
-  const current = entry.data?.status ?? null;
-  const busy = entry.isLoading || choose.isPending;
+  const current = entry?.status ?? null;
+  const busy = lib.isLoading || choose.isPending;
 
   return (
     <View style={[styles.row, busy && styles.busy]}>

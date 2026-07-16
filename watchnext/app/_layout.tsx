@@ -28,11 +28,20 @@ function AuthGate() {
 // Mobile networks drop requests transiently (a momentary dead zone surfaces as
 // "TypeError: Network request failed"). Retry a few times with backoff so a brief
 // blip self-heals instead of surfacing an error the user has to manually retry.
+//
+// staleTime/gcTime: without these every screen refetched on entry (staleTime
+// defaults to 0), so revisiting a tab showed a spinner even when we already had
+// the data. Now cached data renders instantly and only refetches in the
+// background when it's actually stale; mutations still call invalidateQueries,
+// which forces a refetch regardless of staleTime, so nothing goes out of date.
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 3,
       retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+      staleTime: 60 * 1000, // 1 min: revisits within a minute skip the refetch entirely
+      gcTime: 30 * 60 * 1000, // keep cache 30 min so returning to a screen is instant
+      refetchOnWindowFocus: false,
     },
   },
 });

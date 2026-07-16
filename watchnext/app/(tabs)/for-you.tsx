@@ -425,9 +425,10 @@ export default function HomeScreen() {
         )
       }
       renderItem={({ item: row, index }) => {
-        // Stagger the fade so the first few cards cascade in; cap the delay so
-        // items far down the list don't feel sluggish.
-        const delay = Math.min(index, 6) * 60;
+        // A whisper of stagger on just the first few cards — enough to feel alive,
+        // not enough to feel like waiting. Everything past the 3rd card fades with
+        // no delay so scrolling never feels sluggish.
+        const delay = Math.min(index, 3) * 35;
         if (row.item.kind === "watchlist") {
           const e = row.item.entry;
           return (

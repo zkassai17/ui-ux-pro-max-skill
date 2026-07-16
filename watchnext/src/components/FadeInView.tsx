@@ -6,8 +6,8 @@ import { Animated, type StyleProp, type ViewStyle } from "react-native";
 export function FadeInView({
   children,
   style,
-  duration = 320,
-  offset = 8,
+  duration = 220,
+  offset = 6,
   delay = 0,
 }: {
   children: ReactNode;

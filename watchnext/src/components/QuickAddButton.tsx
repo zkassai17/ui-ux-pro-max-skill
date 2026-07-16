@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Pressable, Text, StyleSheet, ActivityIndicator, Alert, Animated } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getLibraryEntry, addToLibrary, updateStatus, removeFromLibrary } from "../services/watchlist";
+import { getLibrary, addToLibrary, updateStatus, removeFromLibrary } from "../services/watchlist";
 import { useI18n } from "../i18n/I18nProvider";
 import type { Title } from "../types/tmdb";
 import type { WatchStatus } from "../types/db";
@@ -23,22 +23,23 @@ export function QuickAddButton({
 }) {
   const qc = useQueryClient();
   const { t } = useI18n();
-  const entryKey = ["library-entry", title.mediaType, title.tmdbId];
 
-  const entry = useQuery({
-    queryKey: entryKey,
-    queryFn: () => getLibraryEntry(title.tmdbId, title.mediaType),
-  });
+  // Read library membership from the one shared ["library"] cache instead of
+  // firing a per-button network query. On a screen with 20 posters that's the
+  // difference between 1 request and 20 (each of which used to flash a spinner).
+  const lib = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
+  const entry =
+    (lib.data ?? []).find((e) => e.tmdb_id === title.tmdbId && e.media_type === title.mediaType) ?? null;
 
   function refresh() {
-    qc.invalidateQueries({ queryKey: entryKey });
     qc.invalidateQueries({ queryKey: ["library"] });
+    // Keep the (separately cached) title detail page in sync with this change.
+    qc.invalidateQueries({ queryKey: ["library-entry"] });
   }
 
   const set = useMutation({
     mutationFn: async (status: WatchStatus) => {
-      const existing = entry.data;
-      if (existing) await updateStatus(existing.id, status);
+      if (entry) await updateStatus(entry.id, status);
       else await addToLibrary(title, status);
     },
     onSuccess: () => {
@@ -49,8 +50,7 @@ export function QuickAddButton({
 
   const remove = useMutation({
     mutationFn: async () => {
-      const existing = entry.data;
-      if (existing) await removeFromLibrary(existing.id);
+      if (entry) await removeFromLibrary(entry.id);
     },
     onSuccess: () => {
       refresh();
@@ -67,8 +67,8 @@ export function QuickAddButton({
     ]);
   }
 
-  const busy = entry.isLoading || set.isPending || remove.isPending;
-  const status = entry.data?.status ?? null;
+  const busy = lib.isLoading || set.isPending || remove.isPending;
+  const status = entry?.status ?? null;
   const added = status !== null;
 
   // Press feedback (scales down while held) + a satisfying "pop" the moment a
