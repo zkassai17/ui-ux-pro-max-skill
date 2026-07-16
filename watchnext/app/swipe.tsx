@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -61,10 +61,24 @@ export default function SwipeScreen() {
     queryFn: () => getSwipeDeck(library.data ?? []),
   });
 
-  const hiddenSet = hidden.data ?? new Set<string>();
-  const cards = (deck.data ?? []).filter((c) => !hiddenSet.has(titleKey(c)));
-
   const [index, setIndex] = useState(0);
+
+  // Build the swipe stack ONCE, when the data is ready, and never re-filter it
+  // afterward. Previously `cards` was re-derived from the live hidden-recs set on
+  // every render — so swiping left (which hides the card and refetches the hidden
+  // list) shrank the array and shifted every index a beat later. The poster under
+  // your finger would swap to a different title mid-decision. Now we snapshot the
+  // deck and advance purely by `index`, so nothing ever moves underneath you.
+  const [cards, setCards] = useState<Title[]>([]);
+  const built = useRef(false);
+  useEffect(() => {
+    if (built.current) return;
+    if (deck.isLoading || library.isLoading || hidden.isLoading) return;
+    const hiddenSet = hidden.data ?? new Set<string>();
+    setCards((deck.data ?? []).filter((c) => !hiddenSet.has(titleKey(c))));
+    built.current = true;
+  }, [deck.isLoading, deck.data, library.isLoading, hidden.isLoading, hidden.data]);
+
   const position = useRef(new Animated.ValueXY()).current;
   // The incoming card springs up from the "behind" size to full as it becomes
   // the top card — makes the deck feel like it's dealing you the next one.
@@ -127,7 +141,7 @@ export default function SwipeScreen() {
 
   const current = cards[index];
   const next = cards[index + 1];
-  const loading = deck.isLoading || library.isLoading;
+  const loading = !built.current;
 
   return (
     <View style={styles.container}>
