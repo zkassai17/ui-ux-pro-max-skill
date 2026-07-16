@@ -218,7 +218,13 @@ export default function SwipeScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: t("swipe.title"),
+          // Title + a tappable ⓘ that reopens the "how it works" card anytime.
+          headerTitle: () => (
+            <Pressable onPress={() => setCoached(false)} hitSlop={8} style={styles.headerTitleWrap}>
+              <Text style={styles.headerTitle}>{t("swipe.title")}</Text>
+              <Ionicons name="information-circle-outline" size={20} color="#9a9aab" />
+            </Pressable>
+          ),
           headerRight: () => (
             <Pressable onPress={() => router.back()} hitSlop={8} style={{ paddingHorizontal: 12 }}>
               <Text style={styles.done}>{t("swipe.done")}</Text>
@@ -286,13 +292,12 @@ export default function SwipeScreen() {
               <Text style={[styles.actionLabel, { color: "#12b886" }]}>{t("swipe.btnWant")}</Text>
             </View>
           </View>
-
-          <Text style={styles.instr}>{t("swipe.instr")}</Text>
         </>
       )}
 
-      {/* First-run "how it works" overlay — shown once, then remembered. */}
-      {coached === false && current ? (
+      {/* "How it works" overlay — shown once on first run, and any time the user
+          taps the ⓘ in the header. Dismiss remembers it via AsyncStorage. */}
+      {coached === false ? (
         <View style={styles.coach}>
           <View style={styles.coachCard}>
             <Text style={styles.coachTitle}>{t("swipe.coachTitle")}</Text>
@@ -354,7 +359,9 @@ const styles = StyleSheet.create({
   actionCol: { alignItems: "center", gap: 6 },
   actionBtn: { width: 60, height: 60, borderRadius: 30, alignItems: "center", justifyContent: "center", backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#eee", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
   actionLabel: { fontSize: 12, fontWeight: "800" },
-  instr: { textAlign: "center", color: "#bbb", fontSize: 12, paddingTop: 4, paddingBottom: 14, paddingHorizontal: 24, lineHeight: 17 },
+
+  headerTitleWrap: { flexDirection: "row", alignItems: "center", gap: 6 },
+  headerTitle: { fontFamily: HEADING, fontSize: 18, color: "#111" },
 
   coach: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(17,17,17,0.72)", alignItems: "center", justifyContent: "center", padding: 28 },
   coachCard: { backgroundColor: "#fff", borderRadius: 20, padding: 24, width: "100%", maxWidth: 360 },
