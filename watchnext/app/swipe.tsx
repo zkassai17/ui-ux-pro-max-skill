@@ -25,8 +25,11 @@ import { ACCENT, HEADING } from "../src/theme";
 import type { Title } from "../src/types/tmdb";
 
 const { width, height } = Dimensions.get("window");
-const CARD_W = width - 40;
-const CARD_H = Math.min(CARD_W * 1.5, height * 0.62);
+// Wider + a touch taller than a natural 2:3 poster so the card fills more of the
+// screen (poster cover-crops slightly); still bounded by screen height on small
+// devices. Buttons stay below the card.
+const CARD_W = width - 28;
+const CARD_H = Math.min(CARD_W * 1.6, height * 0.68);
 const SWIPE_X = width * 0.26;
 const SWIPE_Y = height * 0.16;
 
@@ -336,19 +339,22 @@ const styles = StyleSheet.create({
   cardTitle: { color: "#fff", fontSize: 20, fontFamily: HEADING },
   cardMeta: { color: "#e5e5e5", fontSize: 13, marginTop: 4, fontWeight: "600" },
 
-  stamp: { position: "absolute", top: 28, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10, borderWidth: 3 },
+  // Swipe indicators sit around the vertical middle of the card so they're clearly
+  // visible over the artwork instead of crammed against the top edge / notch.
+  stamp: { position: "absolute", top: "42%", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, borderWidth: 3, backgroundColor: "rgba(0,0,0,0.4)" },
   stampLike: { right: 20, borderColor: "#1dd1a1", transform: [{ rotate: "12deg" }] },
-  stampLikeText: { color: "#1dd1a1", fontSize: 22, fontWeight: "900", letterSpacing: 1 },
+  stampLikeText: { color: "#1dd1a1", fontSize: 24, fontWeight: "900", letterSpacing: 1 },
   stampNope: { left: 20, borderColor: "#ff3b5b", transform: [{ rotate: "-12deg" }] },
-  stampNopeText: { color: "#ff3b5b", fontSize: 22, fontWeight: "900", letterSpacing: 1 },
-  stampSeen: { alignSelf: "center", left: 0, right: 0, top: 40, marginHorizontal: "auto", borderColor: "#5b6cff", alignItems: "center" },
-  stampSeenText: { color: "#5b6cff", fontSize: 22, fontWeight: "900", letterSpacing: 1 },
+  stampNopeText: { color: "#ff3b5b", fontSize: 24, fontWeight: "900", letterSpacing: 1 },
+  stampSeen: { alignSelf: "center", left: 0, right: 0, marginHorizontal: "auto", borderColor: "#5b6cff", alignItems: "center" },
+  stampSeenText: { color: "#5b6cff", fontSize: 24, fontWeight: "900", letterSpacing: 1 },
 
-  actions: { flexDirection: "row", justifyContent: "center", gap: 28, paddingVertical: 10 },
+  // Tighter spacing below the card so there's no dead gap before the buttons.
+  actions: { flexDirection: "row", justifyContent: "center", gap: 30, paddingVertical: 8, marginTop: 6 },
   actionCol: { alignItems: "center", gap: 6 },
-  actionBtn: { width: 58, height: 58, borderRadius: 29, alignItems: "center", justifyContent: "center", backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#eee", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+  actionBtn: { width: 60, height: 60, borderRadius: 30, alignItems: "center", justifyContent: "center", backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#eee", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
   actionLabel: { fontSize: 12, fontWeight: "800" },
-  instr: { textAlign: "center", color: "#aaa", fontSize: 12, paddingBottom: 20, paddingHorizontal: 24, lineHeight: 17 },
+  instr: { textAlign: "center", color: "#bbb", fontSize: 12, paddingTop: 4, paddingBottom: 14, paddingHorizontal: 24, lineHeight: 17 },
 
   coach: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(17,17,17,0.72)", alignItems: "center", justifyContent: "center", padding: 28 },
   coachCard: { backgroundColor: "#fff", borderRadius: 20, padding: 24, width: "100%", maxWidth: 360 },
