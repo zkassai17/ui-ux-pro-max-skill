@@ -1,6 +1,6 @@
-import { useState, type ComponentProps } from "react";
+import { useState, useCallback, type ComponentProps } from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet, RefreshControl, Share } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../src/auth/AuthProvider";
@@ -31,6 +31,17 @@ export default function ProfileScreen() {
     enabled: !!uid,
   });
   const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
+
+  // This tab stays mounted in the background, so a status change made elsewhere
+  // (e.g. moving a title to Watched on its detail screen) won't auto-refetch here.
+  // Refresh library + stats each time the tab regains focus so "Currently
+  // watching" and the stat cards always reflect the real library.
+  useFocusEffect(
+    useCallback(() => {
+      qc.invalidateQueries({ queryKey: ["library"] });
+      if (uid) qc.invalidateQueries({ queryKey: ["my-stats", uid] });
+    }, [qc, uid]),
+  );
 
   const lib = library.data ?? [];
   const favorites = selectFavorites(lib, 12);
