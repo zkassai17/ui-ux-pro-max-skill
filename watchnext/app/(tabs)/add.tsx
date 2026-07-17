@@ -8,6 +8,8 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
+  Modal,
+  Switch,
 } from "react-native";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter, useNavigation } from "expo-router";
@@ -19,6 +21,7 @@ import { StatusButtons } from "../../src/components/StatusButtons";
 import { useI18n } from "../../src/i18n/I18nProvider";
 import { TOP_PROVIDERS } from "../../src/lib/providers";
 import { getStreamingServices } from "../../src/services/prefs";
+import { HEADING } from "../../src/theme";
 import { filterByLanguage } from "../../src/lib/recommendEngine";
 import type { MediaType, Title } from "../../src/types/tmdb";
 
@@ -42,6 +45,7 @@ export default function AddScreen() {
   const [providerIds, setProviderIds] = useState<number[]>([]);
   const [trending, setTrending] = useState(false);
   const [trendScope, setTrendScope] = useState<TrendingScope>("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Default the provider pills to the services the user saved (onboarding /
   // Settings) — once, on first load. After that the pills are a free override.
@@ -203,6 +207,14 @@ export default function AddScreen() {
     active.refetch();
   }
 
+  // How many filters are on (drives the badge on the Filters button).
+  const activeFilterCount = genreIds.length + providerIds.length + (trending ? 1 : 0);
+  function clearFilters() {
+    setGenreIds([]);
+    setProviderIds([]);
+    setTrending(false);
+  }
+
   return (
     <View style={styles.container}>
       <TextInput
@@ -216,74 +228,44 @@ export default function AddScreen() {
       />
 
       {!searching ? (
-        <View style={styles.filters}>
-          {trending ? (
-            <View style={styles.toggleRow}>
-              {(["all", "movie", "tv"] as TrendingScope[]).map((s) => (
-                <Pressable
-                  key={s}
-                  style={[styles.toggle, trendScope === s && styles.toggleOn]}
-                  onPress={() => setTrendScope(s)}
-                >
-                  <Text style={[styles.toggleText, trendScope === s && styles.toggleTextOn]}>
-                    {s === "all" ? t("filter.all") : s === "movie" ? t("media.movies") : t("media.shows")}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          ) : (
-            <View style={styles.toggleRow}>
-              {(["movie", "tv"] as MediaType[]).map((m) => (
-                <Pressable
-                  key={m}
-                  style={[styles.toggle, mediaType === m && styles.toggleOn]}
-                  onPress={() => switchMedia(m)}
-                >
-                  <Text style={[styles.toggleText, mediaType === m && styles.toggleTextOn]}>
-                    {m === "movie" ? t("media.movies") : t("media.shows")}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          )}
+        <View style={styles.filterBar}>
+          {/* Type stays visible — it's the primary browse dimension. */}
+          <View style={[styles.toggleRow, styles.toggleRowFlex]}>
+            {trending
+              ? (["all", "movie", "tv"] as TrendingScope[]).map((s) => (
+                  <Pressable
+                    key={s}
+                    style={[styles.toggle, trendScope === s && styles.toggleOn]}
+                    onPress={() => setTrendScope(s)}
+                  >
+                    <Text style={[styles.toggleText, trendScope === s && styles.toggleTextOn]}>
+                      {s === "all" ? t("filter.all") : s === "movie" ? t("media.movies") : t("media.shows")}
+                    </Text>
+                  </Pressable>
+                ))
+              : (["movie", "tv"] as MediaType[]).map((m) => (
+                  <Pressable
+                    key={m}
+                    style={[styles.toggle, mediaType === m && styles.toggleOn]}
+                    onPress={() => switchMedia(m)}
+                  >
+                    <Text style={[styles.toggleText, mediaType === m && styles.toggleTextOn]}>
+                      {m === "movie" ? t("media.movies") : t("media.shows")}
+                    </Text>
+                  </Pressable>
+                ))}
+          </View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-            <Pressable
-              style={[styles.chip, styles.trendChip, trending && styles.trendChipOn]}
-              onPress={toggleTrending}
-            >
-              <Text style={[styles.chipText, styles.trendChipText, trending && styles.chipTextOn]}>
-                {t("add.trending")}
-              </Text>
-            </Pressable>
-            {(genres.data ?? []).map((g) => {
-              const on = genreIds.includes(g.id);
-              return (
-                <Pressable
-                  key={g.id}
-                  style={[styles.chip, on && styles.chipOn]}
-                  onPress={() => pickGenre(g.id)}
-                >
-                  <Text style={[styles.chipText, on && styles.chipTextOn]}>{g.name}</Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-            {TOP_PROVIDERS.map((p) => {
-              const on = providerIds.includes(p.id);
-              return (
-                <Pressable
-                  key={p.id}
-                  style={[styles.chip, on && styles.chipOn]}
-                  onPress={() => setProviderIds((cur) => toggle(cur, p.id))}
-                >
-                  <Text style={[styles.chipText, on && styles.chipTextOn]}>{p.name}</Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+          {/* Everything else lives in the Filters sheet, so the page leads with posters. */}
+          <Pressable style={styles.filterBtn} onPress={() => setFiltersOpen(true)}>
+            <Ionicons name="options-outline" size={17} color="#333" />
+            <Text style={styles.filterBtnText}>{t("add.filters")}</Text>
+            {activeFilterCount > 0 ? (
+              <View style={styles.filterBadge}>
+                <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
+              </View>
+            ) : null}
+          </Pressable>
         </View>
       ) : null}
 
@@ -343,6 +325,61 @@ export default function AddScreen() {
           </Pressable>
         </View>
       ) : null}
+
+      {/* Filters sheet — keeps genres/streaming/trending out of the main view. */}
+      <Modal visible={filtersOpen} transparent animationType="slide" onRequestClose={() => setFiltersOpen(false)}>
+        <Pressable style={styles.sheetBackdrop} onPress={() => setFiltersOpen(false)} />
+        <View style={styles.sheet}>
+          <View style={styles.sheetHandle} />
+          <View style={styles.sheetHead}>
+            <Text style={styles.sheetTitle}>{t("add.filters")}</Text>
+            {activeFilterCount > 0 ? (
+              <Pressable onPress={clearFilters} hitSlop={8}>
+                <Text style={styles.sheetClear}>{t("add.clearAll")}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+
+          <ScrollView style={styles.sheetBody} contentContainerStyle={{ paddingBottom: 12 }}>
+            <View style={styles.sheetToggleRow}>
+              <Text style={styles.sheetToggleLabel}>{t("add.trendingNow")}</Text>
+              <Switch value={trending} onValueChange={() => toggleTrending()} />
+            </View>
+
+            <Text style={styles.sheetLabel}>{t("add.genres")}</Text>
+            <View style={styles.sheetChips}>
+              {(genres.data ?? []).map((g) => {
+                const on = genreIds.includes(g.id);
+                return (
+                  <Pressable key={g.id} style={[styles.chip, on && styles.chipOn]} onPress={() => pickGenre(g.id)}>
+                    <Text style={[styles.chipText, on && styles.chipTextOn]}>{g.name}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <Text style={styles.sheetLabel}>{t("add.streaming")}</Text>
+            <View style={styles.sheetChips}>
+              {TOP_PROVIDERS.map((p) => {
+                const on = providerIds.includes(p.id);
+                return (
+                  <Pressable
+                    key={p.id}
+                    style={[styles.chip, on && styles.chipOn]}
+                    onPress={() => setProviderIds((cur) => toggle(cur, p.id))}
+                  >
+                    <Text style={[styles.chipText, on && styles.chipTextOn]}>{p.name}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </ScrollView>
+
+          <Pressable style={styles.sheetApply} onPress={() => setFiltersOpen(false)}>
+            <Text style={styles.sheetApplyText}>{t("add.showResults")}</Text>
+          </Pressable>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -355,17 +392,38 @@ const styles = StyleSheet.create({
   swipeFabText: { color: "#fff", fontWeight: "800", fontSize: 14 },
   headerQuick: { backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8 },
   headerQuickText: { color: "#5b6cff", fontWeight: "800", fontSize: 13 },
-  filters: { marginBottom: 8 },
+  // Compact filter bar: type toggle on the left, a single Filters button on the right.
+  filterBar: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
   toggleRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
+  toggleRowFlex: { flex: 1, marginBottom: 0 },
   toggle: { flex: 1, alignItems: "center", backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
   toggleOn: { backgroundColor: "#111" },
   toggleText: { fontSize: 13, color: "#666", fontWeight: "600" },
   toggleTextOn: { color: "#fff" },
-  chipRow: { gap: 8, paddingVertical: 4, paddingRight: 8 },
-  chip: { backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  filterBtn: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#f0f0f3", borderRadius: 999, paddingLeft: 12, paddingRight: 14, paddingVertical: 8 },
+  filterBtnText: { fontSize: 13, color: "#333", fontWeight: "700" },
+  filterBadge: { minWidth: 18, height: 18, borderRadius: 9, backgroundColor: "#5b6cff", alignItems: "center", justifyContent: "center", paddingHorizontal: 5, marginLeft: 1 },
+  filterBadgeText: { color: "#fff", fontSize: 11, fontWeight: "800" },
+
+  chip: { backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   chipOn: { backgroundColor: "#5b6cff" },
-  chipText: { fontSize: 12, color: "#666", fontWeight: "600" },
+  chipText: { fontSize: 13, color: "#666", fontWeight: "600" },
   chipTextOn: { color: "#fff" },
+
+  // Filters bottom sheet
+  sheetBackdrop: { flex: 1, backgroundColor: "rgba(10,10,20,0.4)" },
+  sheet: { backgroundColor: "#fff", borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 28, maxHeight: "80%" },
+  sheetHandle: { alignSelf: "center", width: 40, height: 5, borderRadius: 3, backgroundColor: "#e2e2ea", marginBottom: 12 },
+  sheetHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
+  sheetTitle: { fontFamily: HEADING, fontSize: 20, color: "#111" },
+  sheetClear: { fontSize: 14, fontWeight: "700", color: "#5b6cff" },
+  sheetBody: { marginTop: 6 },
+  sheetToggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 6 },
+  sheetToggleLabel: { fontSize: 15, fontWeight: "700", color: "#222" },
+  sheetLabel: { fontSize: 12, fontWeight: "800", color: "#999", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 20, marginBottom: 12 },
+  sheetChips: { flexDirection: "row", flexWrap: "wrap", gap: 9 },
+  sheetApply: { backgroundColor: "#5b6cff", borderRadius: 14, height: 52, alignItems: "center", justifyContent: "center", marginTop: 16 },
+  sheetApplyText: { color: "#fff", fontSize: 16, fontWeight: "800" },
   trendChip: { backgroundColor: "#fff0e6" },
   trendChipOn: { backgroundColor: "#ff7a1a" },
   trendChipText: { color: "#e8650e" },
