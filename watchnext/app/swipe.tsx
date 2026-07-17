@@ -34,8 +34,8 @@ const { width, height } = Dimensions.get("window");
 // Wider + taller than a natural 2:3 poster so the card fills the space (poster
 // cover-crops slightly); still bounded by screen height on small devices.
 // Buttons stay below the card.
-const CARD_W = width - 16;
-const CARD_H = Math.min(CARD_W * 1.78, height * 0.76);
+const CARD_W = width - 28;
+const CARD_H = Math.min(CARD_W * 1.72, height * 0.71);
 const SWIPE_X = width * 0.26;
 const SWIPE_Y = height * 0.16;
 
