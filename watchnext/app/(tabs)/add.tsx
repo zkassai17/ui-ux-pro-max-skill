@@ -46,6 +46,8 @@ export default function AddScreen() {
   const [trending, setTrending] = useState(false);
   const [trendScope, setTrendScope] = useState<TrendingScope>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // "All" browse = popular movies + TV interleaved (like the swipe deck / Home).
+  const [browseAll, setBrowseAll] = useState(false);
 
   // Default the provider pills to the services the user saved (onboarding /
   // Settings) — once, on first load. After that the pills are a free override.
@@ -64,16 +66,35 @@ export default function AddScreen() {
   // Typed search is exempt — if you search a specific foreign title, you still get it.
   const allowedLangs = new Set<string>(["en", lang]);
 
-  // Lightning-bolt shortcut in the header → the bulk "Quick add what you've seen" flow.
+  // How many filters are on (drives the badge on the Filters button).
+  const activeFilterCount = genreIds.length + providerIds.length + (trending ? 1 : 0);
+  function clearFilters() {
+    setGenreIds([]);
+    setProviderIds([]);
+    setTrending(false);
+  }
+
+  // Header: Quick add (top-left shortcut to the bulk flow) + Filters (top-right,
+  // opens the filter sheet, with an active-count badge).
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerRight: () => (
+      headerLeft: () => (
         <Pressable onPress={() => router.push("/quick-seen")} hitSlop={10} style={styles.headerQuick}>
           <Text style={styles.headerQuickText}>⚡ {t("lib.quickAddShort")}</Text>
         </Pressable>
       ),
+      headerRight: () => (
+        <Pressable onPress={() => setFiltersOpen(true)} hitSlop={10} style={styles.headerFilter}>
+          <Ionicons name="options-outline" size={22} color="#111" />
+          {activeFilterCount > 0 ? (
+            <View style={styles.headerFilterBadge}>
+              <Text style={styles.headerFilterBadgeText}>{activeFilterCount}</Text>
+            </View>
+          ) : null}
+        </Pressable>
+      ),
     });
-  }, [navigation, router, t]);
+  }, [navigation, router, t, activeFilterCount]);
 
   // Tapping the Add tab again jumps the results list back to the top.
   const listRef = useRef<FlatList<Title>>(null);
@@ -117,7 +138,28 @@ export default function AddScreen() {
     queryKey: ["tmdb-discover", mediaType, genreKey, providerKey],
     queryFn: ({ pageParam }) =>
       discoverTitles({ mediaType, genreIds, providerIds, sortBy: "vote_count.desc", minVotes: 300, page: pageParam }),
-    enabled: showingDiscover,
+    enabled: showingDiscover && !browseAll,
+    initialPageParam: 1,
+    getNextPageParam: (last) => (last.page < last.totalPages ? last.page + 1 : undefined),
+  });
+  // "All": fetch popular movies AND TV for the page and interleave them. Genres are
+  // per-media (different taxonomies), so All doesn't apply a genre filter.
+  const discoverAll = useInfiniteQuery({
+    queryKey: ["tmdb-discover-all", providerKey],
+    queryFn: async ({ pageParam }) => {
+      const [m, tv] = await Promise.all([
+        discoverTitles({ mediaType: "movie", providerIds, sortBy: "vote_count.desc", minVotes: 300, page: pageParam }),
+        discoverTitles({ mediaType: "tv", providerIds, sortBy: "vote_count.desc", minVotes: 300, page: pageParam }),
+      ]);
+      const results: Title[] = [];
+      const max = Math.max(m.results.length, tv.results.length);
+      for (let i = 0; i < max; i++) {
+        if (m.results[i]) results.push(m.results[i]);
+        if (tv.results[i]) results.push(tv.results[i]);
+      }
+      return { results, page: pageParam, totalPages: Math.min(m.totalPages, tv.totalPages) };
+    },
+    enabled: showingDiscover && browseAll,
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page < last.totalPages ? last.page + 1 : undefined),
   });
@@ -134,6 +176,16 @@ export default function AddScreen() {
     setMediaType(next);
     setGenreIds([]); // genre IDs differ between movie and tv
   }
+  // The type pills in discover mode: All / Movies / TV.
+  function pickType(type: "all" | MediaType) {
+    if (type === "all") {
+      setBrowseAll(true);
+      setGenreIds([]); // genres are per-media, so All doesn't filter by genre
+      return;
+    }
+    setBrowseAll(false);
+    switchMedia(type);
+  }
   function toggleTrending() {
     setTrending((on) => !on);
     setGenreIds([]); // trending spans both media types; per-media genres don't apply
@@ -149,7 +201,7 @@ export default function AddScreen() {
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   // A new search or filter change clears the grace window — added titles drop out then.
-  const context = `${q.trim()}|${mediaType}|${genreKey}|${providerKey}|${trending}|${trendScope}`;
+  const context = `${q.trim()}|${mediaType}|${genreKey}|${providerKey}|${trending}|${trendScope}|${browseAll}`;
   useEffect(() => {
     timers.current.forEach((t) => clearTimeout(t));
     timers.current.clear();
@@ -187,7 +239,7 @@ export default function AddScreen() {
   }, []);
 
   // The active infinite-scroll feed when not searching (trending or discover).
-  const feed = showingTrending ? trend : discover;
+  const feed = showingTrending ? trend : browseAll ? discoverAll : discover;
   const rawResults: Title[] = searching
     ? search.data ?? []
     : feed.data?.pages.flatMap((p) => p.results) ?? [];
@@ -207,14 +259,6 @@ export default function AddScreen() {
     active.refetch();
   }
 
-  // How many filters are on (drives the badge on the Filters button).
-  const activeFilterCount = genreIds.length + providerIds.length + (trending ? 1 : 0);
-  function clearFilters() {
-    setGenreIds([]);
-    setProviderIds([]);
-    setTrending(false);
-  }
-
   return (
     <View style={styles.container}>
       <TextInput
@@ -228,44 +272,26 @@ export default function AddScreen() {
       />
 
       {!searching ? (
-        <View style={styles.filterBar}>
-          {/* Type stays visible — it's the primary browse dimension. */}
-          <View style={[styles.toggleRow, styles.toggleRowFlex]}>
-            {trending
-              ? (["all", "movie", "tv"] as TrendingScope[]).map((s) => (
-                  <Pressable
-                    key={s}
-                    style={[styles.toggle, trendScope === s && styles.toggleOn]}
-                    onPress={() => setTrendScope(s)}
-                  >
-                    <Text style={[styles.toggleText, trendScope === s && styles.toggleTextOn]}>
-                      {s === "all" ? t("filter.all") : s === "movie" ? t("media.movies") : t("media.shows")}
-                    </Text>
-                  </Pressable>
-                ))
-              : (["movie", "tv"] as MediaType[]).map((m) => (
-                  <Pressable
-                    key={m}
-                    style={[styles.toggle, mediaType === m && styles.toggleOn]}
-                    onPress={() => switchMedia(m)}
-                  >
-                    <Text style={[styles.toggleText, mediaType === m && styles.toggleTextOn]}>
-                      {m === "movie" ? t("media.movies") : t("media.shows")}
-                    </Text>
-                  </Pressable>
-                ))}
-          </View>
-
-          {/* Everything else lives in the Filters sheet, so the page leads with posters. */}
-          <Pressable style={styles.filterBtn} onPress={() => setFiltersOpen(true)}>
-            <Ionicons name="options-outline" size={17} color="#333" />
-            <Text style={styles.filterBtnText}>{t("add.filters")}</Text>
-            {activeFilterCount > 0 ? (
-              <View style={styles.filterBadge}>
-                <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
-              </View>
-            ) : null}
-          </Pressable>
+        // All / Movies / TV. Full width now that Filters lives in the header.
+        <View style={styles.toggleRow}>
+          {(["all", "movie", "tv"] as const).map((s) => {
+            const selected = trending
+              ? trendScope === s
+              : s === "all"
+              ? browseAll
+              : !browseAll && mediaType === s;
+            return (
+              <Pressable
+                key={s}
+                style={[styles.toggle, selected && styles.toggleOn]}
+                onPress={() => (trending ? setTrendScope(s) : pickType(s))}
+              >
+                <Text style={[styles.toggleText, selected && styles.toggleTextOn]}>
+                  {s === "all" ? t("filter.all") : s === "movie" ? t("media.movies") : t("media.shows")}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
       ) : null}
 
@@ -347,16 +373,20 @@ export default function AddScreen() {
             </View>
 
             <Text style={styles.sheetLabel}>{t("add.genres")}</Text>
-            <View style={styles.sheetChips}>
-              {(genres.data ?? []).map((g) => {
-                const on = genreIds.includes(g.id);
-                return (
-                  <Pressable key={g.id} style={[styles.chip, on && styles.chipOn]} onPress={() => pickGenre(g.id)}>
-                    <Text style={[styles.chipText, on && styles.chipTextOn]}>{g.name}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+            {browseAll ? (
+              <Text style={styles.sheetNote}>{t("add.genresAllNote")}</Text>
+            ) : (
+              <View style={styles.sheetChips}>
+                {(genres.data ?? []).map((g) => {
+                  const on = genreIds.includes(g.id);
+                  return (
+                    <Pressable key={g.id} style={[styles.chip, on && styles.chipOn]} onPress={() => pickGenre(g.id)}>
+                      <Text style={[styles.chipText, on && styles.chipTextOn]}>{g.name}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
 
             <Text style={styles.sheetLabel}>{t("add.streaming")}</Text>
             <View style={styles.sheetChips}>
@@ -390,20 +420,18 @@ const styles = StyleSheet.create({
   swipeFabWrap: { position: "absolute", left: 0, right: 0, bottom: 20, alignItems: "center" },
   swipeFab: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#5b6cff", borderRadius: 999, paddingHorizontal: 22, paddingVertical: 14, shadowColor: "#5b6cff", shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
   swipeFabText: { color: "#fff", fontWeight: "800", fontSize: 14 },
-  headerQuick: { backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8 },
+  headerQuick: { backgroundColor: "#eef0ff", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginLeft: 12 },
   headerQuickText: { color: "#5b6cff", fontWeight: "800", fontSize: 13 },
-  // Compact filter bar: type toggle on the left, a single Filters button on the right.
-  filterBar: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
+  // Filters gear in the header top-right, with an active-count badge.
+  headerFilter: { paddingHorizontal: 14, paddingVertical: 4 },
+  headerFilterBadge: { position: "absolute", top: -2, right: 8, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: "#5b6cff", alignItems: "center", justifyContent: "center", paddingHorizontal: 4 },
+  headerFilterBadgeText: { color: "#fff", fontSize: 10, fontWeight: "800" },
+
   toggleRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
-  toggleRowFlex: { flex: 1, marginBottom: 0 },
   toggle: { flex: 1, alignItems: "center", backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
   toggleOn: { backgroundColor: "#111" },
   toggleText: { fontSize: 13, color: "#666", fontWeight: "600" },
   toggleTextOn: { color: "#fff" },
-  filterBtn: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#f0f0f3", borderRadius: 999, paddingLeft: 12, paddingRight: 14, paddingVertical: 8 },
-  filterBtnText: { fontSize: 13, color: "#333", fontWeight: "700" },
-  filterBadge: { minWidth: 18, height: 18, borderRadius: 9, backgroundColor: "#5b6cff", alignItems: "center", justifyContent: "center", paddingHorizontal: 5, marginLeft: 1 },
-  filterBadgeText: { color: "#fff", fontSize: 11, fontWeight: "800" },
 
   chip: { backgroundColor: "#f0f0f3", borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   chipOn: { backgroundColor: "#5b6cff" },
@@ -421,6 +449,7 @@ const styles = StyleSheet.create({
   sheetToggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 6 },
   sheetToggleLabel: { fontSize: 15, fontWeight: "700", color: "#222" },
   sheetLabel: { fontSize: 12, fontWeight: "800", color: "#999", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 20, marginBottom: 12 },
+  sheetNote: { fontSize: 13, color: "#999", lineHeight: 19 },
   sheetChips: { flexDirection: "row", flexWrap: "wrap", gap: 9 },
   sheetApply: { backgroundColor: "#5b6cff", borderRadius: 14, height: 52, alignItems: "center", justifyContent: "center", marginTop: 16 },
   sheetApplyText: { color: "#fff", fontSize: 16, fontWeight: "800" },

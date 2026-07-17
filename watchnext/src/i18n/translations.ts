@@ -324,6 +324,7 @@ const en: Dict = {
   "add.streaming": "Streaming",
   "add.showResults": "Show results",
   "add.clearAll": "Clear all",
+  "add.genresAllNote": "Pick Movies or TV to filter by genre.",
   "add.noResults": "No results.",
   "add.noFilterMatch": "Nothing matches those filters.",
   "add.errorTitle": "Couldn't reach the catalog",
