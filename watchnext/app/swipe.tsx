@@ -491,8 +491,8 @@ export default function SwipeScreen() {
               <Text style={[styles.actionLabel, { color: WANT }]}>{t("swipe.btnWant")}</Text>
             </View>
             <View style={styles.actionCol}>
-              <PressableScale style={[styles.actionBtn, styles.actionBtnWatching]} onPress={markWatching} to={0.88}>
-                <Ionicons name="play" size={24} color={WATCHING} />
+              <PressableScale style={[styles.actionBtnSm, styles.actionBtnWatching]} onPress={markWatching} to={0.86}>
+                <Ionicons name="play" size={19} color={WATCHING} />
               </PressableScale>
               <Text style={[styles.actionLabel, { color: WATCHING }]}>{t("swipe.btnWatching")}</Text>
             </View>
@@ -597,6 +597,23 @@ const styles = StyleSheet.create({
   actionBtnSeen: { backgroundColor: "#f5f6ff" },
   actionBtnWant: { backgroundColor: "#f1fbf7" },
   actionBtnWatching: { backgroundColor: "#fff8ec" },
+  // Small button (44px) matching Undo — used for the secondary Watching action so
+  // the two utility buttons on the ends are the same size. marginTop centres it
+  // against the 56px main buttons.
+  actionBtnSm: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginTop: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+    shadowColor: "#0b0b18",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
   actionLabel: { fontSize: 11.5, fontWeight: "800", letterSpacing: 0.1 },
 
   // Secondary to the four main actions: smaller, flatter and grey. marginTop
