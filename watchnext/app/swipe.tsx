@@ -42,6 +42,12 @@ const SWIPE_Y = height * 0.16;
 type Dir = "right" | "left" | "up";
 type IconName = ComponentProps<typeof Ionicons>["name"];
 
+// One colour per swipe direction, used by the buttons, labels, stamps and edge
+// glows so a direction always reads as the same colour.
+const SKIP = "#ff3b5b";
+const SEEN = "#5b6cff";
+const WANT = "#12b886";
+
 // One line in the first-run "how it works" card.
 function CoachRow({ icon, color, text }: { icon: IconName; color: string; text: string }) {
   return (
@@ -457,22 +463,22 @@ export default function SwipeScreen() {
               </FadeInView>
             ) : null}
             <View style={styles.actionCol}>
-              <PressableScale style={styles.actionBtn} onPress={() => swipeOff("left")} to={0.88}>
-                <Ionicons name="close" size={28} color="#ff3b5b" />
+              <PressableScale style={[styles.actionBtn, styles.actionBtnSkip]} onPress={() => swipeOff("left")} to={0.88}>
+                <Ionicons name="close" size={30} color={SKIP} />
               </PressableScale>
-              <Text style={[styles.actionLabel, { color: "#ff3b5b" }]}>{t("swipe.btnSkip")}</Text>
+              <Text style={[styles.actionLabel, { color: SKIP }]}>{t("swipe.btnSkip")}</Text>
             </View>
             <View style={styles.actionCol}>
-              <PressableScale style={styles.actionBtn} onPress={() => swipeOff("up")} to={0.88}>
-                <Ionicons name="eye" size={24} color="#5b6cff" />
+              <PressableScale style={[styles.actionBtn, styles.actionBtnSeen]} onPress={() => swipeOff("up")} to={0.88}>
+                <Ionicons name="eye" size={26} color={SEEN} />
               </PressableScale>
-              <Text style={[styles.actionLabel, { color: "#5b6cff" }]}>{t("swipe.btnSeen")}</Text>
+              <Text style={[styles.actionLabel, { color: SEEN }]}>{t("swipe.btnSeen")}</Text>
             </View>
             <View style={styles.actionCol}>
-              <PressableScale style={styles.actionBtn} onPress={() => swipeOff("right")} to={0.88}>
-                <Ionicons name="bookmark" size={24} color="#1dd1a1" />
+              <PressableScale style={[styles.actionBtn, styles.actionBtnWant]} onPress={() => swipeOff("right")} to={0.88}>
+                <Ionicons name="bookmark" size={26} color={WANT} />
               </PressableScale>
-              <Text style={[styles.actionLabel, { color: "#12b886" }]}>{t("swipe.btnWant")}</Text>
+              <Text style={[styles.actionLabel, { color: WANT }]}>{t("swipe.btnWant")}</Text>
             </View>
           </View>
         </>
@@ -545,25 +551,54 @@ const styles = StyleSheet.create({
   // Swipe indicators sit around the vertical middle of the card so they're clearly
   // visible over the artwork instead of crammed against the top edge / notch.
   stamp: { position: "absolute", top: "42%", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, borderWidth: 3, backgroundColor: "rgba(0,0,0,0.4)" },
-  stampLike: { right: 20, borderColor: "#1dd1a1", transform: [{ rotate: "12deg" }] },
-  stampLikeText: { color: "#1dd1a1", fontSize: 24, fontWeight: "900", letterSpacing: 1 },
-  stampNope: { left: 20, borderColor: "#ff3b5b", transform: [{ rotate: "-12deg" }] },
-  stampNopeText: { color: "#ff3b5b", fontSize: 24, fontWeight: "900", letterSpacing: 1 },
-  stampSeen: { alignSelf: "center", left: 0, right: 0, marginHorizontal: "auto", borderColor: "#5b6cff", alignItems: "center" },
-  stampSeenText: { color: "#5b6cff", fontSize: 24, fontWeight: "900", letterSpacing: 1 },
+  stampLike: { right: 20, borderColor: WANT, transform: [{ rotate: "12deg" }] },
+  stampLikeText: { color: WANT, fontSize: 24, fontWeight: "900", letterSpacing: 1 },
+  stampNope: { left: 20, borderColor: SKIP, transform: [{ rotate: "-12deg" }] },
+  stampNopeText: { color: SKIP, fontSize: 24, fontWeight: "900", letterSpacing: 1 },
+  stampSeen: { alignSelf: "center", left: 0, right: 0, marginHorizontal: "auto", borderColor: SEEN, alignItems: "center" },
+  stampSeenText: { color: SEEN, fontSize: 24, fontWeight: "900", letterSpacing: 1 },
 
   // Tighter spacing below the card so there's no dead gap before the buttons.
   // `relative` anchors the absolutely-placed undo button.
   actions: { flexDirection: "row", justifyContent: "center", gap: 30, paddingVertical: 8, marginTop: 6, position: "relative" },
-  actionCol: { alignItems: "center", gap: 6 },
-  actionBtn: { width: 60, height: 60, borderRadius: 30, alignItems: "center", justifyContent: "center", backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#eee", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
-  actionLabel: { fontSize: 12, fontWeight: "800" },
+  actionCol: { alignItems: "center", gap: 7 },
+  // No grey outline — a soft lift + a faint wash of the action's own colour reads
+  // as a physical button instead of a flat ring.
+  actionBtn: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+    shadowColor: "#0b0b18",
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+  actionBtnSkip: { backgroundColor: "#fff5f7" },
+  actionBtnSeen: { backgroundColor: "#f5f6ff" },
+  actionBtnWant: { backgroundColor: "#f1fbf7" },
+  actionLabel: { fontSize: 12, fontWeight: "800", letterSpacing: 0.2 },
 
-  // Smaller than the main actions and sat to the left of Skip. `top` centres the
-  // 44px button against the 60px action buttons (both centre on y=30).
-  undoWrap: { position: "absolute", left: 14, top: 8, alignItems: "center", gap: 6 },
-  undoBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#eee", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
-  undoLabel: { fontSize: 11, fontWeight: "800", color: "#9a9aab" },
+  // Secondary to the three main actions: smaller, flatter and grey. `top` centres
+  // the 44px button against the 62px action buttons (both centre on y=31).
+  undoWrap: { position: "absolute", left: 12, top: 9, alignItems: "center", gap: 7 },
+  undoBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f3f3f7",
+    shadowColor: "#0b0b18",
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  undoLabel: { fontSize: 11, fontWeight: "800", color: "#9a9aab", letterSpacing: 0.2 },
 
   headerTitleWrap: { flexDirection: "row", alignItems: "center", gap: 6 },
   headerTitle: { fontFamily: HEADING, fontSize: 18, color: "#111" },
