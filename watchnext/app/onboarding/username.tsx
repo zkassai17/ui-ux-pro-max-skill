@@ -40,7 +40,9 @@ export default function ChooseUsername() {
       return Alert.alert(t("onboarding.cantSave"), msg);
     }
     await refreshProfile();
-    router.replace("/quick-seen?from=onboarding");
+    // Offer both ways to build a library (import / tap what you've seen) rather
+    // than dropping straight into one of them.
+    router.replace("/onboarding/library");
   }
 
   const inputStyle = { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12 } as const;

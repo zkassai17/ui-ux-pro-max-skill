@@ -35,3 +35,17 @@ export async function hideRec(title: { tmdbId: number; mediaType: string }): Pro
   );
   if (error) throw error;
 }
+
+// Un-hide a title the user marked "Not interested" — powers undo on the swipe
+// deck. Deliberately tolerant: if it isn't hidden, that's already the goal.
+export async function unhideRec(title: { tmdbId: number; mediaType: string }): Promise<void> {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Not signed in");
+  const { error } = await supabase
+    .from("hidden_recs")
+    .delete()
+    .eq("user_id", uid)
+    .eq("tmdb_id", title.tmdbId)
+    .eq("media_type", title.mediaType);
+  if (error) throw error;
+}

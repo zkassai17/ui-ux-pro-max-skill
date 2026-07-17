@@ -11,13 +11,19 @@ const OPTIONS = [
   { key: "tap", icon: "apps-outline" as const, route: "/quick-seen" as const },
 ];
 
-export function BuildLibraryOptions() {
+// `from` marks where we came from so the destination knows how to exit — e.g.
+// quick-seen sends you into the app (rather than back) when from=onboarding.
+export function BuildLibraryOptions({ from }: { from?: string } = {}) {
   const router = useRouter();
   const { t } = useI18n();
   return (
     <View style={styles.wrap}>
       {OPTIONS.map((o) => (
-        <Pressable key={o.key} style={styles.card} onPress={() => router.push(o.route)}>
+        <Pressable
+          key={o.key}
+          style={styles.card}
+          onPress={() => router.push(from ? { pathname: o.route, params: { from } } : o.route)}
+        >
           <View style={styles.iconWrap}>
             <Ionicons name={o.icon} size={22} color={ACCENT} />
           </View>
