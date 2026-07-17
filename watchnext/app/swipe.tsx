@@ -25,7 +25,6 @@ import { posterUrl } from "../src/lib/tmdbNormalize";
 import { titleKey } from "../src/lib/forYouLogic";
 import { PosterImage } from "../src/components/PosterImage";
 import { PressableScale } from "../src/components/PressableScale";
-import { FadeInView } from "../src/components/FadeInView";
 import { useI18n } from "../src/i18n/I18nProvider";
 import { ACCENT, HEADING } from "../src/theme";
 import type { Title, TitleDetail, WatchProviders } from "../src/types/tmdb";
@@ -47,6 +46,7 @@ type IconName = ComponentProps<typeof Ionicons>["name"];
 const SKIP = "#ff3b5b";
 const SEEN = "#5b6cff";
 const WANT = "#12b886";
+const WATCHING = "#f5a623"; // button-only action (no swipe direction)
 
 // One line in the first-run "how it works" card.
 function CoachRow({ icon, color, text }: { icon: IconName; color: string; text: string }) {
@@ -304,6 +304,18 @@ export default function SwipeScreen() {
     Animated.timing(position, { toValue, duration: 220, useNativeDriver: false }).start(() => act(dir, card));
   }
 
+  // "Watching" has no swipe direction — it's a button that files the current card
+  // under Watching. Fly the card straight down, then commit and advance.
+  function markWatching() {
+    const card = cardsRef.current[indexRef.current];
+    if (!card) return;
+    Animated.timing(position, { toValue: { x: 0, y: height * 1.2 }, duration: 220, useNativeDriver: false }).start(() => {
+      addToLibrary(card, "watching").catch(onSaveError);
+      setIndex((i) => i + 1);
+      qc.invalidateQueries({ queryKey: ["library"] });
+    });
+  }
+
   const setLift = (toValue: number) =>
     Animated.spring(lift, { toValue, useNativeDriver: false, speed: 30, bounciness: 4 }).start();
 
@@ -452,33 +464,37 @@ export default function SwipeScreen() {
           </View>
 
           <View style={styles.actions}>
-            {/* Undo the last skip. Absolutely placed so the three main buttons
-                never shift when it appears. */}
-            {undoable ? (
-              <FadeInView style={styles.undoWrap} duration={140}>
-                <PressableScale style={styles.undoBtn} onPress={undoLast} to={0.88}>
-                  <Ionicons name="arrow-undo" size={19} color="#8a8a99" />
-                </PressableScale>
-                <Text style={styles.undoLabel}>{t("swipe.undo")}</Text>
-              </FadeInView>
-            ) : null}
+            {/* Undo the last skip — always on the far left, smaller, and disabled
+                (greyed) until there's a skip to undo. */}
+            <View style={styles.actionCol}>
+              <PressableScale style={styles.undoBtn} onPress={undoLast} to={0.86} disabled={!undoable}>
+                <Ionicons name="arrow-undo" size={17} color={undoable ? "#8a8a99" : "#d3d3db"} />
+              </PressableScale>
+              <Text style={[styles.actionLabel, styles.undoLabel, !undoable && styles.undoLabelOff]}>{t("swipe.undo")}</Text>
+            </View>
             <View style={styles.actionCol}>
               <PressableScale style={[styles.actionBtn, styles.actionBtnSkip]} onPress={() => swipeOff("left")} to={0.88}>
-                <Ionicons name="close" size={34} color={SKIP} />
+                <Ionicons name="close" size={28} color={SKIP} />
               </PressableScale>
               <Text style={[styles.actionLabel, { color: SKIP }]}>{t("swipe.btnSkip")}</Text>
             </View>
             <View style={styles.actionCol}>
               <PressableScale style={[styles.actionBtn, styles.actionBtnSeen]} onPress={() => swipeOff("up")} to={0.88}>
-                <Ionicons name="eye" size={30} color={SEEN} />
+                <Ionicons name="eye" size={25} color={SEEN} />
               </PressableScale>
               <Text style={[styles.actionLabel, { color: SEEN }]}>{t("swipe.btnSeen")}</Text>
             </View>
             <View style={styles.actionCol}>
               <PressableScale style={[styles.actionBtn, styles.actionBtnWant]} onPress={() => swipeOff("right")} to={0.88}>
-                <Ionicons name="bookmark" size={29} color={WANT} />
+                <Ionicons name="bookmark" size={24} color={WANT} />
               </PressableScale>
               <Text style={[styles.actionLabel, { color: WANT }]}>{t("swipe.btnWant")}</Text>
+            </View>
+            <View style={styles.actionCol}>
+              <PressableScale style={[styles.actionBtn, styles.actionBtnWatching]} onPress={markWatching} to={0.88}>
+                <Ionicons name="play" size={24} color={WATCHING} />
+              </PressableScale>
+              <Text style={[styles.actionLabel, { color: WATCHING }]}>{t("swipe.btnWatching")}</Text>
             </View>
           </View>
         </>
@@ -558,37 +574,38 @@ const styles = StyleSheet.create({
   stampSeen: { alignSelf: "center", left: 0, right: 0, marginHorizontal: "auto", borderColor: SEEN, alignItems: "center" },
   stampSeenText: { color: SEEN, fontSize: 24, fontWeight: "900", letterSpacing: 1 },
 
-  // Bigger buttons + tighter top margin so the row fills the space under the card
-  // instead of leaving a dead gap. `relative` anchors the absolute undo button.
-  actions: { flexDirection: "row", justifyContent: "center", gap: 34, paddingTop: 12, paddingBottom: 6, marginTop: 2, position: "relative" },
-  actionCol: { alignItems: "center", gap: 8 },
+  // Five buttons: a small undo on the left, then Skip / Seen it / Want / Watching.
+  // space-between keeps them edge-to-edge and evenly spread.
+  actions: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingHorizontal: 14, paddingTop: 10, paddingBottom: 6 },
+  actionCol: { alignItems: "center", gap: 7 },
   // No grey outline — a soft lift + a faint wash of the action's own colour reads
   // as a physical button instead of a flat ring.
   actionBtn: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#fff",
     shadowColor: "#0b0b18",
-    shadowOpacity: 0.13,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
     elevation: 6,
   },
   actionBtnSkip: { backgroundColor: "#fff5f7" },
   actionBtnSeen: { backgroundColor: "#f5f6ff" },
   actionBtnWant: { backgroundColor: "#f1fbf7" },
-  actionLabel: { fontSize: 13, fontWeight: "800", letterSpacing: 0.2 },
+  actionBtnWatching: { backgroundColor: "#fff8ec" },
+  actionLabel: { fontSize: 11.5, fontWeight: "800", letterSpacing: 0.1 },
 
-  // Secondary to the three main actions: smaller, flatter and grey. `top` centres
-  // the 48px button against the 72px action buttons (both centre on y=36).
-  undoWrap: { position: "absolute", left: 10, top: 12, alignItems: "center", gap: 8 },
+  // Secondary to the four main actions: smaller, flatter and grey. marginTop
+  // centres the 44px circle against the 56px action buttons ((56-44)/2 = 6).
   undoBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginTop: 6,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#f3f3f7",
@@ -598,7 +615,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  undoLabel: { fontSize: 11, fontWeight: "800", color: "#9a9aab", letterSpacing: 0.2 },
+  undoLabel: { color: "#9a9aab" },
+  undoLabelOff: { color: "#d3d3db" },
 
   headerTitleWrap: { flexDirection: "row", alignItems: "center", gap: 6 },
   headerTitle: { fontFamily: HEADING, fontSize: 18, color: "#111" },

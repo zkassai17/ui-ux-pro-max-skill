@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable } from "react-native";
 import { Stack, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { getLibrary } from "../src/services/watchlist";
 import { getInsights } from "../src/services/insights";
@@ -27,6 +28,14 @@ function Bar({ label, count, max }: { label: string; count: number; max: number 
 export default function InsightsScreen() {
   const router = useRouter();
   const { t } = useI18n();
+  // Explicit back so it always works, even if this screen was reached in a way
+  // that leaves nothing to pop (falls back to the Profile tab).
+  const goBack = () => (router.canGoBack() ? router.back() : router.replace("/(tabs)/profile"));
+  const headerBack = () => (
+    <Pressable onPress={goBack} hitSlop={12} style={{ paddingHorizontal: 8 }}>
+      <Ionicons name="chevron-back" size={26} color={ACCENT} />
+    </Pressable>
+  );
   const { isPro } = usePro();
   const library = useQuery({ queryKey: ["library"], queryFn: () => getLibrary() });
   const entries = library.data ?? [];
@@ -42,7 +51,7 @@ export default function InsightsScreen() {
   if (!isPro) {
     return (
       <View style={styles.container}>
-        <Stack.Screen options={{ headerShown: true, title: t("insights.title") }} />
+        <Stack.Screen options={{ headerShown: true, title: t("insights.title"), headerLeft: headerBack }} />
         <View style={styles.lock}>
           <Text style={styles.lockEmoji}>✦</Text>
           <Text style={styles.lockTitle}>{t("insights.title")}</Text>
@@ -64,7 +73,7 @@ export default function InsightsScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-      <Stack.Screen options={{ headerShown: true, title: t("insights.title") }} />
+      <Stack.Screen options={{ headerShown: true, title: t("insights.title"), headerLeft: headerBack }} />
 
       {insights.isLoading ? (
         <ActivityIndicator style={{ marginTop: 40 }} />

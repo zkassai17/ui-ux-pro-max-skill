@@ -84,6 +84,7 @@ const en: Dict = {
   "swipe.btnSkip": "Skip",
   "swipe.btnSeen": "Seen it",
   "swipe.btnWant": "Want",
+  "swipe.btnWatching": "Watching",
   "swipe.empty": "That's everything for now — check back soon.",
   "swipe.done": "Done",
   "swipe.coachTitle": "How it works",
