@@ -40,9 +40,8 @@ export default function ChooseUsername() {
       return Alert.alert(t("onboarding.cantSave"), msg);
     }
     await refreshProfile();
-    // Offer both ways to build a library (import / tap what you've seen) rather
-    // than dropping straight into one of them.
-    router.replace("/onboarding/library");
+    // Onboarding: pick streaming services, then build a library.
+    router.replace("/onboarding/services");
   }
 
   const inputStyle = { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12 } as const;

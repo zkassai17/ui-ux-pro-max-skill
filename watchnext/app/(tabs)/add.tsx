@@ -18,6 +18,7 @@ import { TitleRow } from "../../src/components/TitleRow";
 import { StatusButtons } from "../../src/components/StatusButtons";
 import { useI18n } from "../../src/i18n/I18nProvider";
 import { TOP_PROVIDERS } from "../../src/lib/providers";
+import { getStreamingServices } from "../../src/services/prefs";
 import { filterByLanguage } from "../../src/lib/recommendEngine";
 import type { MediaType, Title } from "../../src/types/tmdb";
 
@@ -41,6 +42,16 @@ export default function AddScreen() {
   const [providerIds, setProviderIds] = useState<number[]>([]);
   const [trending, setTrending] = useState(false);
   const [trendScope, setTrendScope] = useState<TrendingScope>("all");
+
+  // Default the provider pills to the services the user saved (onboarding /
+  // Settings) — once, on first load. After that the pills are a free override.
+  const savedServices = useQuery({ queryKey: ["streaming-services"], queryFn: getStreamingServices });
+  const appliedServiceDefault = useRef(false);
+  useEffect(() => {
+    if (appliedServiceDefault.current || savedServices.data === undefined) return;
+    if (savedServices.data.length) setProviderIds(savedServices.data);
+    appliedServiceDefault.current = true;
+  }, [savedServices.data]);
   const router = useRouter();
   const navigation = useNavigation();
   const { t, lang } = useI18n();

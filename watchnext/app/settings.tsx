@@ -287,6 +287,10 @@ export default function SettingsScreen() {
           })}
         </View>
       </View>
+      <Pressable style={[styles.rowBtn, { marginTop: 10 }]} onPress={() => router.push("/streaming")}>
+        <Text style={styles.rowBtnText}>{t("settings.streaming")}</Text>
+        <Text style={styles.chevron}>›</Text>
+      </Pressable>
 
       {/* Recommendations */}
       <Text style={styles.section}>{t("settings.recommendations")}</Text>
