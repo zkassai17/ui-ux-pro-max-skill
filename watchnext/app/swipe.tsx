@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getLibrary, addToLibrary, removeTitleFromLibrary } from "../src/services/watchlist";
+import { getLibrary, addToLibrary } from "../src/services/watchlist";
 import { getHiddenKeys, hideRec, unhideRec } from "../src/services/hiddenRecs";
 import { getSwipeDeck } from "../src/services/swipe";
 import { getTitleDetails, getWatchProviders } from "../src/services/tmdb";
@@ -204,30 +204,28 @@ export default function SwipeScreen() {
   // and the user assumed it landed in their library. Surface it instead.
   const onSaveError = (e: unknown) => Alert.alert(t("alert.cantSave"), (e as Error).message);
 
-  // Every swipe is one gesture away from being permanent (a left swipe hides a
-  // title for good), so offer a brief undo instead of making people live with a
-  // slip of the thumb.
-  const [undoable, setUndoable] = useState<{ dir: Dir; card: Title } | null>(null);
+  // Skipping is the one destructive swipe — it hides a title for good — so offer a
+  // brief undo for it. Want/Seen just add to the library, which is easy to reverse
+  // there, so they don't need one.
+  const [undoable, setUndoable] = useState<Title | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (undoTimer.current) clearTimeout(undoTimer.current); }, []);
 
-  function armUndo(dir: Dir, card: Title) {
-    setUndoable({ dir, card });
+  function armUndo(card: Title) {
+    setUndoable(card);
     if (undoTimer.current) clearTimeout(undoTimer.current);
     undoTimer.current = setTimeout(() => setUndoable(null), 5000);
   }
 
   async function undoLast() {
-    const last = undoable;
-    if (!last) return;
+    const card = undoable;
+    if (!card) return;
     setUndoable(null);
     if (undoTimer.current) clearTimeout(undoTimer.current);
     try {
-      // Reverse the write, then step the deck back so the card returns.
-      if (last.dir === "left") await unhideRec(last.card);
-      else await removeTitleFromLibrary(last.card);
+      // Un-hide it, then step the deck back so the card returns.
+      await unhideRec(card);
       setIndex((i) => Math.max(0, i - 1));
-      qc.invalidateQueries({ queryKey: ["library"] });
       qc.invalidateQueries({ queryKey: ["hidden-recs"] });
     } catch (e) {
       onSaveError(e);
@@ -237,8 +235,10 @@ export default function SwipeScreen() {
   function act(dir: Dir, card: Title) {
     if (dir === "right") addToLibrary(card, "want").catch(onSaveError);
     else if (dir === "up") addToLibrary(card, "watched").catch(onSaveError);
-    else hideRec(card).catch(onSaveError);
-    armUndo(dir, card);
+    else {
+      hideRec(card).catch(onSaveError);
+      armUndo(card);
+    }
     // Advance the deck. The position + scale reset happens in the layout effect
     // below (keyed on `index`), NOT here — if we reset the shared position now,
     // the reused card view would snap to center while still showing the old
@@ -445,27 +445,17 @@ export default function SwipeScreen() {
             </Animated.View>
           </View>
 
-          {/* Brief undo for the last swipe — reverses the save and deals the card back. */}
-          {undoable ? (
-            <FadeInView style={styles.undoBar} duration={160}>
-              <Text style={styles.undoText} numberOfLines={1}>
-                {t(
-                  undoable.dir === "left"
-                    ? "swipe.undoSkip"
-                    : undoable.dir === "up"
-                    ? "swipe.undoSeen"
-                    : "swipe.undoWant",
-                )}
-                {" · "}
-                {undoable.card.title}
-              </Text>
-              <Pressable onPress={undoLast} hitSlop={10}>
-                <Text style={styles.undoAction}>{t("swipe.undo")}</Text>
-              </Pressable>
-            </FadeInView>
-          ) : null}
-
           <View style={styles.actions}>
+            {/* Undo the last skip. Absolutely placed so the three main buttons
+                never shift when it appears. */}
+            {undoable ? (
+              <FadeInView style={styles.undoWrap} duration={140}>
+                <PressableScale style={styles.undoBtn} onPress={undoLast} to={0.88}>
+                  <Ionicons name="arrow-undo" size={17} color="#8a8a99" />
+                </PressableScale>
+                <Text style={styles.undoLabel}>{t("swipe.undo")}</Text>
+              </FadeInView>
+            ) : null}
             <View style={styles.actionCol}>
               <PressableScale style={styles.actionBtn} onPress={() => swipeOff("left")} to={0.88}>
                 <Ionicons name="close" size={28} color="#ff3b5b" />
@@ -563,14 +553,17 @@ const styles = StyleSheet.create({
   stampSeenText: { color: "#5b6cff", fontSize: 24, fontWeight: "900", letterSpacing: 1 },
 
   // Tighter spacing below the card so there's no dead gap before the buttons.
-  actions: { flexDirection: "row", justifyContent: "center", gap: 30, paddingVertical: 8, marginTop: 6 },
+  // `relative` anchors the absolutely-placed undo button.
+  actions: { flexDirection: "row", justifyContent: "center", gap: 30, paddingVertical: 8, marginTop: 6, position: "relative" },
   actionCol: { alignItems: "center", gap: 6 },
   actionBtn: { width: 60, height: 60, borderRadius: 30, alignItems: "center", justifyContent: "center", backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#eee", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
   actionLabel: { fontSize: 12, fontWeight: "800" },
 
-  undoBar: { flexDirection: "row", alignItems: "center", gap: 12, alignSelf: "center", maxWidth: CARD_W, backgroundColor: "#1c1c24", borderRadius: 999, paddingLeft: 16, paddingRight: 14, paddingVertical: 10, marginTop: 8 },
-  undoText: { flex: 1, color: "#e9e9f0", fontSize: 13, fontWeight: "600" },
-  undoAction: { color: "#8ea2ff", fontSize: 13, fontWeight: "800" },
+  // Smaller than the main actions and sat to the left of Skip. `top` centres the
+  // 44px button against the 60px action buttons (both centre on y=30).
+  undoWrap: { position: "absolute", left: 14, top: 8, alignItems: "center", gap: 6 },
+  undoBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#eee", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+  undoLabel: { fontSize: 11, fontWeight: "800", color: "#9a9aab" },
 
   headerTitleWrap: { flexDirection: "row", alignItems: "center", gap: 6 },
   headerTitle: { fontFamily: HEADING, fontSize: 18, color: "#111" },

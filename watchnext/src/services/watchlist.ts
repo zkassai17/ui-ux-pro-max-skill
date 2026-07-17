@@ -72,21 +72,6 @@ export async function removeFromLibrary(entryId: string): Promise<void> {
   assertWrote(data, "That title wasn't removed.");
 }
 
-// Remove a title by its TMDB identity rather than a row id — powers undo on the
-// swipe deck, where we only have the card. Deliberately tolerant: if it's already
-// gone, the goal is met, so no assertWrote here.
-export async function removeTitleFromLibrary(title: { tmdbId: number; mediaType: MediaType }): Promise<void> {
-  const uid = await currentUserId();
-  if (!uid) throw new Error("Not signed in");
-  const { error } = await supabase
-    .from("watchlist")
-    .delete()
-    .eq("user_id", uid)
-    .eq("tmdb_id", title.tmdbId)
-    .eq("media_type", title.mediaType);
-  if (error) throw error;
-}
-
 // Save (or clear, with empty/null) a short public review note on an entry.
 // Trimmed and capped so a runaway note can't be stored.
 export async function setNote(entryId: string, note: string | null): Promise<void> {
