@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
   // Five buttons: small Undo + Watching on the ends, Skip / Seen it / Want in the
   // middle. space-evenly gives the end buttons margin on the outside too, so they
   // never hug (or clip against) the screen edges.
-  actions: { flexDirection: "row", justifyContent: "space-evenly", alignItems: "flex-start", paddingHorizontal: 4, paddingTop: 10, paddingBottom: 6 },
+  actions: { flexDirection: "row", justifyContent: "space-evenly", alignItems: "flex-start", paddingHorizontal: 4, paddingTop: 6, paddingBottom: 30 },
   actionCol: { alignItems: "center", gap: 7, minWidth: 58 },
   // No grey outline — a soft lift + a faint wash of the action's own colour reads
   // as a physical button instead of a flat ring.
