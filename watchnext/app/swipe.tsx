@@ -34,8 +34,8 @@ const { width, height } = Dimensions.get("window");
 // Wider + taller than a natural 2:3 poster so the card fills the space (poster
 // cover-crops slightly); still bounded by screen height on small devices.
 // Buttons stay below the card.
-const CARD_W = width - 20;
-const CARD_H = Math.min(CARD_W * 1.72, height * 0.72);
+const CARD_W = width - 16;
+const CARD_H = Math.min(CARD_W * 1.78, height * 0.76);
 const SWIPE_X = width * 0.26;
 const SWIPE_Y = height * 0.16;
 
@@ -457,26 +457,26 @@ export default function SwipeScreen() {
             {undoable ? (
               <FadeInView style={styles.undoWrap} duration={140}>
                 <PressableScale style={styles.undoBtn} onPress={undoLast} to={0.88}>
-                  <Ionicons name="arrow-undo" size={17} color="#8a8a99" />
+                  <Ionicons name="arrow-undo" size={19} color="#8a8a99" />
                 </PressableScale>
                 <Text style={styles.undoLabel}>{t("swipe.undo")}</Text>
               </FadeInView>
             ) : null}
             <View style={styles.actionCol}>
               <PressableScale style={[styles.actionBtn, styles.actionBtnSkip]} onPress={() => swipeOff("left")} to={0.88}>
-                <Ionicons name="close" size={30} color={SKIP} />
+                <Ionicons name="close" size={34} color={SKIP} />
               </PressableScale>
               <Text style={[styles.actionLabel, { color: SKIP }]}>{t("swipe.btnSkip")}</Text>
             </View>
             <View style={styles.actionCol}>
               <PressableScale style={[styles.actionBtn, styles.actionBtnSeen]} onPress={() => swipeOff("up")} to={0.88}>
-                <Ionicons name="eye" size={26} color={SEEN} />
+                <Ionicons name="eye" size={30} color={SEEN} />
               </PressableScale>
               <Text style={[styles.actionLabel, { color: SEEN }]}>{t("swipe.btnSeen")}</Text>
             </View>
             <View style={styles.actionCol}>
               <PressableScale style={[styles.actionBtn, styles.actionBtnWant]} onPress={() => swipeOff("right")} to={0.88}>
-                <Ionicons name="bookmark" size={26} color={WANT} />
+                <Ionicons name="bookmark" size={29} color={WANT} />
               </PressableScale>
               <Text style={[styles.actionLabel, { color: WANT }]}>{t("swipe.btnWant")}</Text>
             </View>
@@ -558,37 +558,37 @@ const styles = StyleSheet.create({
   stampSeen: { alignSelf: "center", left: 0, right: 0, marginHorizontal: "auto", borderColor: SEEN, alignItems: "center" },
   stampSeenText: { color: SEEN, fontSize: 24, fontWeight: "900", letterSpacing: 1 },
 
-  // Tighter spacing below the card so there's no dead gap before the buttons.
-  // `relative` anchors the absolutely-placed undo button.
-  actions: { flexDirection: "row", justifyContent: "center", gap: 30, paddingVertical: 8, marginTop: 6, position: "relative" },
-  actionCol: { alignItems: "center", gap: 7 },
+  // Bigger buttons + tighter top margin so the row fills the space under the card
+  // instead of leaving a dead gap. `relative` anchors the absolute undo button.
+  actions: { flexDirection: "row", justifyContent: "center", gap: 34, paddingTop: 12, paddingBottom: 6, marginTop: 2, position: "relative" },
+  actionCol: { alignItems: "center", gap: 8 },
   // No grey outline — a soft lift + a faint wash of the action's own colour reads
   // as a physical button instead of a flat ring.
   actionBtn: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#fff",
     shadowColor: "#0b0b18",
-    shadowOpacity: 0.12,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.13,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 7 },
     elevation: 6,
   },
   actionBtnSkip: { backgroundColor: "#fff5f7" },
   actionBtnSeen: { backgroundColor: "#f5f6ff" },
   actionBtnWant: { backgroundColor: "#f1fbf7" },
-  actionLabel: { fontSize: 12, fontWeight: "800", letterSpacing: 0.2 },
+  actionLabel: { fontSize: 13, fontWeight: "800", letterSpacing: 0.2 },
 
   // Secondary to the three main actions: smaller, flatter and grey. `top` centres
-  // the 44px button against the 62px action buttons (both centre on y=31).
-  undoWrap: { position: "absolute", left: 12, top: 9, alignItems: "center", gap: 7 },
+  // the 48px button against the 72px action buttons (both centre on y=36).
+  undoWrap: { position: "absolute", left: 10, top: 12, alignItems: "center", gap: 8 },
   undoBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#f3f3f7",
