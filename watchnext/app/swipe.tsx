@@ -470,31 +470,31 @@ export default function SwipeScreen() {
               <PressableScale style={styles.undoBtn} onPress={undoLast} to={0.86} disabled={!undoable}>
                 <Ionicons name="arrow-undo" size={17} color={undoable ? "#8a8a99" : "#d3d3db"} />
               </PressableScale>
-              <Text style={[styles.actionLabel, styles.undoLabel, !undoable && styles.undoLabelOff]}>{t("swipe.undo")}</Text>
+              <Text numberOfLines={1} style={[styles.actionLabel, styles.undoLabel, !undoable && styles.undoLabelOff]}>{t("swipe.undo")}</Text>
             </View>
             <View style={styles.actionCol}>
               <PressableScale style={[styles.actionBtn, styles.actionBtnSkip]} onPress={() => swipeOff("left")} to={0.88}>
                 <Ionicons name="close" size={28} color={SKIP} />
               </PressableScale>
-              <Text style={[styles.actionLabel, { color: SKIP }]}>{t("swipe.btnSkip")}</Text>
+              <Text numberOfLines={1} style={[styles.actionLabel, { color: SKIP }]}>{t("swipe.btnSkip")}</Text>
             </View>
             <View style={styles.actionCol}>
               <PressableScale style={[styles.actionBtn, styles.actionBtnSeen]} onPress={() => swipeOff("up")} to={0.88}>
                 <Ionicons name="eye" size={25} color={SEEN} />
               </PressableScale>
-              <Text style={[styles.actionLabel, { color: SEEN }]}>{t("swipe.btnSeen")}</Text>
+              <Text numberOfLines={1} style={[styles.actionLabel, { color: SEEN }]}>{t("swipe.btnSeen")}</Text>
             </View>
             <View style={styles.actionCol}>
               <PressableScale style={[styles.actionBtn, styles.actionBtnWant]} onPress={() => swipeOff("right")} to={0.88}>
                 <Ionicons name="bookmark" size={24} color={WANT} />
               </PressableScale>
-              <Text style={[styles.actionLabel, { color: WANT }]}>{t("swipe.btnWant")}</Text>
+              <Text numberOfLines={1} style={[styles.actionLabel, { color: WANT }]}>{t("swipe.btnWant")}</Text>
             </View>
             <View style={styles.actionCol}>
               <PressableScale style={[styles.actionBtnSm, styles.actionBtnWatching]} onPress={markWatching} to={0.86}>
                 <Ionicons name="play" size={19} color={WATCHING} />
               </PressableScale>
-              <Text style={[styles.actionLabel, { color: WATCHING }]}>{t("swipe.btnWatching")}</Text>
+              <Text numberOfLines={1} style={[styles.actionLabel, { color: WATCHING }]}>{t("swipe.btnWatching")}</Text>
             </View>
           </View>
         </>
@@ -574,10 +574,11 @@ const styles = StyleSheet.create({
   stampSeen: { alignSelf: "center", left: 0, right: 0, marginHorizontal: "auto", borderColor: SEEN, alignItems: "center" },
   stampSeenText: { color: SEEN, fontSize: 24, fontWeight: "900", letterSpacing: 1 },
 
-  // Five buttons: a small undo on the left, then Skip / Seen it / Want / Watching.
-  // space-between keeps them edge-to-edge and evenly spread.
-  actions: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingHorizontal: 14, paddingTop: 10, paddingBottom: 6 },
-  actionCol: { alignItems: "center", gap: 7 },
+  // Five buttons: small Undo + Watching on the ends, Skip / Seen it / Want in the
+  // middle. space-evenly gives the end buttons margin on the outside too, so they
+  // never hug (or clip against) the screen edges.
+  actions: { flexDirection: "row", justifyContent: "space-evenly", alignItems: "flex-start", paddingHorizontal: 4, paddingTop: 10, paddingBottom: 6 },
+  actionCol: { alignItems: "center", gap: 7, minWidth: 58 },
   // No grey outline — a soft lift + a faint wash of the action's own colour reads
   // as a physical button instead of a flat ring.
   actionBtn: {
