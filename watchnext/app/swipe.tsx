@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Image,
   Easing,
+  Alert,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -198,10 +199,14 @@ export default function SwipeScreen() {
   cardsRef.current = cards;
   indexRef.current = index;
 
+  // A swipe that fails to save used to be swallowed silently — the card flew off
+  // and the user assumed it landed in their library. Surface it instead.
+  const onSaveError = (e: unknown) => Alert.alert(t("alert.cantSave"), (e as Error).message);
+
   function act(dir: Dir, card: Title) {
-    if (dir === "right") addToLibrary(card, "want").catch(() => {});
-    else if (dir === "up") addToLibrary(card, "watched").catch(() => {});
-    else hideRec(card).catch(() => {});
+    if (dir === "right") addToLibrary(card, "want").catch(onSaveError);
+    else if (dir === "up") addToLibrary(card, "watched").catch(onSaveError);
+    else hideRec(card).catch(onSaveError);
     // Advance the deck. The position + scale reset happens in the layout effect
     // below (keyed on `index`), NOT here — if we reset the shared position now,
     // the reused card view would snap to center while still showing the old
