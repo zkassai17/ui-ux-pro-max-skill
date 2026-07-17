@@ -52,8 +52,16 @@ export async function addToLibrary(title: Title, status: WatchStatus): Promise<v
 }
 
 export async function updateStatus(entryId: string, status: WatchStatus): Promise<void> {
-  const { error } = await supabase.from("watchlist").update({ status }).eq("id", entryId);
+  // `.select()` so we can tell a real write from a no-op. An update that matches
+  // no rows (e.g. blocked by row-level security, or a stale entry id) returns no
+  // error — without this check the app would report success and silently revert.
+  const { data, error } = await supabase
+    .from("watchlist")
+    .update({ status })
+    .eq("id", entryId)
+    .select("id");
   if (error) throw error;
+  if (!data || data.length === 0) throw new Error("That change didn't save. Pull to refresh and try again.");
 }
 
 export async function removeFromLibrary(entryId: string): Promise<void> {
