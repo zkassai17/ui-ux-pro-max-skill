@@ -18,6 +18,7 @@ import { relativeTime } from "../../src/lib/relativeTime";
 import { initials, avatarColor, matchColor } from "../../src/lib/avatar";
 import { getReactions } from "../../src/services/reactions";
 import { PosterImage } from "../../src/components/PosterImage";
+import { ProviderBadge } from "../../src/components/ProviderBadge";
 import { QuickAddButton } from "../../src/components/QuickAddButton";
 import { FeedReactions } from "../../src/components/FeedReactions";
 import { FadeInView } from "../../src/components/FadeInView";
@@ -109,6 +110,7 @@ function TonightHero({ mediaType }: { mediaType: MediaType }) {
             <Text style={styles.heroType}>
               {hero.mediaType === "movie" ? t("media.movie") : t("media.tv")}{hero.year ? ` · ${hero.year}` : ""}
             </Text>
+            <ProviderBadge title={hero} services={providerIds} variant="hero" />
             {fromWant ? (
               <View style={styles.heroTag}>
                 <Text style={styles.heroTagText}>{t("home.onYourList")}</Text>
@@ -280,6 +282,7 @@ function ForYouRail({ heading }: { heading: string }) {
             <View>
               <PressableScale onPress={() => router.push(`/title/${t.mediaType}/${t.tmdbId}`)}>
                 <PosterImage path={t.posterPath} width={104} height={156} radius={10} />
+                <ProviderBadge title={t} services={providerIds} variant="poster" />
               </PressableScale>
               <Pressable
                 style={styles.hideBtn}

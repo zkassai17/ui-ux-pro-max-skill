@@ -75,6 +75,8 @@ const en: Dict = {
   "recap.empty": "Nothing logged this year yet — start watching!",
   "pro.maybeLater": "Maybe later",
   "home.onYourList": "On your list",
+  "home.onYourService": "On your {name}",
+  "home.streamingOn": "On {name}",
   "swipe.title": "Discover",
   "swipe.discoverCta": "Swipe to discover",
   "swipe.want": "WANT",
