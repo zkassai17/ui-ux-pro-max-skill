@@ -66,6 +66,7 @@ export async function getForYou(
   mediaType: MediaType,
   library: WatchlistEntry[],
   recWeights: RecWeights = DEFAULT_REC_WEIGHTS,
+  providerIds: number[] = [], // the user's streaming services — recs are restricted to these
 ): Promise<Title[]> {
   const mine = library.filter((e) => e.media_type === mediaType);
   // Exclude everything already in the library AND anything marked "Not interested",
@@ -120,6 +121,7 @@ export async function getForYou(
       genreId: g,
       originalLanguage: dominant, // richer pool in your main language
       minVotes: MIN_VOTES, // popularity floor
+      providerIds, // only surface titles on the user's services (empty = no filter)
     }).catch(() => [] as GenreTitle[]);
 
   const [discoverLists, exploreLists, trendingAll] = await Promise.all([

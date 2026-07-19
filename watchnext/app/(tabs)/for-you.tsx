@@ -8,7 +8,7 @@ import { getFeed, type FeedRow } from "../../src/services/feed";
 import { getLibrary } from "../../src/services/watchlist";
 import { getForYou } from "../../src/services/forYou";
 import { getHiddenKeys, hideRec } from "../../src/services/hiddenRecs";
-import { getRecWeights } from "../../src/services/prefs";
+import { getRecWeights, getStreamingServices } from "../../src/services/prefs";
 import { getFriends } from "../../src/services/friends";
 import { reportUser, blockUser } from "../../src/services/account";
 import { titleKey } from "../../src/lib/forYouLogic";
@@ -41,13 +41,16 @@ function TonightHero({ mediaType }: { mediaType: MediaType }) {
   const entries = library.data ?? [];
   const excludeKeys = new Set(entries.map((e) => titleKey({ mediaType: e.media_type, tmdbId: e.tmdb_id })));
   const libHash = entries.map((e) => `${e.media_type}:${e.tmdb_id}:${e.status}:${e.rating ?? ""}`).join("|");
+  const services = useQuery({ queryKey: ["streaming-services"], queryFn: getStreamingServices });
+  const providerIds = services.data ?? [];
+  const svcKey = providerIds.join(",");
   const w = recWeights.data;
   const weightKey = w ? `${w.content}-${w.collaborative}-${w.trending}-${w.discovery}` : "default";
   const recs = useQuery({
-    queryKey: ["for-you", mediaType, libHash, weightKey],
-    enabled: !library.isLoading && !recWeights.isLoading,
+    queryKey: ["for-you", mediaType, libHash, weightKey, svcKey],
+    enabled: !library.isLoading && !recWeights.isLoading && !services.isLoading,
     staleTime: 5 * 60 * 1000,
-    queryFn: () => getForYou(mediaType, entries, w),
+    queryFn: () => getForYou(mediaType, entries, w, providerIds),
   });
 
   // "Not interested": hide this pick instantly (optimistic) and refetch so a fresh
@@ -217,21 +220,24 @@ function ForYouRail({ heading }: { heading: string }) {
   const libHash = entries
     .map((e) => `${e.media_type}:${e.tmdb_id}:${e.status}:${e.rating ?? ""}`)
     .join("|");
+  const services = useQuery({ queryKey: ["streaming-services"], queryFn: getStreamingServices });
+  const providerIds = services.data ?? [];
+  const svcKey = providerIds.join(",");
   const w = recWeights.data;
   const weightKey = w ? `${w.content}-${w.collaborative}-${w.trending}-${w.discovery}` : "default";
-  const ready = !library.isLoading && !recWeights.isLoading;
+  const ready = !library.isLoading && !recWeights.isLoading && !services.isLoading;
 
   const movieRecs = useQuery({
-    queryKey: ["for-you", "movie", libHash, weightKey],
+    queryKey: ["for-you", "movie", libHash, weightKey, svcKey],
     enabled: ready,
     staleTime: 5 * 60 * 1000,
-    queryFn: () => getForYou("movie", entries, w),
+    queryFn: () => getForYou("movie", entries, w, providerIds),
   });
   const tvRecs = useQuery({
-    queryKey: ["for-you", "tv", libHash, weightKey],
+    queryKey: ["for-you", "tv", libHash, weightKey, svcKey],
     enabled: ready,
     staleTime: 5 * 60 * 1000,
-    queryFn: () => getForYou("tv", entries, w),
+    queryFn: () => getForYou("tv", entries, w, providerIds),
   });
 
   // Interleave movies and shows so the row alternates instead of grouping.

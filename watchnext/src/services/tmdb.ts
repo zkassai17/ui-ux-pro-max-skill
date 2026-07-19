@@ -172,6 +172,7 @@ export async function discoverSuggestions(opts: {
   genreId?: number | null;
   originalLanguage?: string | null; // restrict to one language at the source for a richer pool
   minVotes?: number; // drop obscure titles below this vote count
+  providerIds?: number[]; // restrict to titles streaming on these services (the wedge)
   page?: number;
 }): Promise<Suggestion[]> {
   const params = new URLSearchParams({
@@ -183,6 +184,11 @@ export async function discoverSuggestions(opts: {
   if (opts.genreId) params.set("with_genres", String(opts.genreId));
   if (opts.originalLanguage) params.set("with_original_language", opts.originalLanguage);
   if (opts.minVotes) params.set("vote_count.gte", String(opts.minVotes));
+  // "Only what I can actually watch tonight": restrict to the user's subscriptions.
+  if (opts.providerIds?.length) {
+    params.set("with_watch_providers", opts.providerIds.join("|"));
+    params.set("with_watch_monetization_types", "flatrate");
+  }
   // Only recommend titles already released — never an unreleased hyped sequel.
   params.set(...releasedByParam(opts.mediaType, todayIso()));
   const raw = await tmdbGet(`/discover/${opts.mediaType}?${params.toString()}`);
