@@ -1,6 +1,6 @@
 import type { WatchlistEntry } from "../types/db";
 import type { Title } from "../types/tmdb";
-import { discoverTitles } from "./tmdb";
+import { discoverTitles } from "./catalog";
 import { titleKey } from "../lib/forYouLogic";
 
 function interleave(a: Title[], b: Title[]): Title[] {

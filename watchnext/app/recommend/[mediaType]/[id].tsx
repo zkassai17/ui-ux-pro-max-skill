@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, Text, TextInput, Pressable, FlatList, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { getTitleDetailsCached } from "../../../src/services/titleCache";
+import { getTitleDetailsCached } from "../../../src/services/catalog";
 import { getFriends } from "../../../src/services/friends";
 import { sendRecommendation } from "../../../src/services/recommendations";
 import { containsProfanity } from "../../../src/lib/profanity";

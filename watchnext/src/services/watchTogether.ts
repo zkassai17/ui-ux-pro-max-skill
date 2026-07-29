@@ -2,7 +2,7 @@ import type { MediaType, Suggestion, Title } from "../types/tmdb";
 import type { WatchlistEntry } from "../types/db";
 import { getLibrary } from "./watchlist";
 import { getHiddenTitles, type HiddenTitle } from "./hiddenRecs";
-import { getGenres, getTitleDetails, discoverSuggestions, getTrending } from "./tmdb";
+import { getGenres, getTitleDetails, discoverSuggestions, getTrending } from "./catalog";
 import { groupPicks, type GroupPick } from "../lib/watchTogetherLogic";
 import { titleKey, selectWeightedSeeds } from "../lib/forYouLogic";
 import {

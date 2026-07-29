@@ -1,4 +1,4 @@
-import { getTitleDetails } from "./tmdb";
+import { getTitleDetails } from "./catalog";
 import { topGenre } from "../lib/profileInsights";
 import type { WatchlistEntry } from "../types/db";
 

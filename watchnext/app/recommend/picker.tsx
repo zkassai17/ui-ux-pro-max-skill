@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, TextInput, FlatList, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { searchTitles } from "../../src/services/tmdb";
+import { searchTitles } from "../../src/services/catalog";
 import { TitleRow } from "../../src/components/TitleRow";
 import { useI18n } from "../../src/i18n/I18nProvider";
 

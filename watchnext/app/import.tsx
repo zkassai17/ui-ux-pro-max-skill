@@ -13,7 +13,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as DocumentPicker from "expo-document-picker";
 import { File } from "expo-file-system";
 import { parseWatchHistory } from "../src/lib/importHistory";
-import { searchTitles } from "../src/services/tmdb";
+import { searchTitles } from "../src/services/catalog";
 import { addToLibrary } from "../src/services/watchlist";
 import { PosterImage } from "../src/components/PosterImage";
 import { useI18n } from "../src/i18n/I18nProvider";

@@ -1,4 +1,4 @@
-import { getTitleDetailsCached } from "./titleCache";
+import { getTitleDetailsCached } from "./catalog";
 import type { WatchlistEntry } from "../types/db";
 import {
   genreBreakdown,

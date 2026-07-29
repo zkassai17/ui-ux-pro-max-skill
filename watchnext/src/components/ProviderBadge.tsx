@@ -1,6 +1,6 @@
 import { View, Text, Image, StyleSheet } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { getWatchProviders } from "../services/tmdb";
+import { getWatchProviders } from "../services/catalog";
 import { posterUrl } from "../lib/tmdbNormalize";
 import { useI18n } from "../i18n/I18nProvider";
 import type { Title } from "../types/tmdb";

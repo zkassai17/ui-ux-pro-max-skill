@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { I18nManager } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import { getLanguage, setLanguage } from "../services/prefs";
-import { setApiLanguage } from "../services/tmdb";
+import { setApiLanguage } from "../services/catalog";
 import { translate, isRtlLang, type Lang } from "./translations";
 
 type I18nContextValue = {

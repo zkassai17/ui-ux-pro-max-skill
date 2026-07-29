@@ -1,7 +1,7 @@
 import type { MediaType, Title } from "../types/tmdb";
 import type { WatchlistEntry } from "../types/db";
-import { getGenres, getTitleDetails, discoverSuggestions, getTrending } from "./tmdb";
-import { getCachedBatch, cacheTitle, type CachedMeta } from "./titleCache";
+import { getGenres, getTitleDetails, discoverSuggestions, getTrending } from "./catalog";
+import { getCachedBatch, cacheTitle, type CachedMeta } from "./catalog";
 import { getFriends } from "./friends";
 import { getLibrary } from "./watchlist";
 import { getHiddenTitles } from "./hiddenRecs";
