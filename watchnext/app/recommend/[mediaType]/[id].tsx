@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, Text, TextInput, Pressable, FlatList, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { getTitleDetails } from "../../../src/services/tmdb";
+import { getTitleDetailsCached } from "../../../src/services/titleCache";
 import { getFriends } from "../../../src/services/friends";
 import { sendRecommendation } from "../../../src/services/recommendations";
 import { containsProfanity } from "../../../src/lib/profanity";
@@ -21,7 +21,7 @@ export default function SendRecScreen() {
 
   const detail = useQuery({
     queryKey: ["tmdb-detail", mediaType, tmdbId],
-    queryFn: () => getTitleDetails(mediaType as MediaType, tmdbId),
+    queryFn: () => getTitleDetailsCached(mediaType as MediaType, tmdbId),
   });
   const friends = useQuery({ queryKey: ["friends"], queryFn: getFriends });
 

@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { ScrollView, View, Text, TextInput, Image, StyleSheet, Pressable, ActivityIndicator, Alert } from "react-native";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getTitleDetails, getWatchProviders } from "../../../src/services/tmdb";
+import { getWatchProviders } from "../../../src/services/tmdb";
+import { getTitleDetailsCached } from "../../../src/services/titleCache";
 import { addToLibrary, getLibraryEntry, updateStatus, rateTitle, removeFromLibrary, setNote } from "../../../src/services/watchlist";
 import { PosterImage } from "../../../src/components/PosterImage";
 import { EmojiRating } from "../../../src/components/EmojiRating";
@@ -29,7 +30,7 @@ export default function TitleDetailScreen() {
 
   const detail = useQuery({
     queryKey: ["tmdb-detail", mediaType, tmdbId],
-    queryFn: () => getTitleDetails(mediaType as MediaType, tmdbId),
+    queryFn: () => getTitleDetailsCached(mediaType as MediaType, tmdbId),
   });
   const entry = useQuery({
     queryKey: ["library-entry", mediaType, tmdbId],

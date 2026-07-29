@@ -1,6 +1,7 @@
 import type { MediaType, Title } from "../types/tmdb";
 import type { WatchlistEntry } from "../types/db";
 import { getGenres, getTitleDetails, discoverSuggestions, getTrending } from "./tmdb";
+import { getCachedBatch, cacheTitle, type CachedMeta } from "./titleCache";
 import { getFriends } from "./friends";
 import { getLibrary } from "./watchlist";
 import { getHiddenTitles } from "./hiddenRecs";
@@ -37,16 +38,26 @@ async function metaFor(
   mediaType: MediaType,
   tmdbId: number,
   nameToId: Map<string, number>,
+  cacheMap: Map<number, CachedMeta>,
 ): Promise<SeedMeta> {
   const key = titleKey({ mediaType, tmdbId });
-  const cached = metaMemo.get(key);
-  if (cached) return cached;
+  const memo = metaMemo.get(key);
+  if (memo) return memo;
+  const toIds = (names: string[]): number[] =>
+    names.map((name) => nameToId.get(name)).filter((id): id is number => typeof id === "number");
+
+  // 1) Shared DB cache — no API call. This is what keeps rec-engine API usage low.
+  const dbc = cacheMap.get(tmdbId);
+  if (dbc) {
+    const meta: SeedMeta = { genreIds: toIds(dbc.genres), language: dbc.originalLanguage };
+    metaMemo.set(key, meta);
+    return meta;
+  }
+  // 2) Miss → data API, then populate the cache for everyone.
   try {
     const detail = await getTitleDetails(mediaType, tmdbId);
-    const genreIds = detail.genres
-      .map((name) => nameToId.get(name))
-      .filter((id): id is number => typeof id === "number");
-    const meta: SeedMeta = { genreIds, language: detail.originalLanguage ?? null };
+    cacheTitle(mediaType, tmdbId, detail);
+    const meta: SeedMeta = { genreIds: toIds(detail.genres), language: detail.originalLanguage ?? null };
     metaMemo.set(key, meta);
     return meta;
   } catch {
@@ -54,8 +65,12 @@ async function metaFor(
   }
 }
 
-function seedMeta(entry: WatchlistEntry, nameToId: Map<string, number>): Promise<SeedMeta> {
-  return metaFor(entry.media_type, entry.tmdb_id, nameToId);
+function seedMeta(
+  entry: WatchlistEntry,
+  nameToId: Map<string, number>,
+  cacheMap: Map<number, CachedMeta>,
+): Promise<SeedMeta> {
+  return metaFor(entry.media_type, entry.tmdb_id, nameToId, cacheMap);
 }
 
 // Build the "Movies/Shows for you" list with OUR hybrid engine — content (genre
@@ -81,11 +96,18 @@ export async function getForYou(
   const genreList = await getGenres(mediaType).catch(() => []);
   const nameToId = new Map(genreList.map((g) => [g.name, g.id]));
   const seeds = selectWeightedSeeds(mine, mediaType, PROFILE_SEEDS);
+
+  // Pull cached genres for every seed + disliked title in ONE query, so the genre
+  // profile is built from our own DB instead of a data-API call per title.
+  const hiddenThisType = hiddenTitles.filter((h) => h.mediaType === mediaType);
+  const cacheIds = [...new Set([...seeds.map((s) => s.entry.tmdb_id), ...hiddenThisType.map((h) => h.tmdbId)])];
+  const cacheMap = await getCachedBatch(mediaType, cacheIds);
+
   const genresByKey = new Map<string, number[]>();
   const seedLangs: (string | null)[] = [];
   await Promise.all(
     seeds.map(async (s) => {
-      const meta = await seedMeta(s.entry, nameToId);
+      const meta = await seedMeta(s.entry, nameToId, cacheMap);
       genresByKey.set(titleKey({ mediaType: s.entry.media_type, tmdbId: s.entry.tmdb_id }), meta.genreIds);
       seedLangs.push(meta.language);
     })
@@ -96,12 +118,10 @@ export async function getForYou(
   // type), counted so repeatedly rejecting a genre suppresses it more over time.
   const dislike = new Map<number, number>();
   await Promise.all(
-    hiddenTitles
-      .filter((h) => h.mediaType === mediaType)
-      .map(async (h) => {
-        const meta = await metaFor(mediaType, h.tmdbId, nameToId);
-        for (const g of meta.genreIds) dislike.set(g, (dislike.get(g) ?? 0) + 1);
-      })
+    hiddenThisType.map(async (h) => {
+      const meta = await metaFor(mediaType, h.tmdbId, nameToId, cacheMap);
+      for (const g of meta.genreIds) dislike.set(g, (dislike.get(g) ?? 0) + 1);
+    })
   );
 
   // Languages this user actually watches — used to drop foreign-language randoms.

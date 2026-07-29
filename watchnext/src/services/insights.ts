@@ -1,4 +1,4 @@
-import { getTitleDetails } from "./tmdb";
+import { getTitleDetailsCached } from "./titleCache";
 import type { WatchlistEntry } from "../types/db";
 import {
   genreBreakdown,
@@ -22,7 +22,7 @@ async function genreListsFor(entries: WatchlistEntry[]): Promise<string[][]> {
     while (cursor < entries.length) {
       const idx = cursor++;
       const e = entries[idx];
-      out[idx] = await getTitleDetails(e.media_type, e.tmdb_id)
+      out[idx] = await getTitleDetailsCached(e.media_type, e.tmdb_id)
         .then((d) => d.genres)
         .catch(() => [] as string[]);
     }

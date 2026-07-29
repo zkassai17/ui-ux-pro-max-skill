@@ -20,7 +20,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getLibrary, addToLibrary } from "../src/services/watchlist";
 import { getHiddenKeys, hideRec, unhideRec } from "../src/services/hiddenRecs";
 import { getSwipeDeck } from "../src/services/swipe";
-import { getTitleDetails, getWatchProviders } from "../src/services/tmdb";
+import { getWatchProviders } from "../src/services/tmdb";
+import { getTitleDetailsCached } from "../src/services/titleCache";
 import { posterUrl } from "../src/lib/tmdbNormalize";
 import { titleKey } from "../src/lib/forYouLogic";
 import { PosterImage } from "../src/components/PosterImage";
@@ -273,7 +274,7 @@ export default function SwipeScreen() {
     queryKey: ["title-detail", activeCard?.mediaType, activeCard?.tmdbId],
     enabled: !!activeCard && flipped,
     staleTime: 30 * 60 * 1000,
-    queryFn: () => getTitleDetails(activeCard!.mediaType, activeCard!.tmdbId),
+    queryFn: () => getTitleDetailsCached(activeCard!.mediaType, activeCard!.tmdbId),
   });
   const providers = useQuery({
     queryKey: ["watch-providers", activeCard?.mediaType, activeCard?.tmdbId],
