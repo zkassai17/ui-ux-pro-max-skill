@@ -1,73 +1,77 @@
-# watchnext — App Store listing copy
+# watchnext — App Store submission pack
 
-Paste each field into **App Store Connect → your app → (Version) → App Information / Version Information**.
+Everything to paste into App Store Connect. Written for a **free v1** (Pro hidden,
+no in-app purchase).
 
 ---
 
-## App Name (max 30 chars)
-```
-watchnext
-```
+## Listing
 
-## Subtitle (max 30 chars)
-```
-What to watch, with friends
-```
+**Name:** `watchnext`
 
-## Promotional Text (max 170 chars — editable anytime without review)
-```
-Never argue about what to watch again. Track your movies & shows, get picks made just for you, and blend your taste with friends to find what you'll both love.
-```
+**Subtitle** (≤30 chars): `Find what to watch tonight`
 
-## Keywords (max 100 chars, comma-separated, no spaces)
-```
-movie tracker,tv tracker,watchlist,what to watch,streaming,recommendations,friends,series,binge
-```
-> Don't use competitor brand names (e.g. Letterboxd) as keywords — Apple rejects them.
+**Promotional text** (≤170 chars):
+> Stop scrolling. See what's actually worth watching tonight — picked for your taste and playing right now on the streaming services you already pay for.
 
-## Description (max 4000 chars)
-```
-Stop scrolling. Start watching.
+**Keywords** (≤100 chars, comma-separated, no spaces):
+`what to watch,movie tracker,tv shows,streaming,watchlist,recommendations,netflix,films,to watch`
 
-watchnext is the social way to track movies and TV, discover what to watch next, and finally agree on something with your friends.
+**Description:**
+> Can't decide what to watch? watchnext fixes that.
+>
+> Tell it what you've seen and which services you have, and it shows you a short, personal list of what to watch tonight — only titles you can actually stream right now, no "not on your services" letdowns.
+>
+> • Tonight's pick — one great call, tailored to your taste
+> • On your services — every suggestion shows where it's streaming
+> • Swipe to discover — a fast, fun way to find your next watch
+> • Track everything — what you've watched, what you want, your ratings
+> • Watch together — blend your taste with friends and find something you'll both love
+>
+> Less scrolling. More watching. Download watchnext and find something great tonight.
 
-TRACK EVERYTHING YOU WATCH
-Add any movie or show, mark it Want, Watching, or Watched, and rate it. Your whole watch history in one place.
+**Category:** Entertainment
+**Age rating:** 17+ (app includes user-generated reviews)
+**Bundle ID:** `com.zkassai.watchnext`
 
-RECOMMENDATIONS MADE FOR YOU
-Our own recommendation engine learns your taste from what you watch and rate — and gets smarter every time you tap "Not interested." No more generic lists of stuff you'd never pick.
+---
 
-BLEND — SEE YOUR TASTE MATCH WITH FRIENDS
-Pick a friend and watchnext blends your tastes into one: your match %, the shows you both love, and a shared feed of picks made for the two of you. Share your match and find out who really lines up with you.
+## App Review notes (for the reviewer)
 
-WATCH TOGETHER
-Getting everyone to agree is the worst part of movie night. watchnext finds the titles your whole group actually wants to see — no endless swiping, no arguing.
+> This app requires an account.
+> Demo login — email: `______`  password: `______`
+>
+> watchnext recommends movies and TV to stream on your services and tracks what you
+> watch. User reviews are moderated: report and block are available on posts and on
+> user profiles (Guideline 1.2). Terms of Use and Privacy Policy are in the app under
+> Settings → Legal, and accepted at sign-up.
+>
+> To test: sign in → Home shows personalized picks with "where to watch" badges →
+> tap a title for details → the Add tab builds a library. Account deletion is under
+> Settings → Delete account.
 
-WHERE TO WATCH
-See which streaming services carry any title, so you know if you can press play tonight.
+**→ Create the demo login by signing up in the app (email + password + any username),
+then fill it into the blanks above. Tell me the email and I'll seed it with sample
+library data so the reviewer sees a populated app.**
 
-MADE SOCIAL
-Follow friends, see what they're watching, react to their activity, and send recommendations straight to them.
+---
 
-Available in English, Spanish, French, Hebrew, and Arabic.
+## App Privacy questionnaire — how to answer
 
-—
-Movie & TV data by TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB.
-```
+Declare that you collect:
 
-## What's New (version 1.0 release notes)
-```
-Welcome to watchnext! Track what you watch, get recommendations made just for you, blend your taste with friends, and finally agree on what to watch together.
-```
+| Data | Linked to user? | Purpose | Used for tracking? |
+|---|---|---|---|
+| Email address | Yes | App Functionality (account) | No |
+| User content (reviews/notes) | Yes | App Functionality | No |
+| User ID | Yes | App Functionality | No |
 
-## Categories
-- **Primary:** Entertainment
-- **Secondary:** Social Networking
+- **Not** shared with third parties for advertising.
+- **Not** used to track users across apps/websites.
 
-## Age Rating
-Expect **12+** — the app has user-generated content (usernames, recommendations) and social features. Answer Apple's questionnaire honestly; "Infrequent/Mild" on the user-generated-content item plus the social features typically lands at 12+.
+---
 
-## URLs you'll need
-- **Support URL:** _a page or the support email you set up (e.g. a simple site, or a mailto page)_
-- **Marketing URL (optional):** _leave blank or a landing page later_
-- **Privacy Policy URL:** _the hosted privacy policy (docs/privacy-policy.md) — required_
+## Required URLs
+- **Privacy Policy URL:** host `docs/legal/privacy-policy.html` (see submission steps) and paste the link.
+- **Support URL:** a page or `mailto:zkassai17@gmail.com` works.
+- **Terms of Use:** in-app (Settings → Legal) — no URL required, but you can also host `docs/legal/terms-of-use.md` if you want one.
