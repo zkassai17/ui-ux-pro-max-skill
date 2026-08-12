@@ -58,12 +58,9 @@ export default function SignIn() {
           </View>
 
           <View style={styles.field}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>{t("auth.passwordLabel")}</Text>
-              <Link href="/(auth)/forgot-password" style={styles.forgot}>
-                {t("auth.forgot")}
-              </Link>
-            </View>
+            {/* "Forgot password?" is hidden until custom email (SMTP) is set up,
+                so it can't dead-end a user. Restore the labelRow + Link then. */}
+            <Text style={styles.label}>{t("auth.passwordLabel")}</Text>
             <View style={styles.inputWrap}>
               <Ionicons name="lock-closed-outline" size={17} color="#aaa" style={styles.inputIcon} />
               <TextInput
