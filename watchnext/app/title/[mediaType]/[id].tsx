@@ -67,6 +67,11 @@ export default function TitleDetailScreen() {
   }
 
   async function setStatus(status: WatchStatus, d: TitleDetail) {
+    // Tapping the status that's already set toggles it off — a quick way to
+    // remove the title, no separate Remove button needed.
+    if (entry.data && entry.data.status === status) {
+      return doRemove(entry.data.id);
+    }
     try {
       setSaving(true);
       if (entry.data) await updateStatus(entry.data.id, status);
@@ -120,13 +125,6 @@ export default function TitleDetailScreen() {
     }
   }
 
-  function confirmRemove(entryId: string) {
-    Alert.alert(t("title.removeConfirmTitle"), t("title.removeConfirmBody"), [
-      { text: t("common.cancel"), style: "cancel" },
-      { text: t("common.remove"), style: "destructive", onPress: () => doRemove(entryId) },
-    ]);
-  }
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Stack.Screen options={{ headerShown: true, title: detail.data?.title ?? t("title.screenTitle") }} />
@@ -167,13 +165,9 @@ export default function TitleDetailScreen() {
                     </Text>
                   </Pressable>
                   {entry.data ? (
-                    <Pressable
-                      disabled={saving || removing}
-                      style={styles.removeBtn}
-                      onPress={() => confirmRemove(entry.data!.id)}
-                    >
-                      <Text style={styles.removeBtnText}>{removing ? t("title.removing") : t("title.remove")}</Text>
-                    </Pressable>
+                    <Text style={styles.removeHint}>
+                      {removing ? t("title.removing") : t("title.tapToRemove")}
+                    </Text>
                   ) : null}
                 </View>
               </View>
@@ -300,8 +294,7 @@ const styles = StyleSheet.create({
   favBtnOn: { backgroundColor: "#ff5470", borderColor: "#ff5470" },
   favBtnText: { fontSize: 14, color: "#ff5470", fontWeight: "700" },
   favBtnTextOn: { color: "#fff" },
-  removeBtn: { paddingVertical: 8, alignItems: "center", marginTop: 2 },
-  removeBtnText: { fontSize: 13, color: "#d23", fontWeight: "600" },
+  removeHint: { fontSize: 11.5, color: "#9a9aab", textAlign: "center", marginTop: 6, lineHeight: 15 },
   btn: { backgroundColor: "#5b6cff", borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20, marginTop: 24, alignSelf: "stretch", alignItems: "center" },
   btnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
   msg: { color: "#888", fontSize: 13, margin: 24, textAlign: "center" },
