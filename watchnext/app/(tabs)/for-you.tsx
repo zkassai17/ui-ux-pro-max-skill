@@ -22,6 +22,7 @@ import { ProviderBadge } from "../../src/components/ProviderBadge";
 import { QuickAddButton } from "../../src/components/QuickAddButton";
 import { FeedReactions } from "../../src/components/FeedReactions";
 import { FadeInView } from "../../src/components/FadeInView";
+import { WelcomeTour } from "../../src/components/WelcomeTour";
 import { PressableScale } from "../../src/components/PressableScale";
 import { CDrawLoader } from "../../src/components/CDrawLoader";
 import { useI18n } from "../../src/i18n/I18nProvider";
@@ -398,6 +399,8 @@ export default function HomeScreen() {
   if (isLoading) return <CDrawLoader delay={450} />;
 
   return (
+    <>
+    <WelcomeTour />
     <FlatList
       ref={listRef}
       style={styles.container}
@@ -476,6 +479,7 @@ export default function HomeScreen() {
         );
       }}
     />
+    </>
   );
 }
 
