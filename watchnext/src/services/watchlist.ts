@@ -125,3 +125,36 @@ export async function rateTitle(title: Title, rating: number | null): Promise<vo
   );
   if (error) throw error;
 }
+
+// Marks (or unmarks) a title as one of your favorites — a curated pick, separate
+// from the rating. Favoriting a title you haven't added files it under "watched"
+// (a favorite is something you love, i.e. have seen).
+export async function setFavorite(title: Title, isFavorite: boolean): Promise<void> {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Not signed in");
+  const existing = await getLibraryEntry(title.tmdbId, title.mediaType);
+  if (existing) {
+    const { data, error } = await supabase
+      .from("watchlist")
+      .update({ is_favorite: isFavorite })
+      .eq("id", existing.id)
+      .select("id");
+    if (error) throw error;
+    assertWrote(data, "That didn't save.");
+    return;
+  }
+  const { error } = await supabase.from("watchlist").upsert(
+    {
+      user_id: uid,
+      tmdb_id: title.tmdbId,
+      media_type: title.mediaType,
+      title: title.title,
+      poster_path: title.posterPath,
+      year: title.year,
+      status: "watched",
+      is_favorite: isFavorite,
+    },
+    { onConflict: "user_id,tmdb_id,media_type" }
+  );
+  if (error) throw error;
+}

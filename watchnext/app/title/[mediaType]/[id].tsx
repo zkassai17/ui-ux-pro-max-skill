@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getWatchProviders } from "../../../src/services/catalog";
 import { getTitleDetailsCached } from "../../../src/services/catalog";
-import { addToLibrary, getLibraryEntry, updateStatus, rateTitle, removeFromLibrary, setNote } from "../../../src/services/watchlist";
+import { addToLibrary, getLibraryEntry, updateStatus, rateTitle, removeFromLibrary, setNote, setFavorite } from "../../../src/services/watchlist";
 import { PosterImage } from "../../../src/components/PosterImage";
 import { EmojiRating } from "../../../src/components/EmojiRating";
 import { posterUrl } from "../../../src/lib/tmdbNormalize";
@@ -25,6 +25,7 @@ export default function TitleDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [rating, setRating] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [favSaving, setFavSaving] = useState(false);
   const [noteText, setNoteText] = useState("");
   const [savingNote, setSavingNote] = useState(false);
 
@@ -92,6 +93,20 @@ export default function TitleDetailScreen() {
     }
   }
 
+  async function toggleFavorite(d: TitleDetail) {
+    const next = !(entry.data?.is_favorite ?? false);
+    try {
+      setFavSaving(true);
+      await setFavorite(d, next);
+      await qc.invalidateQueries({ queryKey: ["library-entry", mediaType, tmdbId] });
+      await qc.invalidateQueries({ queryKey: ["library"] });
+    } catch (e) {
+      Alert.alert(t("alert.cantSave"), (e as Error).message);
+    } finally {
+      setFavSaving(false);
+    }
+  }
+
   async function doRemove(entryId: string) {
     try {
       setRemoving(true);
@@ -141,6 +156,16 @@ export default function TitleDetailScreen() {
                       </Text>
                     </Pressable>
                   ))}
+                  <Pressable
+                    disabled={favSaving}
+                    style={[styles.favBtn, entry.data?.is_favorite && styles.favBtnOn]}
+                    onPress={() => toggleFavorite(d)}
+                  >
+                    <Text style={[styles.favBtnText, entry.data?.is_favorite && styles.favBtnTextOn]}>
+                      {entry.data?.is_favorite ? "♥  " : "♡  "}
+                      {t(entry.data?.is_favorite ? "title.favorited" : "title.favorite")}
+                    </Text>
+                  </Pressable>
                   {entry.data ? (
                     <Pressable
                       disabled={saving || removing}
@@ -271,6 +296,10 @@ const styles = StyleSheet.create({
   statusBtnOn: { backgroundColor: "#5b6cff" },
   statusBtnText: { fontSize: 14, color: "#5b6cff", fontWeight: "600" },
   statusBtnTextOn: { color: "#fff" },
+  favBtn: { borderWidth: 1.5, borderColor: "#ff5470", borderRadius: 10, paddingVertical: 11, alignItems: "center", marginTop: 2 },
+  favBtnOn: { backgroundColor: "#ff5470", borderColor: "#ff5470" },
+  favBtnText: { fontSize: 14, color: "#ff5470", fontWeight: "700" },
+  favBtnTextOn: { color: "#fff" },
   removeBtn: { paddingVertical: 8, alignItems: "center", marginTop: 2 },
   removeBtnText: { fontSize: 13, color: "#d23", fontWeight: "600" },
   btn: { backgroundColor: "#5b6cff", borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20, marginTop: 24, alignSelf: "stretch", alignItems: "center" },

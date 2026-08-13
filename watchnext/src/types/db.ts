@@ -26,6 +26,7 @@ export type WatchlistEntry = {
   year: string | null;
   status: WatchStatus;
   rating: number | null;
+  is_favorite?: boolean; // user-curated favorite, independent of rating
   note?: string | null; // short public review, shown in the activity feed
   added_at: string;
 };

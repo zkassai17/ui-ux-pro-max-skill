@@ -370,6 +370,8 @@ const en: Dict = {
   "title.removing": "Removing…",
   "title.removeConfirmTitle": "Remove from library?",
   "title.removeConfirmBody": "This will be removed from your library.",
+  "title.favorite": "Add to favorites",
+  "title.favorited": "Favorite",
   "title.yourRating": "Your rating",
   "title.tapToRate": "Tap to rate — adds it to Watched",
   "title.whereToWatch": "Where to watch",

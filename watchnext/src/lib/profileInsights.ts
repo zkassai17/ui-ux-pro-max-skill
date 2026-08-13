@@ -1,8 +1,14 @@
 import type { WatchlistEntry } from "../types/db";
 
-// Your top-rated watched titles (with posters), best first — for the profile
-// Favorites strip. Ties break by most-recently added.
+// For the profile Favorites strip. Prefers the titles you've explicitly hearted
+// (newest first). If you haven't hearted anything yet, falls back to your
+// top-rated watched titles so the strip is never empty. Ties break by recency.
 export function selectFavorites(library: WatchlistEntry[], max: number): WatchlistEntry[] {
+  const hearted = library
+    .filter((e) => e.is_favorite && e.poster_path)
+    .sort((a, b) => b.added_at.localeCompare(a.added_at));
+  if (hearted.length > 0) return hearted.slice(0, max);
+
   return library
     .filter((e) => e.status === "watched" && e.rating != null && e.poster_path)
     .sort((a, b) => (b.rating! - a.rating!) || b.added_at.localeCompare(a.added_at))
