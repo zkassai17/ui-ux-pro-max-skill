@@ -1,0 +1,66 @@
+import { Tabs } from "expo-router";
+import { Image } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { EnvelopeButton } from "../../src/components/EnvelopeButton";
+import { useI18n } from "../../src/i18n/I18nProvider";
+import { HEADING, ACCENT } from "../../src/theme";
+
+export default function TabsLayout() {
+  const { t } = useI18n();
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: true,
+        headerTitleStyle: { fontFamily: HEADING, fontSize: 20 },
+        tabBarActiveTintColor: ACCENT,
+      }}
+    >
+      <Tabs.Screen
+        name="for-you"
+        options={{
+          title: t("tab.home"), // keeps the tab-bar label "Home"
+          headerTitle: "", // wordmark replaces the centered title
+          headerLeft: () => (
+            <Image
+              source={require("../../assets/wordmark.png")}
+              style={{ width: 108, height: 27, marginLeft: 16 }}
+              resizeMode="contain"
+            />
+          ),
+          headerRight: () => <EnvelopeButton />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="home" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="watchlist"
+        options={{
+          title: t("tab.library"),
+          tabBarIcon: ({ color, size }) => <Ionicons name="bookmark" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="add"
+        options={{
+          title: t("tab.add"),
+          tabBarIcon: ({ color, size }) => <Ionicons name="add-circle" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="together"
+        options={{
+          title: t("tab.together"),
+          headerRight: () => <EnvelopeButton />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="sparkles" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: t("tab.profile"),
+          headerRight: () => <EnvelopeButton />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="person" color={color} size={size} />,
+        }}
+      />
+    </Tabs>
+  );
+}
