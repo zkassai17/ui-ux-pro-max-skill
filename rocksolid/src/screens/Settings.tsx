@@ -7,6 +7,10 @@ import { todayISO } from '../lib/dates'
 import { offerFile } from '../lib/download'
 import { ConfirmButton, Field, Modal, SectionHead } from '../components/ui'
 import { describeReport, mergeDatabase } from '../merge'
+import {
+  PORTFOLIO_COMPLIANCE, PORTFOLIO_NOTES, PORTFOLIO_PROPERTIES,
+  PORTFOLIO_TASKS, PORTFOLIO_UNITS,
+} from '../portfolio'
 
 type Theme = 'system' | 'light' | 'dark'
 const THEME_KEY = 'rocksolid.theme'
@@ -179,6 +183,33 @@ export function Settings({ db }: { db: Database }) {
               ))}
             </div>
           </Field>
+        </div>
+      </div>
+
+      <div className="section">
+        <SectionHead title="Your portfolio" />
+        <div className="card card-pad stack">
+          <p className="small muted">
+            The five buildings confirmed as managed by Rock Solid — 303 W 116th St,
+            1875 Lexington Ave, 6 Avenue B, 515 W 47th St and 323 E 108th St — load
+            automatically the first time you open the app on a device. Use this to put
+            them back after an erase, or to pull them onto another browser.
+          </p>
+          <div className="row wrapping">
+            <button className="btn sm" onClick={() => {
+              flash(describeReport(mergeDatabase({
+                ...emptyDatabase(),
+                properties: structuredClone(PORTFOLIO_PROPERTIES),
+                units: structuredClone(PORTFOLIO_UNITS),
+                compliance: structuredClone(PORTFOLIO_COMPLIANCE),
+                tasks: structuredClone(PORTFOLIO_TASKS),
+                notes: structuredClone(PORTFOLIO_NOTES),
+              })))
+            }}>Reload my buildings</button>
+          </div>
+          <p className="tiny muted">
+            Merges on address, so nothing you've already added gets duplicated or overwritten.
+          </p>
         </div>
       </div>
 

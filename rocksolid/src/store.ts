@@ -2,16 +2,38 @@ import { useSyncExternalStore } from 'react'
 import type { Database, Property } from './types'
 import { emptyDatabase } from './seed'
 import { DEFAULT_TEMPLATES } from './catalog'
+import {
+  PORTFOLIO_COMPLIANCE, PORTFOLIO_NOTES, PORTFOLIO_PROPERTIES,
+  PORTFOLIO_TASKS, PORTFOLIO_UNITS,
+} from './portfolio'
 
 const KEY = 'rocksolid.db.v1'
 
 const listeners = new Set<() => void>()
 let db: Database = load()
 
+/** The managed portfolio, used only when the app has never been opened here. */
+function seededDatabase(): Database {
+  return {
+    ...emptyDatabase(),
+    properties: structuredClone(PORTFOLIO_PROPERTIES),
+    units: structuredClone(PORTFOLIO_UNITS),
+    compliance: structuredClone(PORTFOLIO_COMPLIANCE),
+    tasks: structuredClone(PORTFOLIO_TASKS),
+    notes: structuredClone(PORTFOLIO_NOTES),
+  }
+}
+
 function load(): Database {
   try {
     const raw = localStorage.getItem(KEY)
-    if (!raw) return emptyDatabase()
+    // First run on this device: open with the real portfolio rather than an
+    // empty shell. Written straight back so erasing later stays erased.
+    if (!raw) {
+      const seeded = seededDatabase()
+      try { localStorage.setItem(KEY, JSON.stringify(seeded)) } catch { /* private mode */ }
+      return seeded
+    }
     const parsed = JSON.parse(raw) as Partial<Database>
     // Merge onto a fresh shape so a database written by an older build still
     // opens after new collections are added.
