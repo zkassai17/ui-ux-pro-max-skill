@@ -4,6 +4,7 @@ import { readDB, replaceAll, storageBytes } from '../store'
 import { allPhotos, clearPhotos, photoStats, restorePhotos } from '../lib/photos'
 import { demoDatabase, emptyDatabase } from '../seed'
 import { todayISO } from '../lib/dates'
+import { offerFile } from '../lib/download'
 import { ConfirmButton, Field, SectionHead } from '../components/ui'
 
 type Theme = 'system' | 'light' | 'dark'
@@ -41,14 +42,15 @@ export function Settings({ db }: { db: Database }) {
 
   async function exportAll() {
     const payload = { exportedAt: new Date().toISOString(), data: readDB(), photos: await allPhotos() }
-    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `rocksolid-backup-${todayISO()}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-    flash('Backup downloaded')
+    const outcome = await offerFile(
+      `rocksolid-backup-${todayISO()}.json`,
+      JSON.stringify(payload),
+    )
+    flash(
+      outcome === 'saved' ? 'Backup saved'
+        : outcome === 'declined' ? 'Save cancelled'
+        : 'Could not save the backup here',
+    )
   }
 
   async function importFile(file: File) {
