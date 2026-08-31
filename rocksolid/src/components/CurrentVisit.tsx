@@ -5,7 +5,8 @@ import {
 } from '../actions'
 import { checkedCount, checkLabels, inspectionHistory, problemCount } from '../selectors'
 import { navigate } from '../router'
-import { Badge, PhotoStrip, TextArea, TextInput } from './ui'
+import { formatDate, todayISO } from '../lib/dates'
+import { Badge, Field, PhotoStrip, TextArea, TextInput } from './ui'
 import { VisitTimeline } from './VisitTimeline'
 
 /**
@@ -45,6 +46,18 @@ export function CurrentVisit({ db, buildingId }: { db: Database; buildingId: str
         <span className="spacer" />
         <span className="tiny muted">{checked}/{current.items.length} checked</span>
         {problems > 0 && <Badge tone="red">{problems} problem{problems === 1 ? '' : 's'}</Badge>}
+      </div>
+
+      <div className="card card-pad" style={{ marginBottom: 14 }}>
+        <Field label="Date of this visit"
+          hint={current.visitDate === todayISO()
+            ? 'Today. Change it if you\u2019re writing up an earlier walk.'
+            : `Not today \u2014 saving this as ${formatDate(current.visitDate)}.`}>
+          <TextInput type="date" value={current.visitDate} max={todayISO()}
+            onChange={(e) => saveInspection({
+              ...current, visitDate: e.target.value || todayISO(),
+            })} />
+        </Field>
       </div>
 
       <div className="card card-pad">
@@ -116,7 +129,7 @@ export function CurrentVisit({ db, buildingId }: { db: Database; buildingId: str
         </div>
       ) : (
         <p className="tiny muted" style={{ marginTop: 7, textAlign: 'center' }}>
-          Files this visit with today's date and starts a fresh one.
+          Files this visit under {formatDate(current.visitDate)} and starts a fresh one.
           {filedCount > 0 && <> {filedCount} saved so far.</>}
         </p>
       )}

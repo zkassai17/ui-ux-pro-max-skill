@@ -47,11 +47,16 @@ function migrate(input: unknown): Database {
           note: e.body,
           photoIds: e.photoIds,
           startedAt: e.createdAt,
+          visitDate: e.createdAt.slice(0, 10),
           filedAt: e.createdAt,
         })),
       ]
       db.entries = db.entries.filter((e) => !(e.buildingId && !e.unitId))
     }
+    db.inspections = db.inspections.map((i) => ({
+      ...i,
+      visitDate: i.visitDate || (i.filedAt ?? i.startedAt ?? '').slice(0, 10),
+    }))
     db.version = 3
     return db
   }
@@ -119,6 +124,7 @@ function migrate(input: unknown): Database {
     note: e.body,
     photoIds: e.photoIds,
     startedAt: e.createdAt,
+    visitDate: e.createdAt.slice(0, 10),
     filedAt: e.createdAt,
   }))
 

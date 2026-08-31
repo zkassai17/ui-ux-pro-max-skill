@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import type { Database, Inspection } from '../types'
 import { deleteInspection, reopenInspection } from '../actions'
 import { checkedCount } from '../selectors'
-import { formatDate } from '../lib/dates'
+import { formatDate, formatStamp } from '../lib/dates'
 import { outcomeMessage, sendAsText } from '../lib/share'
 import { navigate } from '../router'
 import { Badge, ConfirmButton, Empty, PhotoStrip, SectionHead } from '../components/ui'
@@ -16,12 +16,12 @@ export function History({ db }: { db: Database }) {
 
   const filed = useMemo(() => db.inspections
     .filter((i) => i.filedAt && (!buildingId || i.buildingId === buildingId))
-    .sort((a, b) => (b.filedAt ?? '').localeCompare(a.filedAt ?? '')),
+    .sort((a, b) => b.visitDate.localeCompare(a.visitDate)),
   [db.inspections, buildingId])
 
   async function text(i: Inspection) {
     const lines = [
-      `${db.buildings.find((b) => b.id === i.buildingId)?.address ?? ''} — ${formatDate((i.filedAt ?? '').slice(0, 10))}`,
+      `${db.buildings.find((b) => b.id === i.buildingId)?.address ?? ''} — ${formatDate(i.visitDate)}`,
       '',
       ...i.items.map((c) =>
         `${c.status === 'problem' ? '✗' : c.status === 'ok' ? '✓' : '–'} ${c.label}${c.note ? ` — ${c.note}` : ''}`),
@@ -84,7 +84,7 @@ function VisitCard({ db, inspection, showBuilding, onText, onTimeline }: {
         <span style={{ minWidth: 0 }}>
           {showBuilding && <span className="display" style={{ fontSize: 15 }}>{address}<br /></span>}
           <span style={{ fontWeight: showBuilding ? 400 : 600 }}>
-            {formatDate((inspection.filedAt ?? '').slice(0, 10))}
+            {formatDate(inspection.visitDate)}
           </span>
           <span className="rowcard-meta" style={{ marginTop: 3 }}>
             {inspection.items.length > 0 && (
@@ -127,6 +127,12 @@ function VisitCard({ db, inspection, showBuilding, onText, onTimeline }: {
           )}
           {inspection.photoIds.length > 0 && (
             <div style={{ marginTop: 9 }}><PhotoStrip ids={inspection.photoIds} /></div>
+          )}
+
+          {inspection.filedAt && inspection.filedAt.slice(0, 10) !== inspection.visitDate && (
+            <p className="tiny muted" style={{ marginTop: 10 }}>
+              Walked {formatDate(inspection.visitDate)}, written up {formatStamp(inspection.filedAt)}.
+            </p>
           )}
 
           <div className="row" style={{ marginTop: 12, gap: 7 }}>

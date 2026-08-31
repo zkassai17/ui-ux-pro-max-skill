@@ -1,6 +1,6 @@
 import type { Database } from '../types'
 import { itemTimeline } from '../selectors'
-import { formatStamp } from '../lib/dates'
+import { formatDate } from '../lib/dates'
 import { Badge, Empty, Modal, PhotoStrip } from './ui'
 
 /** One area, every visit it was checked — improving, or the same every week. */
@@ -22,7 +22,7 @@ export function VisitTimeline({ db, buildingId, label, onClose }: {
           {rows.map(({ at, item }, n) => (
             <div key={`${at}-${n}`} className="note">
               <div className="row" style={{ marginBottom: 5 }}>
-                <span className="eyebrow">{formatStamp(at)}</span>
+                <span className="eyebrow">{formatDate(at)}</span>
                 <span className="spacer" />
                 {item.status === 'problem' ? <Badge tone="red">Problem</Badge>
                   : item.status === 'ok' ? <Badge tone="green">OK</Badge>

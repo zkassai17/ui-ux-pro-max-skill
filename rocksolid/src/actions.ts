@@ -1,5 +1,6 @@
 import { mutate } from './store'
 import { uid } from './lib/id'
+import { todayISO } from './lib/dates'
 import type { Building, CheckItem, Entry, Inspection, Todo, Unit } from './types'
 import { DEFAULT_CHECKS } from './types'
 
@@ -128,7 +129,7 @@ export function openInspection(buildingId: string, all: Inspection[]): Inspectio
 
   const fresh: Inspection = {
     id: uid('i_'), buildingId, items: labels.map(blankItem),
-    note: '', photoIds: [], startedAt: now(), filedAt: null,
+    note: '', photoIds: [], startedAt: now(), visitDate: todayISO(), filedAt: null,
   }
   mutate((d) => { d.inspections.unshift(fresh) })
   return fresh

@@ -48,7 +48,8 @@ export const currentInspection = (db: Database, buildingId: string): Inspection 
 export const inspectionHistory = (db: Database, buildingId: string): Inspection[] =>
   db.inspections
     .filter((i) => i.buildingId === buildingId && i.filedAt)
-    .sort((a, b) => (b.filedAt ?? '').localeCompare(a.filedAt ?? ''))
+    // Ordered by the day you were there, not the day you wrote it up.
+    .sort((a, b) => b.visitDate.localeCompare(a.visitDate))
 
 export const problemCount = (i: Inspection): number =>
   i.items.filter((c) => c.status === 'problem').length
@@ -67,7 +68,7 @@ export function itemTimeline(
   return inspectionHistory(db, buildingId)
     .flatMap((i) => i.items
       .filter((c) => c.label.trim().toLowerCase() === key)
-      .map((item) => ({ at: i.filedAt!, item })))
+      .map((item) => ({ at: i.visitDate, item })))
 }
 
 /** Every distinct checklist line this building has ever used. */

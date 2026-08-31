@@ -66,7 +66,13 @@ export interface Inspection {
   note: string
   photoIds: string[]
   startedAt: string
-  /** null while it's still this week's open walk; set when filed to history. */
+  /**
+   * The day you were actually in the building, YYYY-MM-DD. Defaults to the day
+   * the visit was started but stays editable, because a walk on Monday often
+   * doesn't get written up until Wednesday.
+   */
+  visitDate: string
+  /** null while it's still the open walk; set when filed to history. */
   filedAt: string | null
 }
 
