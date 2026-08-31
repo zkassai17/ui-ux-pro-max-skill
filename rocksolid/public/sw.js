@@ -1,12 +1,13 @@
 /**
  * Offline cache. A property manager opens this in a boiler room with no signal,
- * so the app shell has to come from disk, not the network.
+ * so the app has to run from disk when there's no network.
  *
- * App shell is cache-first and refreshed in the background; everything else
- * falls back to cache only when the network is unavailable. Bumping CACHE
- * retires the previous version on activate.
+ * Page loads are network-first: cache-first felt right until it meant every
+ * update showed up a visit late, which is worse than a few hundred milliseconds
+ * on open. Build assets are content-hashed, so those stay cache-first — if the
+ * URL matches, the bytes match.
  */
-const CACHE = 'rocksolid-v1'
+const CACHE = 'rocksolid-v2'
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
@@ -24,23 +25,31 @@ self.addEventListener('activate', (e) => {
   )
 })
 
+const keep = (req, res) => {
+  if (res && res.status === 200 && res.type === 'basic') {
+    const copy = res.clone()
+    caches.open(CACHE).then((c) => c.put(req, copy))
+  }
+  return res
+}
+
 self.addEventListener('fetch', (e) => {
   const req = e.request
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return
 
+  // The page itself: go to the network so a new version appears immediately,
+  // and fall back to the cached copy when there is no signal.
+  if (req.mode === 'navigate') {
+    e.respondWith(
+      fetch(req)
+        .then((res) => keep(req, res))
+        .catch(() => caches.match(req).then((hit) => hit || caches.match('./index.html'))),
+    )
+    return
+  }
+
+  // Everything else: cached bytes are as good as fresh ones.
   e.respondWith(
-    caches.match(req).then((hit) => {
-      const live = fetch(req)
-        .then((res) => {
-          if (res && res.status === 200) {
-            const copy = res.clone()
-            caches.open(CACHE).then((c) => c.put(req, copy))
-          }
-          return res
-        })
-        .catch(() => hit)
-      // Serve from disk instantly when we have it; refresh behind the scenes.
-      return hit || live
-    }),
+    caches.match(req).then((hit) => hit || fetch(req).then((res) => keep(req, res))),
   )
 })

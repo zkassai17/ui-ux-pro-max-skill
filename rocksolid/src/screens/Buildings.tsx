@@ -10,6 +10,7 @@ import {
 } from '../components/ui'
 import { EntryLog } from '../components/EntryLog'
 import { CurrentVisit } from '../components/CurrentVisit'
+import { History } from './History'
 import { AddUnits } from '../components/AddUnits'
 import { TodoEditor, TodoRow } from './Todos'
 
@@ -77,7 +78,7 @@ function BuildingEditor({ building, onClose }: { building: Building; onClose: ()
 
 // ---------------------------------------------------------------- building
 
-type Tab = 'visit' | 'units' | 'todos'
+type Tab = 'visit' | 'history' | 'units' | 'todos'
 
 export function BuildingDetail({ db, id }: { db: Database; id: string }) {
   const [tab, setTab] = useState<Tab>('visit')
@@ -101,6 +102,7 @@ export function BuildingDetail({ db, id }: { db: Database; id: string }) {
 
   const TABS: { key: Tab; label: string; n: number }[] = [
     { key: 'visit', label: 'Visit', n: 0 },
+    { key: 'history', label: 'History', n: db.inspections.filter((i) => i.buildingId === b.id && i.filedAt).length },
     { key: 'units', label: 'Units', n: units.length },
     { key: 'todos', label: 'To do', n: open.length },
   ]
@@ -127,7 +129,11 @@ export function BuildingDetail({ db, id }: { db: Database; id: string }) {
         ))}
       </div>
 
-      {tab === 'visit' && <CurrentVisit db={db} buildingId={b.id} />}
+      {tab === 'visit' && (
+        <CurrentVisit db={db} buildingId={b.id} onSaved={() => setTab('history')} />
+      )}
+
+      {tab === 'history' && <History db={db} buildingId={b.id} />}
 
       {tab === 'units' && (
         <>

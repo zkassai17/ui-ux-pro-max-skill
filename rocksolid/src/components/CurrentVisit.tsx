@@ -4,7 +4,6 @@ import {
   addCheckItem, fileInspection, openInspection, removeCheckItem, saveInspection,
 } from '../actions'
 import { checkedCount, checkLabels, inspectionHistory, problemCount } from '../selectors'
-import { navigate } from '../router'
 import { formatDate, todayISO } from '../lib/dates'
 import { Badge, Field, PhotoStrip, TextArea, TextInput } from './ui'
 import { VisitTimeline } from './VisitTimeline'
@@ -14,7 +13,9 @@ import { VisitTimeline } from './VisitTimeline'
  * it. Past visits deliberately don't live here — this screen is what you hold
  * in one hand while walking the building.
  */
-export function CurrentVisit({ db, buildingId }: { db: Database; buildingId: string }) {
+export function CurrentVisit({ db, buildingId, onSaved }: {
+  db: Database; buildingId: string; onSaved: () => void
+}) {
   const [adding, setAdding] = useState('')
   const [timelineFor, setTimelineFor] = useState<string | null>(null)
   const [justFiled, setJustFiled] = useState(false)
@@ -123,8 +124,8 @@ export function CurrentVisit({ db, buildingId }: { db: Database; buildingId: str
         <div className="banner accent" style={{ marginTop: 12 }}>
           <span className="b-icon">✓</span>
           <div>
-            Saved. It's in <button className="linklike" onClick={() => navigate('/history')}>History</button>,
-            and a fresh checklist is ready above.
+            Saved to this building's <button className="linklike" onClick={onSaved}>History</button>.
+            A fresh checklist is ready above.
           </div>
         </div>
       ) : (

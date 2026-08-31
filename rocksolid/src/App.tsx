@@ -5,18 +5,16 @@ import { openTodos } from './selectors'
 import { daysUntil } from './lib/dates'
 import { Todos } from './screens/Todos'
 import { Buildings, BuildingDetail, UnitDetail } from './screens/Buildings'
-import { History } from './screens/History'
 import { Settings, applyTheme, readTheme } from './screens/Settings'
 
 const NAV = [
   { path: '/todo', label: 'To do', icon: '☑' },
-  { path: '/history', label: 'History', icon: '🗓' },
   { path: '/buildings', label: 'Buildings', icon: '▦' },
   { path: '/settings', label: 'Settings', icon: '⚙' },
 ]
 
 const TITLES: Record<string, string> = {
-  todo: 'To do', history: 'History', buildings: 'Buildings', units: 'Unit', settings: 'Settings',
+  todo: 'To do', buildings: 'Buildings', units: 'Unit', settings: 'Settings',
 }
 
 export default function App() {
@@ -34,8 +32,6 @@ export default function App() {
         return detailId ? <BuildingDetail db={db} id={detailId} /> : <Buildings db={db} />
       case 'units':
         return <UnitDetail db={db} id={detailId} />
-      case 'history':
-        return <History db={db} />
       case 'settings':
         return <Settings db={db} />
       default:
