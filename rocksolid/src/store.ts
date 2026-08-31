@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import type { Building, Database, Entry, Todo, Unit } from './types'
+import type { Building, Database, Entry, Inspection, Todo, Unit } from './types'
 import { PORTFOLIO_BUILDINGS, PORTFOLIO_UNITS, PORTFOLIO_VERSION } from './portfolio'
 import { uid } from './lib/id'
 
@@ -10,7 +10,7 @@ const KEY = 'rocksolid.db.v1'
 const SEED_KEY = 'rocksolid.seed'
 
 export function emptyDatabase(): Database {
-  return { version: 2, buildings: [], units: [], todos: [], entries: [] }
+  return { version: 3, buildings: [], units: [], todos: [], entries: [], inspections: [] }
 }
 
 const listeners = new Set<() => void>()
@@ -32,8 +32,28 @@ const ref = (v: unknown): string | null => (typeof v === 'string' ? v : null)
 function migrate(input: unknown): Database {
   const d = (input ?? {}) as Row
 
-  if (d.version === 2 && Array.isArray(d.buildings)) {
-    return { ...emptyDatabase(), ...(d as unknown as Database) }
+  if ((d.version === 2 || d.version === 3) && Array.isArray(d.buildings)) {
+    const db = { ...emptyDatabase(), ...(d as unknown as Database) }
+    // v2 kept building photos as loose entries. Each one was a visit, so give
+    // it the shape a visit now has and file it into the building's history.
+    const loose = db.entries.filter((e) => e.buildingId && !e.unitId)
+    if (loose.length) {
+      db.inspections = [
+        ...db.inspections,
+        ...loose.map<Inspection>((e) => ({
+          id: `i_${e.id}`,
+          buildingId: e.buildingId!,
+          items: [],
+          note: e.body,
+          photoIds: e.photoIds,
+          startedAt: e.createdAt,
+          filedAt: e.createdAt,
+        })),
+      ]
+      db.entries = db.entries.filter((e) => !(e.buildingId && !e.unitId))
+    }
+    db.version = 3
+    return db
   }
 
   const stamp = () => new Date().toISOString()
@@ -90,7 +110,26 @@ function migrate(input: unknown): Database {
   const entries = [...fromNotes, ...fromThreads]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
-  return { version: 2, buildings, units, todos, entries }
+  // v1 building-level notes were visits too.
+  const buildingNotes = entries.filter((e) => e.buildingId && !e.unitId)
+  const inspections: Inspection[] = buildingNotes.map((e) => ({
+    id: `i_${e.id}`,
+    buildingId: e.buildingId!,
+    items: [],
+    note: e.body,
+    photoIds: e.photoIds,
+    startedAt: e.createdAt,
+    filedAt: e.createdAt,
+  }))
+
+  return {
+    version: 3,
+    buildings,
+    units,
+    todos,
+    entries: entries.filter((e) => !(e.buildingId && !e.unitId)),
+    inspections,
+  }
 }
 
 function seeded(): Database {
@@ -143,7 +182,10 @@ let db: Database = load()
  */
 try {
   const seen = Number(localStorage.getItem(SEED_KEY) ?? '0')
-  if (seen < PORTFOLIO_VERSION) {
+  // Also self-heal: units with no buildings to hang off is an incoherent
+  // database, and leaving it that way strands every note filed against them.
+  const orphaned = db.buildings.length === 0 && db.units.length > 0
+  if (seen < PORTFOLIO_VERSION || orphaned) {
     reseed()
     localStorage.setItem(SEED_KEY, String(PORTFOLIO_VERSION))
   }

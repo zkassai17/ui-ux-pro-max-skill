@@ -686,3 +686,21 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .tickbox:hover { border-color: var(--accent); }
 .rowcard:has(.tickbox) { align-items: flex-start; }
 button.tickbox:not(:empty) { background: var(--ok); border-color: var(--ok); color: #fff; }
+
+/* ============================================================
+   Inspection checklist
+   ============================================================ */
+
+.check-line { padding: 9px 0; border-bottom: 1px solid var(--line-soft); }
+.check-line:last-of-type { border-bottom: none; }
+
+.chk {
+  width: 34px; height: 34px; flex: 0 0 34px;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: var(--surface); color: var(--muted);
+  font-size: 14px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+}
+.chk:hover { border-color: var(--muted); }
+.chk.on.ok  { background: var(--ok);     border-color: var(--ok);     color: #fff; }
+.chk.on.bad { background: var(--danger); border-color: var(--danger); color: #fff; }

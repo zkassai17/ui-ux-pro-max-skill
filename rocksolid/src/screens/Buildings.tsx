@@ -9,6 +9,7 @@ import {
   ConfirmButton, Empty, Field, Modal, SectionHead, TextArea, TextInput,
 } from '../components/ui'
 import { EntryLog } from '../components/EntryLog'
+import { History } from '../components/History'
 import { AddUnits } from '../components/AddUnits'
 import { TodoEditor, TodoRow } from './Todos'
 
@@ -29,7 +30,7 @@ export function Buildings({ db }: { db: Database }) {
       ) : db.buildings.map((b) => {
         const units = unitsFor(db, b.id)
         const open = db.todos.filter((t) => t.buildingId === b.id && !t.done).length
-        const visits = entriesFor(db, b.id, null).length
+        const visits = db.inspections.filter((i) => i.buildingId === b.id && i.filedAt).length
         return (
           <button key={b.id} className="rowcard" onClick={() => navigate(`/buildings/${b.id}`)}>
             <span className="rowcard-body">
@@ -76,10 +77,10 @@ function BuildingEditor({ building, onClose }: { building: Building; onClose: ()
 
 // ---------------------------------------------------------------- building
 
-type Tab = 'photos' | 'units' | 'todos'
+type Tab = 'history' | 'units' | 'todos'
 
 export function BuildingDetail({ db, id }: { db: Database; id: string }) {
-  const [tab, setTab] = useState<Tab>('photos')
+  const [tab, setTab] = useState<Tab>('history')
   const [editing, setEditing] = useState(false)
   const [adding, setAdding] = useState(false)
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null)
@@ -99,7 +100,7 @@ export function BuildingDetail({ db, id }: { db: Database; id: string }) {
   const open = todos.filter((t) => !t.done)
 
   const TABS: { key: Tab; label: string; n: number }[] = [
-    { key: 'photos', label: 'Photos', n: entriesFor(db, b.id, null).length },
+    { key: 'history', label: 'History', n: db.inspections.filter((i) => i.buildingId === b.id && i.filedAt).length },
     { key: 'units', label: 'Units', n: units.length },
     { key: 'todos', label: 'To do', n: open.length },
   ]
@@ -126,11 +127,7 @@ export function BuildingDetail({ db, id }: { db: Database; id: string }) {
         ))}
       </div>
 
-      {tab === 'photos' && (
-        <EntryLog db={db} buildingId={b.id} unitId={null}
-          placeholder="What did you see today?"
-          emptyBody="Every time you walk the building, drop a line and some photos. Shoot the same spots each visit and this becomes the record of whether anything changed." />
-      )}
+      {tab === 'history' && <History db={db} buildingId={b.id} />}
 
       {tab === 'units' && (
         <>

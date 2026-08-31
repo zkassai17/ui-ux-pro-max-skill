@@ -1,6 +1,7 @@
 import { mutate } from './store'
 import { uid } from './lib/id'
-import type { Building, Entry, Todo, Unit } from './types'
+import type { Building, CheckItem, Entry, Inspection, Todo, Unit } from './types'
+import { DEFAULT_CHECKS } from './types'
 
 const now = () => new Date().toISOString()
 
@@ -103,4 +104,73 @@ export function saveEntry(e: Entry) {
 
 export function deleteEntry(id: string) {
   mutate((d) => { d.entries = d.entries.filter((e) => e.id !== id) })
+}
+
+// ---------- Inspections ----------
+
+const blankItem = (label: string): CheckItem =>
+  ({ id: uid('c_'), label, status: 'pending', note: '', photoIds: [] })
+
+/**
+ * The open walk for a building, created on demand. There is only ever one —
+ * you're either mid-walk or you've filed it.
+ */
+export function openInspection(buildingId: string, all: Inspection[]): Inspection {
+  const existing = all.find((i) => i.buildingId === buildingId && !i.filedAt)
+  if (existing) return existing
+
+  // Reuse the checklist from the last filed walk so edits to it stick.
+  const previous = all
+    .filter((i) => i.buildingId === buildingId && i.filedAt && i.items.length)
+    .sort((a, b) => (b.filedAt ?? '').localeCompare(a.filedAt ?? ''))[0]
+
+  const labels = previous?.items.map((i) => i.label) ?? DEFAULT_CHECKS
+
+  const fresh: Inspection = {
+    id: uid('i_'), buildingId, items: labels.map(blankItem),
+    note: '', photoIds: [], startedAt: now(), filedAt: null,
+  }
+  mutate((d) => { d.inspections.unshift(fresh) })
+  return fresh
+}
+
+export function saveInspection(i: Inspection) {
+  mutate((d) => {
+    const at = d.inspections.findIndex((x) => x.id === i.id)
+    if (at >= 0) d.inspections[at] = i
+    else d.inspections.unshift(i)
+  })
+}
+
+/** Send this walk to history. */
+export function fileInspection(id: string) {
+  mutate((d) => {
+    const i = d.inspections.find((x) => x.id === id)
+    if (i) i.filedAt = now()
+  })
+}
+
+export function reopenInspection(id: string) {
+  mutate((d) => {
+    const i = d.inspections.find((x) => x.id === id)
+    if (i) i.filedAt = null
+  })
+}
+
+export function deleteInspection(id: string) {
+  mutate((d) => { d.inspections = d.inspections.filter((i) => i.id !== id) })
+}
+
+export function addCheckItem(inspectionId: string, label: string) {
+  mutate((d) => {
+    const i = d.inspections.find((x) => x.id === inspectionId)
+    if (i) i.items.push(blankItem(label))
+  })
+}
+
+export function removeCheckItem(inspectionId: string, itemId: string) {
+  mutate((d) => {
+    const i = d.inspections.find((x) => x.id === inspectionId)
+    if (i) i.items = i.items.filter((c) => c.id !== itemId)
+  })
 }

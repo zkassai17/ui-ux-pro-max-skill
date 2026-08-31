@@ -3,7 +3,7 @@
 A property manager's pocket notebook. Three things and nothing else:
 
 - **To do** — what needs doing, and which building or unit it's for
-- **Buildings** — walk in, take photos, they're filed with today's date
+- **Buildings** — walk the checklist, photograph what's wrong, file it to history
 - **Units** — knock on a door, write down what happened
 
 That's the whole app. It runs on your own device with no account.
@@ -26,10 +26,16 @@ it to your phone's home screen.
 
 ## How it's meant to be used
 
-**Walking a building.** Open it, type a line, attach photos, Save. Shoot the same
-spots every visit — front door, boiler room, roof drain, trash area — and the log
-answers the only question that matters: is this getting better, or is it the same
-thing every month?
+**Walking a building.** Open it and you get this visit's checklist — Main areas,
+Boiler, Basement, Smoke detectors by default, and you can add your own. Tick ✓ for
+fine or ✗ for a problem; a problem opens a box for what's wrong and photos of it.
+Press **Save to history** and the visit is filed with today's date, and a fresh
+blank one takes its place.
+
+**Seeing whether it improved.** Past visits stack up under the current one — tap
+one to expand it. Better still, tap **Past** next to any checklist line to see just
+that area across every visit, newest first, with each week's photos. Shoot the same
+spot each week and the answer is right there.
 
 **Knocking.** Buildings → the building → Units → the door. Every knock gets a dated
 entry: who answered, what they said, what you promised. Tenant name and phone sit at
