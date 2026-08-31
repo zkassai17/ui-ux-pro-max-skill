@@ -85,6 +85,9 @@ export function BuildingDetail({ db, id }: { db: Database; id: string }) {
   const [editing, setEditing] = useState(false)
   const [adding, setAdding] = useState(false)
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null)
+  // Collapsed by default: the reference detail matters once, the checklist
+  // matters every visit, so the checklist gets the top of the screen.
+  const [showDetails, setShowDetails] = useState(false)
 
   const b = db.buildings.find((x) => x.id === id)
   if (!b) {
@@ -112,14 +115,24 @@ export function BuildingDetail({ db, id }: { db: Database; id: string }) {
       <button className="btn ghost sm" style={{ marginBottom: 10 }}
         onClick={() => navigate('/buildings')}>← Buildings</button>
 
-      <div className="row" style={{ alignItems: 'flex-start', marginBottom: 14 }}>
-        <div style={{ minWidth: 0 }}>
-          <h2 className="display" style={{ fontSize: 21 }}>{b.address}</h2>
-          {b.notes && <p className="small muted wrap" style={{ marginTop: 4 }}>{b.notes}</p>}
-        </div>
+      <div className="row" style={{ alignItems: 'center', marginBottom: b.notes ? 8 : 14 }}>
+        <h2 className="display" style={{ fontSize: 21, minWidth: 0 }}>{b.address}</h2>
         <span className="spacer" />
         <button className="btn sm" onClick={() => setEditing(true)}>Edit</button>
       </div>
+
+      {b.notes && (
+        <div style={{ marginBottom: 14 }}>
+          <button className="disclosure" onClick={() => setShowDetails(!showDetails)}
+            aria-expanded={showDetails}>
+            <span className="disclosure-arrow">{showDetails ? '▾' : '▸'}</span>
+            Building details
+          </button>
+          {showDetails && (
+            <p className="small muted wrap" style={{ marginTop: 8 }}>{b.notes}</p>
+          )}
+        </div>
+      )}
 
       <div className="tabs" style={{ marginBottom: 16 }}>
         {TABS.map((t) => (
@@ -203,6 +216,7 @@ export function BuildingDetail({ db, id }: { db: Database; id: string }) {
 
 export function UnitDetail({ db, id }: { db: Database; id: string }) {
   const [editing, setEditing] = useState(false)
+  const [showNotes, setShowNotes] = useState(false)
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null)
 
   const u = db.units.find((x) => x.id === id)
@@ -242,7 +256,18 @@ export function UnitDetail({ db, id }: { db: Database; id: string }) {
           </div>
         </div>
       )}
-      {u.notes && <p className="small wrap" style={{ marginBottom: 14, color: 'var(--ink-2)' }}>{u.notes}</p>}
+      {u.notes && (
+        <div style={{ marginBottom: 14 }}>
+          <button className="disclosure" onClick={() => setShowNotes(!showNotes)}
+            aria-expanded={showNotes}>
+            <span className="disclosure-arrow">{showNotes ? '▾' : '▸'}</span>
+            Unit details
+          </button>
+          {showNotes && (
+            <p className="small wrap" style={{ marginTop: 8, color: 'var(--ink-2)' }}>{u.notes}</p>
+          )}
+        </div>
+      )}
 
       {open.length > 0 && (
         <div style={{ marginBottom: 18 }}>
