@@ -16,6 +16,13 @@ import type { Building, Unit } from './types'
  * Delete this file and its import in store.ts to ship without it.
  */
 
+/**
+ * Bump this whenever the lists below change. A device that has already opened
+ * the app checks it on load and quietly fills in whatever is new, so nobody has
+ * to know a Sync button exists.
+ */
+export const PORTFOLIO_VERSION = 2
+
 export const PORTFOLIO_BUILDINGS: Building[] = [
   {
     id: "p_303w116",

@@ -1,12 +1,13 @@
 import { useSyncExternalStore } from 'react'
 import type { Building, Database, Entry, Todo, Unit } from './types'
-import { PORTFOLIO_BUILDINGS, PORTFOLIO_UNITS } from './portfolio'
+import { PORTFOLIO_BUILDINGS, PORTFOLIO_UNITS, PORTFOLIO_VERSION } from './portfolio'
 import { uid } from './lib/id'
 
 /** Marks a building note as already carrying the city tax-lot record. */
 const VERIFIED_MARKER = 'NYC PLUTO'
 
 const KEY = 'rocksolid.db.v1'
+const SEED_KEY = 'rocksolid.seed'
 
 export function emptyDatabase(): Database {
   return { version: 2, buildings: [], units: [], todos: [], entries: [] }
@@ -110,7 +111,10 @@ function load(): Database {
 
   if (!raw) {
     const fresh = seeded()
-    try { localStorage.setItem(KEY, JSON.stringify(fresh)) } catch { /* private mode */ }
+    try {
+      localStorage.setItem(KEY, JSON.stringify(fresh))
+      localStorage.setItem(SEED_KEY, String(PORTFOLIO_VERSION))
+    } catch { /* private mode */ }
     return fresh
   }
 
@@ -131,6 +135,19 @@ function load(): Database {
 }
 
 let db: Database = load()
+
+/**
+ * A device that opened the app before only has whatever the portfolio held at
+ * the time. Rather than making that the user's problem, top it up on load —
+ * reseed only ever fills gaps, so this cannot clobber anything.
+ */
+try {
+  const seen = Number(localStorage.getItem(SEED_KEY) ?? '0')
+  if (seen < PORTFOLIO_VERSION) {
+    reseed()
+    localStorage.setItem(SEED_KEY, String(PORTFOLIO_VERSION))
+  }
+} catch { /* storage blocked — the manual Sync button still works */ }
 
 function persist() {
   try {
