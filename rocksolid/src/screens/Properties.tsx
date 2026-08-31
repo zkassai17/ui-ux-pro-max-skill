@@ -47,7 +47,7 @@ export function Properties({ db }: { db: Database }) {
                 <div className="row wrapping" style={{ marginTop: 10, gap: 6 }}>
                   <Badge>{PROPERTY_TYPE[p.type]}</Badge>
                   {p.submarket && <Badge>{p.submarket}</Badge>}
-                  <Badge>{units.length || p.unitCount} units</Badge>
+                  <Badge>{units.length || p.unitCount} unit{(units.length || p.unitCount) === 1 ? '' : 's'}</Badge>
                   {vacant > 0 && <Badge tone="amber">{vacant} not occupied</Badge>}
                   {owed > 0 && <Badge tone="red">${owed.toLocaleString()} owed</Badge>}
                 </div>

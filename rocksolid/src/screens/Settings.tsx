@@ -5,7 +5,8 @@ import { allPhotos, clearPhotos, photoStats, restorePhotos } from '../lib/photos
 import { demoDatabase, emptyDatabase } from '../seed'
 import { todayISO } from '../lib/dates'
 import { offerFile } from '../lib/download'
-import { ConfirmButton, Field, SectionHead } from '../components/ui'
+import { ConfirmButton, Field, Modal, SectionHead } from '../components/ui'
+import { describeReport, mergeDatabase } from '../merge'
 
 type Theme = 'system' | 'light' | 'dark'
 const THEME_KEY = 'rocksolid.theme'
@@ -31,6 +32,7 @@ export function Settings({ db }: { db: Database }) {
   const [theme, setTheme] = useState<Theme>(readTheme)
   const [photos, setPhotos] = useState({ count: 0, bytes: 0 })
   const [status, setStatus] = useState('')
+  const [pending, setPending] = useState<{ data: Database; photos?: Record<string, string> } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { photoStats().then(setPhotos) }, [db])
@@ -59,12 +61,23 @@ export function Settings({ db }: { db: Database }) {
       const parsed = JSON.parse(text)
       const data: Database = parsed.data ?? parsed
       if (!data || !Array.isArray(data.properties)) throw new Error('Not a Rock Solid backup')
-      replaceAll(data)
-      if (parsed.photos) await restorePhotos(parsed.photos)
-      flash('Backup restored')
+      setPending({ data, photos: parsed.photos })
     } catch (err) {
       flash(`Import failed — ${err instanceof Error ? err.message : 'unreadable file'}`)
     }
+  }
+
+  async function applyImport(mode: 'merge' | 'replace') {
+    if (!pending) return
+    const { data, photos } = pending
+    setPending(null)
+    if (mode === 'replace') {
+      replaceAll(data)
+      flash('Everything replaced')
+    } else {
+      flash(describeReport(mergeDatabase(data)))
+    }
+    if (photos) await restorePhotos(photos)
   }
 
   const counts = [
@@ -117,9 +130,41 @@ export function Settings({ db }: { db: Database }) {
               }} />
             {status && <span className="small" style={{ color: 'var(--ok)' }}>{status}</span>}
           </div>
-          <p className="tiny muted">Importing replaces everything currently in the app.</p>
+          <p className="tiny muted">
+            You choose whether to merge or replace once the file is read. Merging matches
+            buildings on address, so importing a list twice won't duplicate anything.
+          </p>
         </div>
       </div>
+
+      {pending && (
+        <Modal title="Import" onClose={() => setPending(null)}
+          footer={<>
+            <span className="spacer" />
+            <button className="btn" onClick={() => setPending(null)}>Cancel</button>
+            <button className="btn" onClick={() => applyImport('replace')}>Replace everything</button>
+            <button className="btn accent" onClick={() => applyImport('merge')}>Merge in</button>
+          </>}>
+          <div className="stack">
+            <p className="small">
+              That file holds <strong>{pending.data.properties.length} buildings</strong>
+              {pending.data.units?.length ? <> and <strong>{pending.data.units.length} units</strong></> : null}
+              {pending.data.tasks?.length ? <>, {pending.data.tasks.length} tasks</> : null}
+              {pending.data.compliance?.length ? <>, {pending.data.compliance.length} filings</> : null}.
+            </p>
+            <div className="banner">
+              <span className="b-icon">＋</span>
+              <div><strong>Merge in</strong> keeps everything you already have and adds what's new.
+                Buildings are matched on address, so nothing doubles up.</div>
+            </div>
+            <div className="banner warn">
+              <span className="b-icon">⚠️</span>
+              <div><strong>Replace everything</strong> discards your current data first. Use it when
+                you're restoring a backup onto a fresh device.</div>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       <div className="section">
         <SectionHead title="Appearance" />

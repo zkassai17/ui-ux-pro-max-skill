@@ -68,7 +68,7 @@ export function PropertyDetail({ db, id }: { db: Database; id: string }) {
         </div>
 
         <div className="row wrapping" style={{ marginTop: 12, gap: 6 }}>
-          <Badge>{units.length || p.unitCount} units</Badge>
+          <Badge>{units.length || p.unitCount} unit{(units.length || p.unitCount) === 1 ? '' : 's'}</Badge>
           {p.hpdRegistration && <Badge tone="blue">HPD {p.hpdRegistration}</Badge>}
           {p.blockLot && <Badge>Block/Lot {p.blockLot}</Badge>}
           {owed > 0 && <Badge tone="red">{money(owed)} in arrears</Badge>}
