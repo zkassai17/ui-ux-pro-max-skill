@@ -1,6 +1,10 @@
 import { useSyncExternalStore } from 'react'
 import type { Building, Database, Entry, Todo, Unit } from './types'
 import { PORTFOLIO_BUILDINGS, PORTFOLIO_UNITS } from './portfolio'
+import { uid } from './lib/id'
+
+/** Marks a building note as already carrying the city tax-lot record. */
+const VERIFIED_MARKER = 'NYC PLUTO'
 
 const KEY = 'rocksolid.db.v1'
 
@@ -168,18 +172,62 @@ export function storageBytes(): number {
   try { return new Blob([localStorage.getItem(KEY) ?? '']).size } catch { return 0 }
 }
 
-export function reseed(): number {
-  let added = 0
+export interface ReseedReport { buildings: number; units: number; notes: number }
+
+/**
+ * Bring a device up to date with the current portfolio.
+ *
+ * Matching is by address for buildings and by label within a building for
+ * units, so this only ever fills gaps: it never duplicates, never renames, and
+ * never touches a unit you have already edited. Building notes are appended to
+ * rather than replaced, so anything you have written survives.
+ */
+export function reseed(): ReseedReport {
+  const report: ReseedReport = { buildings: 0, units: 0, notes: 0 }
+  const norm = (s: string) => s.trim().toLowerCase()
+
   mutate((d) => {
-    const have = new Set(d.buildings.map((b) => b.address.trim().toLowerCase()))
-    for (const b of PORTFOLIO_BUILDINGS) {
-      if (have.has(b.address.trim().toLowerCase())) continue
-      d.buildings.push(structuredClone(b))
-      added++
-      for (const u of PORTFOLIO_UNITS.filter((u) => u.buildingId === b.id)) {
-        d.units.push(structuredClone(u))
+    const takenIds = new Set([...d.units.map((u) => u.id), ...d.buildings.map((b) => b.id)])
+    const freeId = (want: string) => {
+      if (!takenIds.has(want)) { takenIds.add(want); return want }
+      const alt = uid('u_')
+      takenIds.add(alt)
+      return alt
+    }
+
+    for (const pb of PORTFOLIO_BUILDINGS) {
+      let target = d.buildings.find((b) => norm(b.address) === norm(pb.address))
+
+      if (!target) {
+        target = structuredClone(pb)
+        target.id = freeId(pb.id)
+        d.buildings.push(target)
+        report.buildings++
+      } else if (pb.notes && !target.notes.includes(VERIFIED_MARKER)) {
+        // Add the city record without discarding whatever they wrote.
+        target.notes = target.notes.trim() ? `${target.notes.trim()}\n\n${pb.notes}` : pb.notes
+        report.notes++
+      }
+
+      const have = new Set(
+        d.units.filter((u) => u.buildingId === target!.id).map((u) => norm(u.label)),
+      )
+      for (const pu of PORTFOLIO_UNITS.filter((u) => u.buildingId === pb.id)) {
+        if (have.has(norm(pu.label))) continue
+        d.units.push({ ...structuredClone(pu), id: freeId(pu.id), buildingId: target!.id })
+        have.add(norm(pu.label))
+        report.units++
       }
     }
   })
-  return added
+
+  return report
+}
+
+export function describeReseed(r: ReseedReport): string {
+  const parts: string[] = []
+  if (r.buildings) parts.push(`${r.buildings} building${r.buildings === 1 ? '' : 's'}`)
+  if (r.units) parts.push(`${r.units} unit${r.units === 1 ? '' : 's'}`)
+  if (!parts.length) return r.notes ? 'Updated building details' : 'Everything is already here'
+  return `Added ${parts.join(' and ')}`
 }

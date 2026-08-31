@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Database } from '../types'
-import { emptyDatabase, readDB, replaceAll, reseed, storageBytes } from '../store'
+import { describeReseed, emptyDatabase, readDB, replaceAll, reseed, storageBytes } from '../store'
 import { allPhotos, clearPhotos, photoStats, restorePhotos } from '../lib/photos'
 import { todayISO } from '../lib/dates'
 import { offerFile } from '../lib/download'
@@ -105,15 +105,16 @@ export function Settings({ db }: { db: Database }) {
         <SectionHead title="Reset" />
         <div className="card card-pad stack">
           <div className="row wrapping">
-            <button className="btn sm" onClick={() => {
-              const n = reseed()
-              flash(n ? `Added ${n} building${n === 1 ? '' : 's'}` : 'All already here')
-            }}>Reload my buildings</button>
+            <button className="btn sm" onClick={() => flash(describeReseed(reseed()))}>
+              Sync my buildings
+            </button>
             <ConfirmButton label="Erase everything"
               onConfirm={async () => { replaceAll(emptyDatabase()); await clearPhotos(); flash('Erased') }} />
           </div>
           <p className="tiny muted">
-            Reloading your buildings matches on address, so it never duplicates. Erasing cannot be undone.
+            Syncing fills in any buildings or units missing from this device — matched on address and
+            unit label, so it never duplicates and never overwrites what you've edited. Erasing cannot
+            be undone.
           </p>
         </div>
       </div>
