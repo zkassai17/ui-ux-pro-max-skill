@@ -4,6 +4,7 @@ import { describeReseed, emptyDatabase, readDB, replaceAll, reseed, storageBytes
 import { allPhotos, clearPhotos, photoStats, restorePhotos } from '../lib/photos'
 import { todayISO } from '../lib/dates'
 import { offerFile } from '../lib/download'
+import { requestDurableStorage, storageStatus, type StorageStatus } from '../lib/storage'
 import { ConfirmButton, Field, SectionHead } from '../components/ui'
 
 type Theme = 'system' | 'light' | 'dark'
@@ -24,10 +25,12 @@ const fmt = (n: number) =>
 export function Settings({ db }: { db: Database }) {
   const [theme, setTheme] = useState<Theme>(readTheme)
   const [photos, setPhotos] = useState({ count: 0, bytes: 0 })
+  const [storage, setStorage] = useState<StorageStatus | null>(null)
   const [status, setStatus] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { photoStats().then(setPhotos) }, [db])
+  useEffect(() => { storageStatus().then(setStorage) }, [db])
 
   const flash = (m: string) => { setStatus(m); setTimeout(() => setStatus(''), 3000) }
 
@@ -68,6 +71,30 @@ export function Settings({ db }: { db: Database }) {
             {fmt(storageBytes())} of records, {fmt(photos.bytes)} of photos — all in this browser on
             this device. Clearing site data wipes it, so export now and then.
           </p>
+
+          {storage?.supported && (
+            <div className={`banner ${storage.durable ? '' : 'warn'}`} style={{ marginTop: 12 }}>
+              <span className="b-icon">{storage.durable ? '🔒' : '⚠️'}</span>
+              <div>
+                {storage.durable ? (
+                  <>
+                    <strong>Storage is protected.</strong> The browser won't clear your photos to
+                    free up space. Using {storage.usedMB} MB of {storage.quotaMB} MB.
+                  </>
+                ) : (
+                  <>
+                    <strong>Storage isn't protected yet.</strong> The browser is allowed to clear
+                    your photos if it needs space, and on iPhone site data can go after a week of not
+                    opening the app. Adding it to your home screen usually fixes this.{' '}
+                    <button className="linklike"
+                      onClick={() => requestDurableStorage().then(() => storageStatus().then(setStorage))}>
+                      Ask again
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
