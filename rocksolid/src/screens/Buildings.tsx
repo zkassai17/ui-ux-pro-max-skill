@@ -9,7 +9,7 @@ import {
   ConfirmButton, Empty, Field, Modal, SectionHead, TextArea, TextInput,
 } from '../components/ui'
 import { EntryLog } from '../components/EntryLog'
-import { History } from '../components/History'
+import { CurrentVisit } from '../components/CurrentVisit'
 import { AddUnits } from '../components/AddUnits'
 import { TodoEditor, TodoRow } from './Todos'
 
@@ -77,10 +77,10 @@ function BuildingEditor({ building, onClose }: { building: Building; onClose: ()
 
 // ---------------------------------------------------------------- building
 
-type Tab = 'history' | 'units' | 'todos'
+type Tab = 'visit' | 'units' | 'todos'
 
 export function BuildingDetail({ db, id }: { db: Database; id: string }) {
-  const [tab, setTab] = useState<Tab>('history')
+  const [tab, setTab] = useState<Tab>('visit')
   const [editing, setEditing] = useState(false)
   const [adding, setAdding] = useState(false)
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null)
@@ -100,7 +100,7 @@ export function BuildingDetail({ db, id }: { db: Database; id: string }) {
   const open = todos.filter((t) => !t.done)
 
   const TABS: { key: Tab; label: string; n: number }[] = [
-    { key: 'history', label: 'History', n: db.inspections.filter((i) => i.buildingId === b.id && i.filedAt).length },
+    { key: 'visit', label: 'Visit', n: 0 },
     { key: 'units', label: 'Units', n: units.length },
     { key: 'todos', label: 'To do', n: open.length },
   ]
@@ -127,7 +127,7 @@ export function BuildingDetail({ db, id }: { db: Database; id: string }) {
         ))}
       </div>
 
-      {tab === 'history' && <History db={db} buildingId={b.id} />}
+      {tab === 'visit' && <CurrentVisit db={db} buildingId={b.id} />}
 
       {tab === 'units' && (
         <>
