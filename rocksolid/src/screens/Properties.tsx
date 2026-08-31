@@ -38,8 +38,7 @@ export function Properties({ db }: { db: Database }) {
                 onClick={() => navigate(`/properties/${p.id}`)}>
                 <div className="row" style={{ alignItems: 'flex-start' }}>
                   <div style={{ minWidth: 0 }}>
-                    <div className="display" style={{ fontSize: 17 }}>{p.name || 'Untitled building'}</div>
-                    <div className="small muted truncate">{p.address}</div>
+                    <div className="display" style={{ fontSize: 17 }}>{p.address || 'Untitled building'}</div>
                   </div>
                   <span className="spacer" />
                   {overdue > 0 && <Badge tone="red">{overdue} overdue</Badge>}
@@ -82,25 +81,21 @@ export function PropertyEditor({ property, onClose }: { property: Property; onCl
 
   return (
     <Modal
-      title={property.name ? 'Edit building' : 'Add building'}
+      title={property.address ? 'Edit building' : 'Add building'}
       onClose={onClose}
       footer={
         <>
           <span className="spacer" />
           <button className="btn" onClick={onClose}>Cancel</button>
-          <button className="btn primary" disabled={!draft.name.trim()}
+          <button className="btn primary" disabled={!draft.address.trim()}
             onClick={() => { saveProperty(draft); onClose() }}>Save</button>
         </>
       }
     >
       <div className="stack">
         <div className="form-grid two">
-          <Field label="Building name">
-            <TextInput autoFocus value={draft.name} placeholder="The Chandler"
-              onChange={(e) => set('name', e.target.value)} />
-          </Field>
-          <Field label="Address">
-            <TextInput value={draft.address} placeholder="303 W 116th St"
+          <Field label="Address" hint="This is how the building is listed everywhere else.">
+            <TextInput autoFocus value={draft.address} placeholder="303 W 116th St"
               onChange={(e) => set('address', e.target.value)} />
           </Field>
           <Field label="Submarket">

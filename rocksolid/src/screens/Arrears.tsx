@@ -86,7 +86,7 @@ export function Arrears({ db }: { db: Database }) {
                 return (
                   <tr key={entry.id} style={{ cursor: 'pointer' }} onClick={() => setEditing(entry)}>
                     <td>
-                      <div style={{ fontWeight: 500 }}>{property?.name ?? '—'} · {unit?.label ?? '—'}</div>
+                      <div style={{ fontWeight: 500 }}>{property?.address ?? '—'} · {unit?.label ?? '—'}</div>
                       <div className="tiny muted">{unit?.tenantName || 'No tenant on file'}</div>
                     </td>
                     <td className="num" style={{ fontWeight: 600, color: 'var(--danger)' }}>
@@ -164,7 +164,7 @@ function ArrearsEditor({ db, entry, onClose }: {
                   setPropertyId(e.target.value)
                   set('unitId', unitsFor(db, e.target.value)[0]?.id ?? '')
                 }}>
-                {db.properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                {db.properties.map((p) => <option key={p.id} value={p.id}>{p.address}</option>)}
               </select>
             </Field>
             <Field label="Unit">

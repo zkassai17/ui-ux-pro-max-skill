@@ -20,7 +20,7 @@ export const isLive = (c: ComplianceItem) => c.status === 'scheduled'
 
 export function propertyName(db: Database, id: string | null): string {
   if (!id) return ''
-  return db.properties.find((p) => p.id === id)?.name ?? 'Unknown property'
+  return db.properties.find((p) => p.id === id)?.address ?? 'Unknown property'
 }
 
 export function unitLabel(db: Database, id: string | null): string {

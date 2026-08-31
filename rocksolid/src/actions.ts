@@ -12,7 +12,7 @@ const now = () => new Date().toISOString()
 
 export function newProperty(): Property {
   return {
-    id: uid('p_'), name: '', address: '', submarket: '', type: 'multifamily',
+    id: uid('p_'), address: '', submarket: '', type: 'multifamily',
     unitCount: 0, superName: '', superPhone: '', hpdRegistration: '', blockLot: '',
     notes: '', archived: false, createdAt: now(),
   }

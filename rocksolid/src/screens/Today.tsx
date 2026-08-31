@@ -58,7 +58,7 @@ export function Today({ db }: { db: Database }) {
             aria-label="Tag to building"
           >
             <option value="">No building</option>
-            {db.properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            {db.properties.map((p) => <option key={p.id} value={p.id}>{p.address}</option>)}
           </select>
           <span className="spacer" />
           {flash && <span className="tiny" style={{ color: 'var(--ok)' }}>{flash}</span>}
@@ -171,7 +171,7 @@ export function Today({ db }: { db: Database }) {
               <button key={u.id} className={`rowcard rail ${urgency(u.leaseEnd)}`}
                 onClick={() => navigate(`/properties/${u.propertyId}`)}>
                 <span className="rowcard-body">
-                  <span className="rowcard-title">{p?.name} · {u.label}</span>
+                  <span className="rowcard-title">{p?.address} · {u.label}</span>
                   <span className="rowcard-meta">
                     <span>{u.tenantName || 'No tenant on file'}</span>
                     {u.stabilized && <Badge tone="blue">Stabilized</Badge>}
@@ -197,7 +197,7 @@ export function Today({ db }: { db: Database }) {
             <div className={`note ${n.pinned ? 'pinned' : ''}`} key={n.id}>
               <div className="note-body">{n.body}</div>
               <div className="note-meta">
-                {n.propertyId && <Badge>{db.properties.find((p) => p.id === n.propertyId)?.name}</Badge>}
+                {n.propertyId && <Badge>{db.properties.find((p) => p.id === n.propertyId)?.address}</Badge>}
                 <span>{new Date(n.createdAt).toLocaleString('en-US',
                   { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
               </div>

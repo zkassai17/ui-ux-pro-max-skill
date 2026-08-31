@@ -24,19 +24,19 @@ export function demoDatabase(): Database {
 
   d.properties = [
     {
-      id: 'p1', name: 'The Chandler', address: '303 W 116th St', submarket: 'South Harlem',
+      id: 'p1', address: '303 W 116th St', submarket: 'South Harlem',
       type: 'multifamily', unitCount: 24, superName: 'Luis Ortega', superPhone: '(917) 555-0142',
       hpdRegistration: '3041882', blockLot: '1826 / 45', archived: false, createdAt: now(),
       notes: 'Pre-war walk-up, oil-to-gas conversion completed 2023. Elevator installed 2019.',
     },
     {
-      id: 'p2', name: '210 Rivington', address: '210 Rivington St', submarket: 'Lower East Side',
+      id: 'p2', address: '210 Rivington St', submarket: 'Lower East Side',
       type: 'mixed-use', unitCount: 12, superName: 'Marco Silva', superPhone: '(646) 555-0119',
       hpdRegistration: '2298104', blockLot: '337 / 12', archived: false, createdAt: now(),
       notes: 'Ground-floor retail plus 11 residential above. Facade on FISP Cycle 10B.',
     },
     {
-      id: 'p3', name: 'The Franklin', address: '2450 Frederick Douglass Blvd', submarket: 'Central Harlem',
+      id: 'p3', address: '2450 Frederick Douglass Blvd', submarket: 'Central Harlem',
       type: 'mixed-use', unitCount: 18, superName: 'Danny Reyes', superPhone: '(212) 555-0177',
       hpdRegistration: '3118740', blockLot: '2044 / 28', archived: false, createdAt: now(),
       notes: 'Cooling tower on roof — DOHMH registration active. Compactor replaced Feb 2026.',

@@ -4,7 +4,7 @@ export type PropertyType = 'multifamily' | 'mixed-use' | 'commercial' | 'walk-up
 
 export interface Property {
   id: string
-  name: string
+  /** The address is the building's identity — there is no separate name. */
   address: string
   submarket: string
   type: PropertyType

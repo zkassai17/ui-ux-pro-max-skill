@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import type { Database } from './types'
+import type { Database, Property } from './types'
 import { emptyDatabase } from './seed'
 import { DEFAULT_TEMPLATES } from './catalog'
 
@@ -20,11 +20,27 @@ function load(): Database {
       ...base,
       ...parsed,
       version: 1,
+      properties: (parsed.properties ?? []).map(migrateProperty),
       templates: parsed.templates?.length ? parsed.templates : structuredClone(DEFAULT_TEMPLATES),
     }
   } catch {
     return emptyDatabase()
   }
+}
+
+/**
+ * Buildings used to carry a display name alongside the address. The address is
+ * now the identity, so fold any old name in rather than dropping it: it becomes
+ * the address when no address was recorded, and is otherwise appended so a
+ * building people knew as "The Chandler" is still findable by that word.
+ */
+function migrateProperty(p: Property & { name?: string }): Property {
+  const { name, ...rest } = p
+  if (!name) return rest as Property
+  const address = rest.address?.trim()
+  if (!address) return { ...rest, address: name } as Property
+  if (address.toLowerCase().includes(name.trim().toLowerCase())) return rest as Property
+  return { ...rest, address: `${address} (${name})` } as Property
 }
 
 let saveFailed = false

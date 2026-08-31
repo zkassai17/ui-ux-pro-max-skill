@@ -60,8 +60,8 @@ export function PropertyDetail({ db, id }: { db: Database; id: string }) {
       <div className="card card-pad" style={{ marginBottom: 16 }}>
         <div className="row wrapping" style={{ alignItems: 'flex-start' }}>
           <div style={{ minWidth: 0 }}>
-            <h2 className="display" style={{ fontSize: 22 }}>{p.name}</h2>
-            <div className="small muted">{p.address}{p.submarket ? ` · ${p.submarket}` : ''}</div>
+            <h2 className="display" style={{ fontSize: 22 }}>{p.address}</h2>
+            {p.submarket && <div className="small muted">{p.submarket}</div>}
           </div>
           <span className="spacer" />
           <button className="btn sm" onClick={() => setEditingProp(true)}>Edit</button>

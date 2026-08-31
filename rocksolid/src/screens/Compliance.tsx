@@ -69,7 +69,7 @@ export function Compliance({ db }: { db: Database }) {
         <select className="select" value={propertyId} onChange={(e) => setPropertyId(e.target.value)}
           aria-label="Filter by building" style={{ maxWidth: 260 }}>
           <option value="">All buildings</option>
-          {db.properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          {db.properties.map((p) => <option key={p.id} value={p.id}>{p.address}</option>)}
         </select>
       </div>
 
@@ -187,7 +187,7 @@ export function ComplianceEditor({ db, item, propertyId, onClose }: {
               <Field label="Building">
                 <Select value={draft.propertyId}
                   onChange={(e) => set('propertyId', e.target.value)}
-                  options={db.properties.map((p) => ({ value: p.id, label: p.name }))} />
+                  options={db.properties.map((p) => ({ value: p.id, label: p.address }))} />
               </Field>
               <Field label="Type">
                 <Select value={draft.kind}

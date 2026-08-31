@@ -66,7 +66,7 @@ export function Tasks({ db }: { db: Database }) {
             aria-label="Filter by building"
           >
             <option value="">All buildings</option>
-            {db.properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            {db.properties.map((p) => <option key={p.id} value={p.id}>{p.address}</option>)}
           </select>
         </div>
       </div>

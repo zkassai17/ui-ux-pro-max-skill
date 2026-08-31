@@ -4,6 +4,8 @@ import { addNote, deleteNote, saveNote, togglePin } from '../actions'
 import { locationLabel } from '../selectors'
 import { unitsFor } from '../selectors'
 import { formatStamp } from '../lib/dates'
+import { outcomeMessage, sendAsText } from '../lib/share'
+import { noteToText, notesToText } from '../lib/noteText'
 import {
   Badge, ConfirmButton, Empty, Field, Modal, PhotoStrip, SectionHead, TextArea,
 } from '../components/ui'
@@ -12,6 +14,12 @@ export function Notes({ db }: { db: Database }) {
   const [query, setQuery] = useState('')
   const [propertyId, setPropertyId] = useState('')
   const [editing, setEditing] = useState<Note | null>(null)
+  const [flash, setFlash] = useState('')
+
+  async function text(body: string) {
+    setFlash(outcomeMessage(await sendAsText(body)))
+    setTimeout(() => setFlash(''), 2600)
+  }
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -35,13 +43,21 @@ export function Notes({ db }: { db: Database }) {
         <select className="select" style={{ width: 'auto', flex: '0 1 190px' }}
           value={propertyId} onChange={(e) => setPropertyId(e.target.value)} aria-label="Filter by building">
           <option value="">All buildings</option>
-          {db.properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          {db.properties.map((p) => <option key={p.id} value={p.id}>{p.address}</option>)}
         </select>
       </div>
 
       <SectionHead title="Notes" count={visible.length}>
-        <button className="btn accent sm"
-          onClick={() => setEditing(addNote({ propertyId: propertyId || null }))}>＋ New note</button>
+        <div className="row" style={{ gap: 7 }}>
+          {flash && <span className="tiny" style={{ color: 'var(--ok)' }}>{flash}</span>}
+          {visible.length > 0 && (
+            <button className="btn sm" onClick={() => text(notesToText(db, visible))}>
+              Text {visible.length > 1 ? `all ${visible.length}` : 'it'}
+            </button>
+          )}
+          <button className="btn accent sm"
+            onClick={() => setEditing(addNote({ propertyId: propertyId || null }))}>＋ New note</button>
+        </div>
       </SectionHead>
 
       {visible.length === 0 ? (
@@ -60,6 +76,8 @@ export function Notes({ db }: { db: Database }) {
             {n.propertyId && <Badge>{locationLabel(db, n.propertyId, n.unitId)}</Badge>}
             {n.tags.map((t) => <Badge key={t} tone="blue">#{t}</Badge>)}
             <span className="spacer" />
+            <button className="btn ghost sm" onClick={() => text(noteToText(db, n))}
+              title="Send this note as a text">Text</button>
             <button className="iconbtn" onClick={() => togglePin(n.id)}
               aria-label={n.pinned ? 'Unpin' : 'Pin'} title={n.pinned ? 'Unpin' : 'Pin'}>
               {n.pinned ? '📌' : '📍'}
@@ -87,6 +105,8 @@ function NoteEditor({ db, note, onClose }: { db: Database; note: Note; onClose: 
         <>
           <ConfirmButton label="Delete" onConfirm={() => { deleteNote(draft.id); onClose() }} />
           <span className="spacer" />
+          <button className="btn" disabled={!draft.body.trim()}
+            onClick={() => { saveNote(draft); sendAsText(noteToText(db, draft)) }}>Text</button>
           <button className="btn" onClick={onClose}>Cancel</button>
           <button className="btn primary" onClick={() => { saveNote(draft); onClose() }}>Save</button>
         </>
@@ -102,7 +122,7 @@ function NoteEditor({ db, note, onClose }: { db: Database; note: Note; onClose: 
             <select className="select" value={draft.propertyId ?? ''}
               onChange={(e) => { set('propertyId', e.target.value || null); set('unitId', null) }}>
               <option value="">— none —</option>
-              {db.properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {db.properties.map((p) => <option key={p.id} value={p.id}>{p.address}</option>)}
             </select>
           </Field>
           <Field label="Unit">

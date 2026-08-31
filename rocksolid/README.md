@@ -28,12 +28,22 @@ or add it to your phone's home screen.
 |---|---|
 | **Today** | Capture box on top for whatever just happened; below it, overdue work, today's tasks, filings inside two weeks, leases expiring, recent notes |
 | **Tasks** | Open → Assigned → Waiting on vendor → Done, with priority, category, due date, an activity log and photos |
-| **Portfolio** | Buildings and units — tenants, rents, lease dates, rent-stabilized flags |
+| **Portfolio** | Buildings and units — tenants, rents, lease dates, rent-stabilized flags. A building is identified by its address; there's no separate name to keep in sync |
 | **Compliance** | Recurring NYC filings and violation cure clocks, sorted by days remaining, with a preset catalog |
 | **Walkthroughs** | Reusable checklists for building inspections and unit turnovers. Mark an item as an issue and turn it into a task in one tap |
 | **Arrears** | Per-unit balances, last payment, notice stage, payment plans |
-| **Notes** | Every note you've captured, searchable and timestamped |
+| **Notes** | Every note you've captured, searchable and timestamped, and sendable as a text |
 | **Settings** | JSON export/import, demo data, theme, storage usage |
+
+## Sending notes as a text
+
+Any note has a **Text** button, and the Notes screen has one that sends everything
+currently in view — so you can filter to a building, then text the batch. A finished
+walkthrough has **Text summary**, which sends the counts and the failed checks.
+
+On a phone this opens the system share sheet, where you pick Messages and the recipient.
+If the share sheet isn't available it falls back to opening Messages directly, and on a
+desktop browser it copies the text so you can paste it.
 
 ## Where your data lives
 

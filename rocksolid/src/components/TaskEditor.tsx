@@ -63,7 +63,7 @@ export function TaskEditor({ db, task, onClose }: {
               value={draft.propertyId ?? ''}
               onChange={(e) => { set('propertyId', e.target.value || null); set('unitId', null) }}
               options={[{ value: '', label: '— none —' },
-                ...db.properties.map((p) => ({ value: p.id, label: p.name }))]}
+                ...db.properties.map((p) => ({ value: p.id, label: p.address }))]}
             />
           </Field>
           <Field label="Unit">

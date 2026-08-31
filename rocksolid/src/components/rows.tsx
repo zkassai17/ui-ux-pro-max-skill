@@ -62,7 +62,7 @@ export function ComplianceRow({ db, item, onOpen }: {
         </span>
         <span className="rowcard-meta">
           <Badge tone="blue">{AGENCY[item.agency]}</Badge>
-          <span className="truncate">{prop?.name ?? 'Unknown property'}</span>
+          <span className="truncate">{prop?.address ?? 'Unknown property'}</span>
           {item.reference && <span className="truncate">· {item.reference}</span>}
         </span>
       </span>

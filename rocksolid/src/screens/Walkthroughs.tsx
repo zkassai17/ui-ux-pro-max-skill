@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { Database, ResultStatus, Walkthrough } from '../types'
 import { deleteWalkthrough, newTask, saveTask, saveWalkthrough, startWalkthrough } from '../actions'
 import { formatDate, todayISO } from '../lib/dates'
+import { outcomeMessage, sendAsText } from '../lib/share'
+import { walkthroughToText } from '../lib/noteText'
 import { navigate } from '../router'
 import {
   Badge, ConfirmButton, Empty, Field, Modal, PhotoStrip, SectionHead, TextArea,
@@ -33,7 +35,7 @@ export function Walkthroughs({ db }: { db: Database }) {
           return (
             <button key={w.id} className="rowcard" onClick={() => navigate(`/walkthroughs/${w.id}`)}>
               <span className="rowcard-body">
-                <span className="rowcard-title">{p?.name ?? 'Unknown building'} — {w.templateName}</span>
+                <span className="rowcard-title">{p?.address ?? 'Unknown building'} — {w.templateName}</span>
                 <span className="rowcard-meta">
                   <span>{formatDate(w.date)}</span>
                   <span>· {checked}/{w.results.length} checked</span>
@@ -92,7 +94,7 @@ function StartModal({ db, onClose }: { db: Database; onClose: () => void }) {
       <div className="stack">
         <Field label="Building">
           <select className="select" value={propertyId} onChange={(e) => setPropertyId(e.target.value)}>
-            {db.properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            {db.properties.map((p) => <option key={p.id} value={p.id}>{p.address}</option>)}
           </select>
         </Field>
         <Field label="Checklist">
@@ -109,6 +111,7 @@ function StartModal({ db, onClose }: { db: Database; onClose: () => void }) {
 
 export function WalkthroughRun({ db, id }: { db: Database; id: string }) {
   const [noteFor, setNoteFor] = useState<string | null>(null)
+  const [flash, setFlash] = useState('')
 
   const w = db.walkthroughs.find((x) => x.id === id)
   const tpl = w ? db.templates.find((t) => t.id === w.templateId) : undefined
@@ -162,7 +165,7 @@ export function WalkthroughRun({ db, id }: { db: Database; id: string }) {
       <div className="card card-pad" style={{ marginBottom: 16 }}>
         <div className="row wrapping" style={{ alignItems: 'flex-start' }}>
           <div>
-            <h2 className="display" style={{ fontSize: 20 }}>{property?.name ?? 'Unknown building'}</h2>
+            <h2 className="display" style={{ fontSize: 20 }}>{property?.address ?? 'Unknown building'}</h2>
             <div className="small muted">{w.templateName} · {formatDate(w.date)}</div>
           </div>
           <span className="spacer" />
@@ -243,7 +246,12 @@ export function WalkthroughRun({ db, id }: { db: Database; id: string }) {
         ) : (
           <button className="btn" onClick={() => saveWalkthrough({ ...w, completedAt: null })}>Reopen</button>
         )}
+        <button className="btn" onClick={async () => {
+          setFlash(outcomeMessage(await sendAsText(walkthroughToText(db, w, tpl))))
+          setTimeout(() => setFlash(''), 2600)
+        }}>Text summary</button>
         <button className="btn" onClick={() => window.print()}>Print / save PDF</button>
+        {flash && <span className="tiny" style={{ color: 'var(--ok)' }}>{flash}</span>}
         <span className="spacer" />
         <ConfirmButton label="Delete"
           onConfirm={() => { deleteWalkthrough(w.id); navigate('/walkthroughs') }} />
