@@ -21,6 +21,10 @@ function load(): Database {
       ...parsed,
       version: 1,
       properties: (parsed.properties ?? []).map(migrateProperty),
+      tasks: (parsed.tasks ?? []).map((t) => ({
+        ...t,
+        thread: (t.thread ?? []).map((e) => ({ ...e, photoIds: e.photoIds ?? [] })),
+      })),
       templates: parsed.templates?.length ? parsed.templates : structuredClone(DEFAULT_TEMPLATES),
     }
   } catch {

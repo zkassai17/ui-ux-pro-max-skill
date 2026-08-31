@@ -89,10 +89,10 @@ export function setTaskStatus(id: string, status: Task['status']) {
   })
 }
 
-export function addTaskEntry(id: string, body: string) {
+export function addTaskEntry(id: string, body: string, photoIds: string[] = []) {
   mutate((d) => {
     const t = d.tasks.find((x) => x.id === id)
-    if (t) t.thread.push({ id: uid('e_'), at: now(), body })
+    if (t) t.thread.push({ id: uid('e_'), at: now(), body, photoIds })
   })
 }
 

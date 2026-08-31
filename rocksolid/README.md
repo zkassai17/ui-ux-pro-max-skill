@@ -27,8 +27,9 @@ or add it to your phone's home screen.
 | Screen | What it's for |
 |---|---|
 | **Today** | Capture box on top for whatever just happened; below it, overdue work, today's tasks, filings inside two weeks, leases expiring, recent notes |
-| **Tasks** | Open → Assigned → Waiting on vendor → Done, with priority, category, due date, an activity log and photos |
-| **Portfolio** | Buildings and units — tenants, rents, lease dates, rent-stabilized flags. A building is identified by its address; there's no separate name to keep in sync |
+| **Tasks** | Open → Assigned → Waiting on vendor → Done, with priority, category and due date. Each task keeps a visit log — dated entries with their own photos, so a recurring problem reads as a before-and-after |
+| **Portfolio** | Buildings and units — tenants, rents, lease dates, rent-stabilized flags. A building is identified by its address; there's no separate name to keep in sync. Units go in in bulk, by floors × letters or by pasting a list |
+| **Visit log** | Per building: one dated entry per visit, with the photos from that visit. Shoot the same spots each time and the history answers whether anything is actually improving |
 | **Compliance** | Recurring NYC filings and violation cure clocks, sorted by days remaining, with a preset catalog |
 | **Walkthroughs** | Reusable checklists for building inspections and unit turnovers. Mark an item as an issue and turn it into a task in one tap |
 | **Arrears** | Per-unit balances, last payment, notice stage, payment plans |

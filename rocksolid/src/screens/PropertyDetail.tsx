@@ -14,9 +14,11 @@ import {
 import { ComplianceRow, TaskRow } from '../components/rows'
 import { TaskEditor } from '../components/TaskEditor'
 import { PropertyEditor } from './Properties'
+import { BulkUnits } from '../components/BulkUnits'
+import { BuildingLog } from '../components/BuildingLog'
 import { ComplianceEditor } from './Compliance'
 
-type Tab = 'units' | 'tasks' | 'compliance' | 'walkthroughs' | 'notes'
+type Tab = 'units' | 'log' | 'tasks' | 'compliance' | 'walkthroughs'
 
 export function PropertyDetail({ db, id }: { db: Database; id: string }) {
   const [tab, setTab] = useState<Tab>('units')
@@ -24,6 +26,7 @@ export function PropertyDetail({ db, id }: { db: Database; id: string }) {
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [addingFiling, setAddingFiling] = useState(false)
+  const [bulkUnits, setBulkUnits] = useState(false)
 
   const p = db.properties.find((x) => x.id === id)
   if (!p) {
@@ -46,10 +49,10 @@ export function PropertyDetail({ db, id }: { db: Database; id: string }) {
 
   const TABS: { key: Tab; label: string; n: number }[] = [
     { key: 'units', label: 'Units', n: units.length },
+    { key: 'log', label: 'Visit log', n: notes.filter((n) => !n.unitId).length },
     { key: 'tasks', label: 'Tasks', n: openTasks.length },
     { key: 'compliance', label: 'Compliance', n: filings.filter((c) => c.status === 'scheduled').length },
     { key: 'walkthroughs', label: 'Walkthroughs', n: walks.length },
-    { key: 'notes', label: 'Notes', n: notes.length },
   ]
 
   return (
@@ -95,12 +98,15 @@ export function PropertyDetail({ db, id }: { db: Database; id: string }) {
       {tab === 'units' && (
         <>
           <SectionHead title="Units" count={units.length}>
-            <button className="btn accent sm" onClick={() => setEditingUnit(newUnit(p.id))}>＋ Add unit</button>
+            <div className="row" style={{ gap: 7 }}>
+              <button className="btn sm" onClick={() => setBulkUnits(true)}>＋ Add many</button>
+              <button className="btn accent sm" onClick={() => setEditingUnit(newUnit(p.id))}>＋ Add unit</button>
+            </div>
           </SectionHead>
           {units.length === 0 ? (
             <Empty icon="🚪" title="No units yet"
-              body="Add units to track tenants, lease expirations and arrears for this building."
-              action={<button className="btn" onClick={() => setEditingUnit(newUnit(p.id))}>Add a unit</button>} />
+              body="Put the whole roster in — every unit, not just the vacant ones. Once they're here you can log a problem against any of them and watch it over time."
+              action={<button className="btn accent" onClick={() => setBulkUnits(true)}>Add the whole roster</button>} />
           ) : units.map((u) => {
             const arr = db.arrears.find((a) => a.unitId === u.id)
             const leaseDays = u.leaseEnd ? daysUntil(u.leaseEnd) : Infinity
@@ -214,23 +220,11 @@ export function PropertyDetail({ db, id }: { db: Database; id: string }) {
         </>
       )}
 
-      {/* ---------- Notes ---------- */}
-      {tab === 'notes' && (
+      {/* ---------- Visit log ---------- */}
+      {tab === 'log' && (
         <>
-          <SectionHead title="Notes" count={notes.length} />
-          {notes.length === 0 ? (
-            <Empty icon="📝" title="No notes on this building"
-              body="Capture notes from the Today screen and tag them to this building." />
-          ) : notes.map((n) => (
-            <div className={`note ${n.pinned ? 'pinned' : ''}`} key={n.id}>
-              <div className="note-body">{n.body}</div>
-              <div className="note-meta">
-                <span>{new Date(n.createdAt).toLocaleString('en-US',
-                  { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
-                {n.unitId && <Badge>{units.find((u) => u.id === n.unitId)?.label}</Badge>}
-              </div>
-            </div>
-          ))}
+          <SectionHead title="Visit log" count={notes.filter((n) => !n.unitId).length} />
+          <BuildingLog db={db} propertyId={p.id} />
         </>
       )}
 
@@ -248,6 +242,7 @@ export function PropertyDetail({ db, id }: { db: Database; id: string }) {
       {editingUnit && <UnitEditor db={db} unit={editingUnit} onClose={() => setEditingUnit(null)} />}
       {editingTask && <TaskEditor db={db} task={editingTask} onClose={() => setEditingTask(null)} />}
       {addingFiling && <ComplianceEditor db={db} propertyId={p.id} onClose={() => setAddingFiling(false)} />}
+      {bulkUnits && <BulkUnits db={db} propertyId={p.id} onClose={() => setBulkUnits(false)} />}
     </div>
   )
 }

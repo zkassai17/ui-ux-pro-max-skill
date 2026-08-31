@@ -11,6 +11,7 @@ export function TaskEditor({ db, task, onClose }: {
 }) {
   const [draft, setDraft] = useState<Task>(task)
   const [entry, setEntry] = useState('')
+  const [entryPhotos, setEntryPhotos] = useState<string[]>([])
 
   const set = <K extends keyof Task>(k: K, v: Task[K]) => setDraft((d) => ({ ...d, [k]: v }))
   const units = draft.propertyId ? unitsFor(db, draft.propertyId) : []
@@ -27,10 +28,11 @@ export function TaskEditor({ db, task, onClose }: {
 
   function postEntry() {
     const body = entry.trim()
-    if (!body) return
+    if (!body && entryPhotos.length === 0) return
     if (!db.tasks.some((t) => t.id === draft.id)) saveTask({ ...draft, thread: [] })
-    addTaskEntry(draft.id, body)
+    addTaskEntry(draft.id, body || 'Photos from this visit', entryPhotos)
     setEntry('')
+    setEntryPhotos([])
   }
 
   return (
@@ -109,30 +111,38 @@ export function TaskEditor({ db, task, onClose }: {
             placeholder="What was reported, what you found, what the plan is." />
         </Field>
 
-        <Field label="Photos">
+        <Field label="Photos" hint="First look. Photos from later visits go in the log below.">
           <PhotoStrip ids={draft.photoIds} onChange={(ids) => set('photoIds', ids)} />
         </Field>
 
         <div>
-          <div className="eyebrow" style={{ marginBottom: 6 }}>Activity log</div>
+          <div className="eyebrow" style={{ marginBottom: 6 }}>Visit log</div>
           {thread.length === 0 && (
             <p className="small muted" style={{ marginBottom: 8 }}>
-              Nothing logged yet. Every call, visit and no-show you record here is the record you will want later.
+              Nothing logged yet. Log a photo each time you check this and the entries below become a dated
+              before-and-after — whether it's improving, or the same problem every month.
             </p>
           )}
           {thread.map((e) => (
             <div className="entry" key={e.id}>
               <div className="when">{formatStamp(e.at)}</div>
-              <div className="wrap">{e.body}</div>
+              {e.body && <div className="wrap">{e.body}</div>}
+              {e.photoIds?.length > 0 && (
+                <div style={{ marginTop: 7 }}><PhotoStrip ids={e.photoIds} /></div>
+              )}
             </div>
           ))}
-          <div className="row" style={{ marginTop: 8 }}>
-            <TextInput
-              value={entry} placeholder="Add an update…"
-              onChange={(e) => setEntry(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); postEntry() } }}
-            />
-            <button className="btn" onClick={postEntry} disabled={!entry.trim()}>Log</button>
+          <div className="stack tight" style={{ marginTop: 10 }}>
+            <div className="row">
+              <TextInput
+                value={entry} placeholder="What did you see this time?"
+                onChange={(e) => setEntry(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); postEntry() } }}
+              />
+              <button className="btn" onClick={postEntry}
+                disabled={!entry.trim() && entryPhotos.length === 0}>Log visit</button>
+            </div>
+            <PhotoStrip ids={entryPhotos} onChange={setEntryPhotos} />
           </div>
         </div>
 

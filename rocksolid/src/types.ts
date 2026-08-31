@@ -44,6 +44,8 @@ export interface TaskEntry {
   id: string
   at: string
   body: string
+  /** Photos taken at this visit. Dated with the entry, not the task. */
+  photoIds: string[]
 }
 
 export interface Task {
