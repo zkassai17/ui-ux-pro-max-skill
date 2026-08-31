@@ -670,3 +670,19 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .main { padding: 0; }
   .card, .rowcard { box-shadow: none; break-inside: avoid; }
 }
+
+/* ============================================================
+   Tick box — the whole point of the to-do list
+   ============================================================ */
+
+.tickbox {
+  width: 24px; height: 24px; flex: 0 0 24px;
+  border: 1.5px solid var(--muted); border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; line-height: 1; color: var(--paper);
+  margin-top: 1px;
+  transition: background .12s, border-color .12s;
+}
+.tickbox:hover { border-color: var(--accent); }
+.rowcard:has(.tickbox) { align-items: flex-start; }
+button.tickbox:not(:empty) { background: var(--ok); border-color: var(--ok); color: #fff; }
