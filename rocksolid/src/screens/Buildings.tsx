@@ -80,8 +80,13 @@ function BuildingEditor({ building, onClose }: { building: Building; onClose: ()
 
 type Tab = 'visit' | 'history' | 'units' | 'todos'
 
-export function BuildingDetail({ db, id }: { db: Database; id: string }) {
-  const [tab, setTab] = useState<Tab>('visit')
+export function BuildingDetail({ db, id, initialTab }: {
+  db: Database; id: string; initialTab?: string
+}) {
+  const TAB_KEYS: Tab[] = ['visit', 'history', 'units', 'todos']
+  const [tab, setTab] = useState<Tab>(
+    TAB_KEYS.includes(initialTab as Tab) ? (initialTab as Tab) : 'visit',
+  )
   const [editing, setEditing] = useState(false)
   const [adding, setAdding] = useState(false)
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null)

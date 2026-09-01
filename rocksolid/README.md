@@ -45,6 +45,11 @@ the top so you know who you're talking to before the door opens.
 **Adding units.** "Add many" builds a roster from floors × letters, or you paste a
 list for walk-ups that don't follow a pattern.
 
+**Finding something.** The magnifier in the header searches everything written down
+— units, tenants, to-dos, knock notes, and what you typed against a checklist line
+months ago. A result takes you to where it lives, including straight to the right
+building's History tab.
+
 **Texting.** Any note has a Text button. On a phone it opens the share sheet so you
 pick Messages and the recipient; on a desktop it copies for pasting.
 

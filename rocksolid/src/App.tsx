@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useDB, didSaveFail } from './store'
 import { navigate, useRoute } from './router'
 import { openTodos } from './selectors'
@@ -6,6 +6,7 @@ import { daysUntil } from './lib/dates'
 import { Todos } from './screens/Todos'
 import { Buildings, BuildingDetail, UnitDetail } from './screens/Buildings'
 import { Settings, applyTheme, readTheme } from './screens/Settings'
+import { Search } from './components/Search'
 
 const NAV = [
   { path: '/todo', label: 'To do', icon: '☑' },
@@ -20,16 +21,20 @@ const TITLES: Record<string, string> = {
 export default function App() {
   const db = useDB()
   const segments = useRoute()
+  const [searching, setSearching] = useState(false)
   useEffect(() => { applyTheme(readTheme()) }, [])
 
   const root = segments[0] ?? 'todo'
   const detailId = segments[1]
+  const detailTab = segments[2]
   const late = openTodos(db).filter((t) => t.dueDate && daysUntil(t.dueDate) < 0).length
 
   function screen() {
     switch (root) {
       case 'buildings':
-        return detailId ? <BuildingDetail db={db} id={detailId} /> : <Buildings db={db} />
+        return detailId
+          ? <BuildingDetail db={db} id={detailId} initialTab={detailTab} />
+          : <Buildings db={db} />
       case 'units':
         return <UnitDetail db={db} id={detailId} />
       case 'settings':
@@ -67,6 +72,10 @@ export default function App() {
       <main className="main">
         <header className="topbar">
           <h1>{TITLES[root] ?? 'To do'}</h1>
+          <div className="topbar-actions">
+            <button className="iconbtn" onClick={() => setSearching(true)}
+              aria-label="Search everything" title="Search">🔍</button>
+          </div>
         </header>
 
         {didSaveFail() && (
@@ -96,6 +105,8 @@ export default function App() {
           )
         })}
       </nav>
+
+      {searching && <Search db={db} onClose={() => setSearching(false)} />}
     </div>
   )
 }
