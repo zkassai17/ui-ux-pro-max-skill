@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Database } from '../types'
 import { describeReseed, emptyDatabase, readDB, replaceAll, reseed, storageBytes } from '../store'
-import { allPhotos, clearPhotos, photoStats, restorePhotos } from '../lib/photos'
+import { allPhotos, clearPhotos, flushToDrive, photoStats, restorePhotos } from '../lib/photos'
+import {
+  connect as driveConnect, disconnect as driveDisconnect,
+  getClientId, isConnected as driveConnected, setClientId,
+} from '../lib/drive'
 import { todayISO } from '../lib/dates'
 import { offerFile } from '../lib/download'
 import { requestDurableStorage, storageStatus, type StorageStatus } from '../lib/storage'
@@ -24,7 +28,10 @@ const fmt = (n: number) =>
 
 export function Settings({ db }: { db: Database }) {
   const [theme, setTheme] = useState<Theme>(readTheme)
-  const [photos, setPhotos] = useState({ count: 0, bytes: 0 })
+  const [photos, setPhotos] = useState({ count: 0, bytes: 0, pending: 0, inDrive: 0 })
+  const [clientId, setId] = useState(getClientId)
+  const [drive, setDrive] = useState(driveConnected)
+  const [busy, setBusy] = useState(false)
   const [storage, setStorage] = useState<StorageStatus | null>(null)
   const [status, setStatus] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -60,7 +67,7 @@ export function Settings({ db }: { db: Database }) {
           <div className="stats" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
             {([['Buildings', db.buildings.length], ['Units', db.units.length],
                ['To-dos', db.todos.length], ['Notes', db.entries.length],
-               ['Photos', photos.count]] as const).map(([l, n]) => (
+               ['Photos', photos.count], ['In Drive', photos.inDrive]] as const).map(([l, n]) => (
               <div key={l}>
                 <div className="eyebrow">{l}</div>
                 <div className="display tabular" style={{ fontSize: 21 }}>{n}</div>
@@ -94,6 +101,83 @@ export function Settings({ db }: { db: Database }) {
                 )}
               </div>
             </div>
+          )}
+        </div>
+      </div>
+
+      <div className="section">
+        <SectionHead title="Google Drive" />
+        <div className="card card-pad stack">
+          <p className="small muted">
+            Files each photo into <strong>Rock Solid ▸ [building address]</strong> in your Drive,
+            then keeps only a thumbnail on this phone — so a year of walks costs tens of megabytes
+            here instead of hundreds. Photos are saved on the device first and uploaded after, so
+            losing signal never loses a photo.
+          </p>
+
+          {!clientId ? (
+            <>
+              <Field label="Google client ID"
+                hint="One-time setup — I'll walk you through getting this.">
+                <input className="input" value={clientId} placeholder="…apps.googleusercontent.com"
+                  onChange={(e) => setId(e.target.value)} />
+              </Field>
+              <div>
+                <button className="btn" disabled={!clientId.trim().endsWith('.apps.googleusercontent.com')}
+                  onClick={() => { setClientId(clientId); flash('Saved — now press Connect') }}>
+                  Save client ID
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className={`banner ${drive ? '' : 'warn'}`}>
+                <span className="b-icon">{drive ? '✓' : '○'}</span>
+                <div>
+                  {drive
+                    ? <><strong>Connected.</strong> {photos.inDrive} photo{photos.inDrive === 1 ? '' : 's'} in
+                        Drive{photos.pending > 0 && <>, {photos.pending} waiting to go up</>}.</>
+                    : <><strong>Not connected.</strong> Google sign-in lasts about an hour, so you'll
+                        reconnect now and then. {photos.pending > 0 &&
+                        <>{photos.pending} photo{photos.pending === 1 ? '' : 's'} waiting.</>}</>}
+                </div>
+              </div>
+              <div className="row wrapping">
+                {drive ? (
+                  <>
+                    <button className="btn accent" disabled={busy || photos.pending === 0}
+                      onClick={async () => {
+                        setBusy(true)
+                        const r = await flushToDrive()
+                        setBusy(false)
+                        photoStats().then(setPhotos)
+                        flash(r.sent ? `Sent ${r.sent} photo${r.sent === 1 ? '' : 's'}`
+                          : r.failed ? 'Upload failed — try again' : 'Nothing waiting')
+                      }}>
+                      {busy ? 'Sending…' : 'Upload waiting photos'}
+                    </button>
+                    <button className="btn" onClick={() => { driveDisconnect(); setDrive(false) }}>
+                      Disconnect
+                    </button>
+                  </>
+                ) : (
+                  <button className="btn accent" disabled={busy} onClick={async () => {
+                    setBusy(true)
+                    try {
+                      const ok = await driveConnect()
+                      setDrive(ok)
+                      if (ok) { await flushToDrive(); photoStats().then(setPhotos) }
+                      flash(ok ? 'Connected to Drive' : 'Sign-in cancelled')
+                    } catch (err) {
+                      flash(err instanceof Error ? err.message : 'Could not connect')
+                    } finally { setBusy(false) }
+                  }}>Connect Google Drive</button>
+                )}
+                <button className="btn ghost sm" onClick={() => { setClientId(''); setId(''); driveDisconnect(); setDrive(false) }}>
+                  Change client ID
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>

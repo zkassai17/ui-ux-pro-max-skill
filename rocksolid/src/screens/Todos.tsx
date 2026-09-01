@@ -150,7 +150,11 @@ export function TodoEditor({ db, todo, onClose }: {
         </Field>
 
         <Field label="Photos">
-          <PhotoStrip ids={draft.photoIds} onChange={(ids) => set('photoIds', ids)} />
+          <PhotoStrip ids={draft.photoIds} onChange={(ids) => set('photoIds', ids)}
+            context={{
+              building: db.buildings.find((b) => b.id === draft.buildingId)?.address ?? '',
+              label: draft.title || 'To do',
+            }} />
         </Field>
 
         {draft.done && draft.doneAt && (

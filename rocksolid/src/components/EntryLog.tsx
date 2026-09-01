@@ -23,6 +23,8 @@ export function EntryLog({ db, buildingId, unitId, placeholder, emptyBody }: {
   const [flash, setFlash] = useState('')
 
   const entries = entriesFor(db, buildingId, unitId)
+  const address = db.buildings.find((b) => b.id === buildingId)?.address ?? ''
+  const unit = db.units.find((u) => u.id === unitId)?.label
 
   function post() {
     if (!body.trim() && photos.length === 0) return
@@ -44,7 +46,8 @@ export function EntryLog({ db, buildingId, unitId, placeholder, emptyBody }: {
           style={{ border: 'none', background: 'none', minHeight: 58, padding: 0 }}
           onChange={(e) => setBody(e.target.value)} />
         <div style={{ paddingTop: 10, marginTop: 4, borderTop: '1px solid var(--line-soft)' }}>
-          <PhotoStrip ids={photos} onChange={setPhotos} />
+          <PhotoStrip ids={photos} onChange={setPhotos}
+            context={{ building: address, label: unit ? `Unit ${unit}` : 'Note' }} />
           <div className="row" style={{ marginTop: 10 }}>
             {flash && <span className="tiny" style={{ color: 'var(--ok)' }}>{flash}</span>}
             <span className="spacer" />

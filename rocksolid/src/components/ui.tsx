@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { getPhoto, savePhoto, deletePhoto } from '../lib/photos'
+import { getPhoto, savePhoto, deletePhoto, type PhotoContext } from '../lib/photos'
 
 // ---------- Modal ----------
 
@@ -139,9 +139,11 @@ function Thumb({ id, onRemove }: { id: string; onRemove?: () => void }) {
   )
 }
 
-export function PhotoStrip({ ids, onChange }: {
+export function PhotoStrip({ ids, onChange, context }: {
   ids: string[]
   onChange?: (next: string[]) => void
+  /** Building and label, so the photo can be filed in the right Drive folder. */
+  context?: PhotoContext
 }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
@@ -154,7 +156,7 @@ export function PhotoStrip({ ids, onChange }: {
       const added: string[] = []
       for (const f of files) {
         if (!f.type.startsWith('image/')) continue
-        added.push(await savePhoto(f))
+        added.push(await savePhoto(f, context))
       }
       onChange([...ids, ...added])
     } finally {

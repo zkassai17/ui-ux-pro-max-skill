@@ -16,6 +16,7 @@ import { VisitTimeline } from './VisitTimeline'
 export function CurrentVisit({ db, buildingId, onSaved }: {
   db: Database; buildingId: string; onSaved: () => void
 }) {
+  const address = db.buildings.find((b) => b.id === buildingId)?.address ?? ''
   const [adding, setAdding] = useState('')
   const [timelineFor, setTimelineFor] = useState<string | null>(null)
   const [justFiled, setJustFiled] = useState(false)
@@ -84,7 +85,8 @@ export function CurrentVisit({ db, buildingId, onSaved }: {
                 <TextArea value={c.note} placeholder="What's wrong?" style={{ minHeight: 48 }}
                   onChange={(e) => patch(c, { note: e.target.value })} />
                 <div style={{ marginTop: 8 }}>
-                  <PhotoStrip ids={c.photoIds} onChange={(ids) => patch(c, { photoIds: ids })} />
+                  <PhotoStrip ids={c.photoIds} onChange={(ids) => patch(c, { photoIds: ids })}
+                    context={{ building: address, label: c.label }} />
                 </div>
               </div>
             )}
@@ -109,7 +111,7 @@ export function CurrentVisit({ db, buildingId, onSaved }: {
             placeholder="Notes and photos that aren't about one area."
             onChange={(e) => saveInspection({ ...current, note: e.target.value })} />
           <div style={{ marginTop: 9 }}>
-            <PhotoStrip ids={current.photoIds}
+            <PhotoStrip ids={current.photoIds} context={{ building: address, label: 'Visit' }}
               onChange={(ids) => saveInspection({ ...current, photoIds: ids })} />
           </div>
         </div>
