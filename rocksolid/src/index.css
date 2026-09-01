@@ -119,8 +119,8 @@
 * { margin: 0; }
 
 html, body, #root { height: 100%; }
-/* Painted behind the status bar so the strip matches the header, not the page. */
-html { background: var(--paper); }
+/* Painted behind the status bar, and behind anything the app doesn't cover. */
+html, body { background: var(--paper); }
 
 body {
   font-family: var(--font);
@@ -152,7 +152,14 @@ h1, h2, h3, h4 { line-height: 1.2; font-weight: 600; }
    App shell
    ============================================================ */
 
-.app { min-height: 100%; display: flex; }
+.app {
+  /* 100% resolves against a viewport that stops short of the home indicator, so
+     a page with little content ended above the bottom of the screen and left a
+     strip of bare document showing. dvh tracks the real visible height. */
+  min-height: 100%;
+  min-height: 100dvh;
+  display: flex;
+}
 
 .sidebar {
   display: none;
@@ -202,7 +209,9 @@ h1, h2, h3, h4 { line-height: 1.2; font-weight: 600; }
 
 .main {
   flex: 1; min-width: 0;
-  padding: 0 0 84px;
+  /* Clear the tab bar and the home indicator beneath it. */
+  padding: 0 0 calc(84px + env(safe-area-inset-bottom, 0px));
+  background: var(--paper);
 }
 
 @media (min-width: 900px) {
